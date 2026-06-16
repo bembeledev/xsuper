@@ -4,73 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/27 a 34.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/commands.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/AppendCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/CatCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ChangeDirCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ClearCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/CopyCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/DeleteCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/DiffCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/DuCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/EditCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/FindCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/FindTextCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/GrepCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ListCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/LnCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/MakeDirCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/MoveCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/OpenCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/PropsCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/PwdCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ReadCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/RenameCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ReplaceCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/SearchCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/SortCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/SystemCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/TailCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/TouchCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/WcCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/WriteCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/CloseCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/CompressCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/ConvertCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/EncryptCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/KillCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/ProcessCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/PsCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/SearchTextCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/UnzipCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/ZipCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/controller/XFileController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/controller/XFileProperties.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/core/Command.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/core/CommandRegistry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/FileHelper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/XFile.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/XFileIO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/XFileReader.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/XFileRun.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/model/XFileWriter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/DataFormatService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/FileSystemService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/ProcessService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/SecurityService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/ui/FileExplorerCLI.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/utils/ConsoleTheme.java" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="Funcionalidades Padrão">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/AliasCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/EnvCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/HistoryCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/CryptCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/TimeCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/WatchCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/core/CommandRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/core/CommandRegistry.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -168,6 +111,19 @@
       <option name="presentableId" value="Default" />
       <updated>1781622929272</updated>
     </task>
+    <task id="LOCAL-00001" summary="Funcionalidades Padrão">
+      <option name="closed" value="true" />
+      <created>1781652251933</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1781652251934</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Funcionalidades Padrão" />
+    <option name="LAST_COMMIT_MESSAGE" value="Funcionalidades Padrão" />
   </component>
 </project>

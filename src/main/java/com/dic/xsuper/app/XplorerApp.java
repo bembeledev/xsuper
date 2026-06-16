@@ -63,6 +63,17 @@ public class XplorerApp {
         registry.register(new SortCmd());
         registry.register(new TailCmd());
         registry.register(new LnCmd());
+
+
+        registry.register(new HistoryCmd());
+        registry.register(new AliasCmd());
+        registry.register(new EnvCmd());
+
+
+        // Adiciona as novas ferramentas no construtor
+        registry.register(new TimeCmd(this.registry));
+        registry.register(new WatchCmd(this.registry));
+        registry.register(new CryptCmd());
     }
 
     public void boot() {

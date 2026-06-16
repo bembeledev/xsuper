@@ -24,7 +24,22 @@ public class CommandRegistry {
     public Path executeCommand(String input, Path currentDirectory) {
         if (input == null || input.trim().isEmpty()) return currentDirectory;
 
-        String[] rawTokens = input.trim().split("\\s+");
+
+        // 1. Grava o comando no Histórico (Sprint 5)
+        SessionManager.HISTORY.add(input);
+
+        // 2. Resolve Aliases (Sprint 5) - Se digitares "ll", ele transforma em "ls"
+        String resolvedInput = input.trim();
+        for (Map.Entry<String, String> alias : SessionManager.ALIASES.entrySet()) {
+            if (resolvedInput.equals(alias.getKey()) || resolvedInput.startsWith(alias.getKey() + " ")) {
+                resolvedInput = resolvedInput.replaceFirst(alias.getKey(), alias.getValue());
+                break;
+            }
+        }
+
+
+        // Continua a usar o input resolvido a partir daqui
+        String[] rawTokens = resolvedInput.trim().split("\\s+");
         List<String> cleanArgsList = new ArrayList<>();
 
         String redirectTarget = null;
