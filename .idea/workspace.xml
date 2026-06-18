@@ -4,33 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="Comandos para Cript, Hisotry,Watch, etc">
-      <change afterPath="$PROJECT_DIR$/fcs.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/script.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ChmodCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/DfCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/TreeCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/AwkCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/PingCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/SedCmd.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ControlFlow.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TestXPL.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Token.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplCallable.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'.">
+      <change afterPath="$PROJECT_DIR$/array.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/object.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ArrayMethods.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ObjectMethods.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/StringMethods.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/str.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/commands.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ListCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ListCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fcs.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/fcs.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/DataFormatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/DataFormatService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/FileSystemService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/FileSystemService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/ProcessService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/services/ProcessService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/ui/FileExplorerCLI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/ui/FileExplorerCLI.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,25 +54,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Application.Main.executor": "Run",
-    "Application.TestXPL.executor": "Run",
-    "Application.com.dic.xsuper.Main.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/ferna/Documents/GitHub/FileManager",
-    "onboarding.tips.debug.path": "C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "RainbowCSV.Settings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
+    &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;RainbowCSV.Settings&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
@@ -160,7 +151,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781652999463</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'.">
+      <option name="closed" value="true" />
+      <created>1781787074150</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1781787074150</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -169,6 +168,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Funcionalidades Padrão" />
     <MESSAGE value="Comandos para Cript, Hisotry,Watch, etc" />
-    <option name="LAST_COMMIT_MESSAGE" value="Comandos para Cript, Hisotry,Watch, etc" />
+    <MESSAGE value="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'." />
   </component>
 </project>

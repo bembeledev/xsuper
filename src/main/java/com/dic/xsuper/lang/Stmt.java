@@ -17,6 +17,7 @@ public abstract class Stmt {
         R visitReturnStmt(Return aReturn);
         R visitForInRangeStmt(ForInRange forInRange);
         R visitForInStmt(ForIn forIn);
+        R visitEnumStmt(Enum stmt);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -273,5 +274,19 @@ public abstract class Stmt {
                     ", value=" + value +
                     '}';
         }
+    }
+
+    // No fundo do ficheiro Stmt.java:
+    public static class Enum extends Stmt {
+        public final Token name;
+        public final List<Token> constants;
+
+        public Enum(Token name, List<Token> constants) {
+            this.name = name;
+            this.constants = constants;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitEnumStmt(this); }
     }
 }

@@ -25,13 +25,15 @@ public enum TokenType {
 
     POWER, // x*x
     MODULO, MODULO_ASSIGN, // %, %=
-
+    FAT_ARROW, // =>
     // Literais e Identificadores
     IDENTIFIER,
     INT_LITERAL,
     FLOAT_LITERAL,
     STRING_LITERAL,
+    TRUE,
+    FALSE,
 
     // Controlo Interno
-    EOF, ERROR
+    EOF, NULL, ERROR
 }

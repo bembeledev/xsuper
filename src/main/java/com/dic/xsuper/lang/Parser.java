@@ -270,6 +270,26 @@ public class Parser {
         return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
+    private Expr objectLiteral() {
+        List<Expr> keys = new ArrayList<>();
+        List<Expr> values = new ArrayList<>();
+
+        if (!check(TokenType.RBRACE)) {
+            do {
+                // A chave pode ser um Identificador ou uma String Literal
+                Expr key = expression();
+                consume(TokenType.COLON, "Esperado ':' após a chave do objeto.");
+                Expr value = expression();
+
+                keys.add(key);
+                values.add(value);
+            } while (match(TokenType.COMMA));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do objeto.");
+        return new Expr.ObjectLiteral(keys, values);
+    }
+
     private Stmt breakStatement() {
         Token keyword = previous();
         consume(TokenType.SEMICOLON, "Esperado ';' após 'break'.");
@@ -316,6 +336,17 @@ public class Parser {
     }
 
     private Expr assignment() {
+
+        // ⭐Detetar Arrow Function de 1 parâmetro (ex: e => e.toUpperCase())
+        // Se o token atual for uma palavra e o token SEGUINTE for '=>'
+        if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
+            Token param = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro da Arrow Function.");
+            consume(TokenType.FAT_ARROW, "Esperado '=>' após o parâmetro.");
+
+            Expr body = expression(); // Lê o que a função faz!
+            return new Expr.ArrowFunction(param, body);
+        }
+
         Expr expr = equality();
 
         // 1. Atribuição Simples (=)
@@ -327,6 +358,11 @@ public class Parser {
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
             }
+            // NOVO: Se o que está à esquerda do '=' for um acesso a Array!
+            else if (expr instanceof Expr.IndexAccess access) {
+                return new Expr.IndexAssign(access.object, access.bracket, access.index, value);
+            }
+
             throw error(equals, "Alvo de atribuição inválido.");
         }
 
@@ -421,20 +457,29 @@ public class Parser {
         Expr expr = primary();
 
         while (true) {
-            if (match(TokenType.LPAREN)) { // Achou um '(' logo depois da expressão? É função!
-                expr = finishCall(expr);
+            if (match(TokenType.LPAREN)) {
+                expr = finishCall(expr); // Chamada de Função
             }
-            // ESQUELETO FUTURO: Se achou um '[' logo depois, é acesso a array! ex: lista[0]
-            // else if (match(TokenType.LBRACKET)) { expr = finishArrayAccess(expr); }
-
-            // ESQUELETO FUTURO: Se achou um '.' logo depois, é acesso a objeto! ex: obj.nome
-            // else if (match(TokenType.DOT)) { expr = finishObjectAccess(expr); }
+            else if (match(TokenType.LBRACKET)) {
+                expr = finishIndexAccess(expr); // Acesso a Array [ ]
+            }
+            // ⭐ NOVO: O Operador Ponto ( . ) ⭐
+            else if (match(TokenType.DOT)) {
+                Token name = consume(TokenType.IDENTIFIER, "Esperado nome do método após '.'.");
+                expr = new Expr.Get(expr, name);
+            }
             else {
                 break;
             }
         }
-
         return expr;
+    }
+
+    // NOVO MÉTODO AUXILIAR
+    private Expr finishIndexAccess(Expr object) {
+        Expr index = expression();
+        Token bracket = consume(TokenType.RBRACKET, "Esperado ']' após o índice.");
+        return new Expr.IndexAccess(object, bracket, index);
     }
 
     private Expr finishCall(Expr callee) {
@@ -455,6 +500,11 @@ public class Parser {
      * e consumimos apenas os valores base puros (Números, Strings, Arrays, Identificadores).
      */
     private Expr primary() {
+
+        if (match(TokenType.FALSE)) return new Expr.Literal(false);
+        if (match(TokenType.TRUE)) return new Expr.Literal(true);
+        if (match(TokenType.NULL)) return new Expr.Literal(null); // ou TokenType.NIL
+
         if (match(TokenType.INT_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STRING_LITERAL)) {
             return new Expr.Literal(previous().literal);
         }
@@ -490,13 +540,6 @@ public class Parser {
         throw error(peek(), "Expressão inesperada.");
     }
 
-    // ESQUELETO FUTURO: Analisador de objetos
-    private Expr objectLiteral() {
-        // TODO: Ler pares chave: valor separados por vírgula até fechar o }
-        // Exemplo: HashMap de Expr para Expr, ou String para Expr, e colocar no Expr.ObjectLiteral
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do objeto.");
-        return null;
-    }
 
     // ==========================================
     // "MÁQUINA DE COMER" (MÉTODOS UTILITÁRIOS DO PARSER)

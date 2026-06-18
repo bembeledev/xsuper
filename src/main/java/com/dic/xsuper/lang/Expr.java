@@ -17,7 +17,11 @@ public abstract class Expr {
         R visitUpdateExpr(Update expr);
         R visitIndexAccessExpr(IndexAccess expr);
         R visitIndexAssignExpr(IndexAssign expr);
+        R visitGetExpr(Get expr);
+        R visitArrowFunctionExpr(ArrowFunction expr);
+        R visitObjectLiteralExpr(ObjectLiteral expr);
     }
+
 
     public abstract <R> R accept(Visitor<R> visitor);
 
@@ -265,6 +269,69 @@ public abstract class Expr {
                     ", bracket=" + bracket +
                     ", index=" + index +
                     ", value=" + value +
+                    '}';
+        }
+    }
+    // Nó para: objeto.propriedade (ex: arr.push)
+    public static class Get extends Expr {
+        public final Expr object; // O que está à esquerda do ponto (ex: arr)
+        public final Token name;  // O nome do método à direita (ex: push)
+
+        public Get(Expr object, Token name) {
+            this.object = object;
+            this.name = name;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitGetExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Get{" +
+                    "object=" + object +
+                    ", name=" + name +
+                    '}';
+        }
+    }
+
+    public static class ArrowFunction extends Expr {
+        public final Token parameter; // Por agora suportamos 1 parâmetro: e => ...
+        public final Expr body;       // O que ela retorna: e.toUpperCase()
+
+        public ArrowFunction(Token parameter, Expr body) {
+            this.parameter = parameter;
+            this.body = body;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitArrowFunctionExpr(this); }
+
+        @Override
+        public String toString() {
+            return "ArrowFunction{" +
+                    "parameter=" + parameter +
+                    ", body=" + body +
+                    '}';
+        }
+    }
+
+    public static class ObjectLiteral extends Expr {
+        public final List<Expr> keys;
+        public final List<Expr> values;
+
+        public ObjectLiteral(List<Expr> keys, List<Expr> values) {
+            this.keys = keys;
+            this.values = values;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitObjectLiteralExpr(this); }
+
+        @Override
+        public String toString() {
+            return "ObjectLiteral{" +
+                    "keys=" + keys +
+                    ", values=" + values +
                     '}';
         }
     }

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
@@ -393,6 +394,198 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitIndexAccessExpr(Expr.IndexAccess expr) {
+        // Avalia quem é o array (lista) e quem é o índice (ex: 0)
+        Object object = evaluate(expr.object);
+        Object index = evaluate(expr.index);
+
+        if (object instanceof List) {
+            List<?> list = (List<?>) object;
+            if (index instanceof Long) {
+                int idx = (int) (long) index; // Convertemos Long para Int porque as listas do Java pedem Int
+                if (idx >= 0 && idx < list.size()) {
+                    return list.get(idx);
+                }
+                throw new ControlFlow.RuntimeError(expr.bracket, "Índice fora dos limites do Array (Index out of bounds).");
+            }
+            throw new ControlFlow.RuntimeError(expr.bracket, "O índice do Array tem de ser um número inteiro.");
+        }
+        if (object instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) object;
+            return map.get(index.toString());
+        }
+
+
+        throw new ControlFlow.RuntimeError(expr.bracket, "Apenas Arrays e Strings suportam acesso por índice.");
+    }
+
+    @Override
+    public Object visitIndexAssignExpr(Expr.IndexAssign expr) {
+        Object object = evaluate(expr.object);
+        Object index = evaluate(expr.index);
+        Object value = evaluate(expr.value);
+
+        if (object instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>) object;
+
+            if (index instanceof Long) {
+                int idx = (int) (long) index;
+                if (idx >= 0 && idx < list.size()) {
+                    list.set(idx, value);
+                    return value;
+                }
+                throw new ControlFlow.RuntimeError(expr.bracket, "Índice fora dos limites do Array (Index out of bounds).");
+            }
+            throw new ControlFlow.RuntimeError(expr.bracket, "O índice do Array tem de ser um número inteiro.");
+        }
+
+        if (object instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) object;
+            map.put(index.toString(), value);
+            return value;
+        }
+
+        throw new ControlFlow.RuntimeError(expr.bracket, "Apenas Arrays suportam atribuição por índice.");
+    }
+
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        // 1. Descobre quem é o objeto à esquerda do ponto (ex: a variável ou a string literal)
+        Object object = evaluate(expr.object);
+
+        // 2. É uma Lista (Array)? Delega para ArrayMethods
+        if (object instanceof List) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<Object> list = (List<Object>) object;
+
+                // 1. Tenta ver se é uma propriedade direta (ex: arr.length, arr.first)
+                switch (expr.name.lexeme) {
+                    case "length":
+                    case "isEmpty":
+                    case "first":
+                    case "last":
+                        return ArrayMethods.getProperty(list, expr.name.lexeme);
+                }
+
+                // 2. Se não for propriedade, devolve o método para ser executado
+                return ArrayMethods.getMethod(list, expr.name.lexeme);
+
+            } catch (RuntimeException e) {
+                throw new ControlFlow.RuntimeError(expr.name, e.getMessage());
+            }
+        }
+
+        // ⭐ 3. É uma String? Delega para StringMethods
+        // É uma String?
+        if (object instanceof String) {
+            try {
+                String str = (String) object;
+
+                // ⭐ 1. INTERCETA AS PROPRIEDADES PRIMEIRO (Sem parêntesis) ⭐
+                switch (expr.name.lexeme) {
+                    case "length":
+                    case "size":
+                    case "isEmpty":
+                    case "empty":
+                        return StringMethods.getProperty(str, expr.name.lexeme);
+                }
+
+                // 2. Se não for propriedade, devolve a função para o visitCallExpr executar
+                return StringMethods.getMethod(str, expr.name.lexeme);
+
+            } catch (RuntimeException e) {
+                throw new ControlFlow.RuntimeError(expr.name, e.getMessage());
+            }
+        }
+
+        // É um Dicionário/Objeto?
+        if (object instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) object;
+            String propName = expr.name.lexeme;
+
+            // 1. Propriedades especiais diretas
+            if (propName.equals("length") || propName.equals("size") || propName.equals("isEmpty") || propName.equals("empty")) {
+                return ObjectMethods.getProperty(map, propName);
+            }
+
+            // 2. Tenta encontrar um método nativo (ex: keys, flatten, pick)
+            try {
+                return ObjectMethods.getMethod(map, propName);
+            } catch (RuntimeException eMethod) {
+                // 3. Se não for um método nativo, é porque o utilizador quer ler uma chave (ex: obj.nome)
+                try {
+                    return ObjectMethods.getProperty(map, propName);
+                } catch (RuntimeException eProperty) {
+                    // Se também não for uma chave, aí sim, damos erro!
+                    throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + propName + "' não existe no objeto.");
+                }
+            }
+        }
+
+        throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos e Strings possuem propriedades/métodos.");
+    }
+    @Override
+    public Object visitArrowFunctionExpr(Expr.ArrowFunction expr) {
+        // Guarda o ambiente atual para que a Arrow Function se lembre das variáveis de fora (Closure!)
+        Environment closure = this.environment;
+
+        // Criamos uma função anónima na hora
+        return new XplCallable() {
+            @Override
+            public int arity() {
+                return 1; // Recebe exatamente 1 parâmetro (ex: o 'e')
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                // 1. Cria um mini-escopo para a função
+                Environment arrowEnv = new Environment(closure);
+
+                // 2. Injeta o valor do parâmetro lá para dentro
+                arrowEnv.defineLet(expr.parameter.lexeme, arguments.get(0));
+
+                // 3. Executa o corpo da função e devolve o resultado!
+                Environment previous = interpreter.environment; // Acede através da instância atual
+                try {
+                    // Forçamos o interpretador a usar o mini-escopo
+                    // Usamos uma abordagem reflexiva ou alteramos temporariamente o escopo do interpretador
+                    interpreter.executeBlock(new ArrayList<>(), arrowEnv); // Truque para mudar de escopo
+
+                    // IMPORTANTE: Como é uma Expressão (Expr) e não um Bloco de Stmt,
+                    // avaliamos a expressão diretamente com o escopo trocado temporariamente!
+                    interpreter.environment = arrowEnv;
+                    return interpreter.evaluate(expr.body);
+
+                } finally {
+                    interpreter.environment = previous; // Restaura sempre!
+                }
+            }
+
+            @Override
+            public String toString() { return "<arrow fn>"; }
+        };
+    }
+
+    @Override
+    public Object visitObjectLiteralExpr(Expr.ObjectLiteral expr) {
+        // Usamos LinkedHashMap para manter a ordem de inserção das chaves
+        Map<String, Object> map = new java.util.LinkedHashMap<>();
+
+        for (int i = 0; i < expr.keys.size(); i++) {
+            // Se a chave for um identificador (ex: nome), extraímos o lexeme, se for string extraímos o valor
+            Object keyObj = evaluate(expr.keys.get(i));
+            String key = (keyObj instanceof Token) ? ((Token) keyObj).lexeme : keyObj.toString();
+            Object value = evaluate(expr.values.get(i));
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         return environment.get(expr.name.lexeme);
     }
@@ -497,7 +690,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 4. Valida a quantidade de parâmetros
         if (function.arity() != -1 && arguments.size() != function.arity()) {
-            throw new ControlFlow.RuntimeError(expr.paren, "Esperado " + function.arity() + " argumentos, mas obteve " + arguments.size() + ".");
+            throw new ControlFlow.RuntimeError(expr.paren,
+                    "Esperado " + function.arity() + " argumentos, mas obteve " + arguments.size() + ".");
         }
 
         // 5. Executa a função de verdade!

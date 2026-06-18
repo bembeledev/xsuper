@@ -36,6 +36,10 @@ public class Lexer {
         keywords.put("object", TokenType.T_OBJECT);
         keywords.put("enum", TokenType.T_ENUM);
         keywords.put("return", TokenType.RETURN);
+        // No local onde inicializas o teu map de keywords
+        keywords.put("true", TokenType.TRUE);
+        keywords.put("false", TokenType.FALSE);
+        keywords.put("null", TokenType.NULL); // ou NIL, dependendo de como chamaste
     }
 
     public Lexer(String source) {
@@ -97,7 +101,16 @@ public class Lexer {
                     addToken(TokenType.SLASH);
                 }
             break;
-            case '=': addToken(match('=') ? TokenType.EQUAL : TokenType.ASSIGN); break;
+            case '=': {
+                if (match('=')) {
+                    addToken(TokenType.EQUAL);
+                } else if (match('>')) { // =>
+                    addToken(TokenType.FAT_ARROW);
+                } else {
+                    addToken(TokenType.ASSIGN);
+                }
+            }
+            break;
             case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.ERROR); break;
             case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
@@ -162,7 +175,7 @@ public class Lexer {
         while (peek() != '"' && !isAtEnd()) {
             if (peek() == '\n') {
                 line++;
-                currentColumn = 1;
+                currentColumn = 1; // Genial! Mantém o rastreio da coluna perfeito.
             }
             advance();
         }
@@ -174,8 +187,18 @@ public class Lexer {
 
         advance(); // Consome as aspas de fecho (")
 
-        // Retira as aspas do valor real
+        // 1. Retira as aspas do valor real (Texto cru)
         String value = source.substring(start + 1, current - 1);
+
+        // ⭐ 2. A MAGIA DAS SEQUÊNCIAS DE ESCAPE ⭐
+        // Traduz os caracteres literais \ e n para um ENTER de verdade, etc.
+        value = value.replace("\\n", "\n")
+                .replace("\\t", "\t")
+                .replace("\\r", "\r")
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\");
+
+        // 3. Guarda o token formatado!
         addToken(TokenType.STRING_LITERAL, value);
     }
 
