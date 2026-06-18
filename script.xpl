@@ -1,0 +1,15 @@
+var i = 10;
+let b = 4;
+println(b);
+b += 12;
+println(b);
+b++;
+println(b);
+b -= 2;
+println(b);
+b--;
+println(b);
+println(i);
+println(i#b);
+println(i%b);
+println(i**b);

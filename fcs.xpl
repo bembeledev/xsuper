@@ -1,0 +1,1 @@
+for(let i:int = 10; i10; i = i+ 1){}

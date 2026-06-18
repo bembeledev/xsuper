@@ -74,6 +74,16 @@ public class XplorerApp {
         registry.register(new TimeCmd(this.registry));
         registry.register(new WatchCmd(this.registry));
         registry.register(new CryptCmd());
+
+
+        registry.register(new PingCmd());
+        registry.register(new DfCmd());
+        registry.register(new ChmodCmd());
+        registry.register(new TreeCmd());
+
+        registry.register(new SedCmd());
+        registry.register(new AwkCmd());
+        registry.register(new RunXplCmd(registry));
     }
 
     public void boot() {
