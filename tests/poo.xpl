@@ -11,20 +11,19 @@ declare Animal {
     pub nome: string;
     pub especie: string;
     priv id: int;
-    pub verdade(): int;
 }
 
 declare Mamifero extends Animal {
-    pub localizacao: string;
+    pub fun localizacao: string;
 }
 
 
 abstract implement Animal {
-    pub verIdade():int {
+    pub fun verIdade():int {
         println("Tenho "+ this.id+" anos");
         return this.id;
     }
-    abstract acasalamento(): string;
+    pub abstract fun acasalamento(): string;
 }
 
 implement Animal as Fish {
@@ -32,7 +31,7 @@ implement Animal as Fish {
         println("Tenho "+ this.id+" anos");
         return this.id;
     }
-    abstract fun acasalamento(): string;
+    pub abstract fun acasalamento(): string;
 }
 
 implement Mamifero as Mam1 for CRUD {
@@ -48,9 +47,9 @@ implement Mamifero as Mam1 for CRUD {
 }
 
 implement Mamifero as Mam2 for CRUD {
-    add() { println("A guardar Mam2 na Base de Dados B..."); }
-    delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
-    getId():int{return this.id;}
+     fun add() { println("A guardar Mam2 na Base de Dados B..."); }
+     fun delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
+     fun getId():int{return this.id;}
 }
 
 var m = new Mam1();

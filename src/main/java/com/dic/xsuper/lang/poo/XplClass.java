@@ -9,8 +9,8 @@ import com.dic.xsuper.lang.Stmt;        // Garante esta importação
 import java.util.List;
 
 public class XplClass implements XplCallable {
-    final XPLModel model;
-    final Environment closure; // O ambiente onde a classe foi registada
+    public final XPLModel model;
+    public final Environment closure; // O ambiente onde a classe foi registada
 
     public XplClass(XPLModel model, Environment closure) {
         this.model = model;

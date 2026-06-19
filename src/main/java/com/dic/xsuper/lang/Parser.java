@@ -112,6 +112,8 @@ public class Parser {
                 modifier = new Token(TokenType.PRIV, "priv", null, peek().line, peek().column);
             }
 
+            boolean isStatic = match(TokenType.STATIC);
+
             // 2. O Nome do campo
             Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade.");
 
@@ -121,7 +123,7 @@ public class Parser {
 
             consume(TokenType.SEMICOLON, "Esperado ';' após declaração da propriedade.");
 
-            fields.add(new Stmt.FieldDecl(modifier, memberName, type));
+            fields.add(new Stmt.FieldDecl(modifier, isStatic, memberName, type));
         }
 
         consume(TokenType.RBRACE, "Esperado '}' após o corpo do declare.");
@@ -211,6 +213,22 @@ public class Parser {
         // 4. O Corpo com o Código
         consume(TokenType.LBRACE, "Esperado '{' antes do corpo da implementação.");
 
+        // ⭐ LER O BLOCO DEFAULT ⭐
+        java.util.Map<String, Expr> defaultState = new java.util.HashMap<>();
+        if (match(TokenType.DEFAULT)) {
+            consume(TokenType.LBRACE, "Esperado '{' após 'default'.");
+            if (!check(TokenType.RBRACE)) {
+                do {
+                    Token key = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade no bloco default.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome da propriedade.");
+                    Expr value = expression();
+                    defaultState.put(key.lexeme, value);
+                } while (match(TokenType.COMMA));
+            }
+            consume(TokenType.RBRACE, "Esperado '}' após o bloco 'default'.");
+        }
+
+
         java.util.List<Stmt.Function> methods = new java.util.ArrayList<>();
 
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
@@ -221,6 +239,7 @@ public class Parser {
                 modifier = previous();
             }
 
+            boolean isStatic = match(TokenType.STATIC);
             // ⭐ 2. Modificador de Abstração (abstract)
             boolean isAbstract = false;
             if (match(TokenType.ABSTRACT)) {
@@ -279,12 +298,12 @@ public class Parser {
             }
 
             // ⭐ 8. Instanciação Perfeita com o Novo Construtor!
-            methods.add(new Stmt.Function(modifier, isAbstract, methodName, parameters, returnType, body));
+            methods.add(new Stmt.Function(modifier,isStatic, isAbstract, methodName, parameters, returnType, body));
         }
 
         consume(TokenType.RBRACE, "Esperado '}' após o corpo do implement.");
 
-        return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, methods);
+        return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, defaultState, methods);
     }
 
 
@@ -332,14 +351,14 @@ public class Parser {
             consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier, isAbstract, name, parameters, returnType, null);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, null);
         } else {
             // Se for um método concreto, EXIGE as chaves e o corpo de código!
             consume(TokenType.LBRACE, "Esperado '{' antes do corpo da função concreta.");
             List<Stmt> body = block();
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier, isAbstract, name, parameters, returnType, body);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, body);
         }
     }
 

@@ -328,7 +328,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             activeModel = baseModel;
             System.out.println("[XPL Engine] -> Injetando Comportamento (Base): " + activeModel.name);
 
-        } else {
+        }
+        else {
             // ---> É UMA VARIANTE! (Ex: implement Mamifero as Mam1) <---
             String variantName = stmt.aliasName.lexeme;
 
@@ -357,6 +358,25 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Log da injeção
             System.out.println("[XPL Engine] -> Injetando Comportamento (Variante): " + variantName + " (Base: " + baseName + ")");
         }
+
+
+        // ⭐ AVALIA O BLOCO DEFAULT E DIVIDE AS ÁGUAS ⭐
+        for (Map.Entry<String, Expr> entry : stmt.defaultState.entrySet()) {
+            String fieldName = entry.getKey();
+            Object value = evaluate(entry.getValue()); // Calcula o valor 1 única vez!
+
+            Stmt.FieldDecl field = activeModel.fields.get(fieldName);
+            if (field == null) {
+                throw new ControlFlow.RuntimeError(stmt.targetName, "O campo '" + fieldName + "' não existe no 'declare " + activeModel.name + "'.");
+            }
+
+            if (field.isStatic) {
+                activeModel.staticFields.put(fieldName, value); // Vai para a memória estática global
+            } else {
+                activeModel.defaultInstanceFields.put(fieldName, value); // Fica de reserva para o próximo 'new'
+            }
+        }
+
 
         // ⭐ 3. A GUILHOTINA: VALIDAÇÃO DE CONTRATOS (TYPE CHECKING) ⭐
         for (Token interfaceToken : stmt.interfaces) {
@@ -747,6 +767,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             return ((XplInstance) object).get(expr.name);
         }
 
+        // ⭐ É uma Classe/Fábrica (Acesso Estático)? ⭐
+        if (object instanceof XplClass) {
+            XPLModel model = ((XplClass) object).model;
+
+            // 1. É um Dado Estático?
+            if (model.staticFields.containsKey(expr.name.lexeme)) {
+                return model.staticFields.get(expr.name.lexeme);
+            }
+
+            // 2. É um Comportamento Estático?
+            Stmt.Function method = model.findMethod(expr.name.lexeme);
+            if (method != null && method.isStatic) {
+                XPLModel owner = model.getOwnerOfMethod(expr.name.lexeme);
+                // Não tem bind(this) porque o método estático não tem dono instanciado!
+                return new XplFunction(method, ((XplClass) object).closure, owner);
+            }
+
+            throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método estático '" + expr.name.lexeme + "' não existe no modelo " + model.name + ".");
+        }
+
         throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos e Strings possuem propriedades/métodos.");
     }
     @Override
@@ -852,6 +892,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Object visitSetExpr(Expr.Set expr) {
         // 1. Avalia quem é o dono da propriedade (o objeto à esquerda do ponto)
         Object object = evaluate(expr.object);
+
+        // ⭐ É Atribuição numa variável estática? (Ex: Animal.INSTANCIAS = 5) ⭐
+        if (object instanceof XplClass) {
+            XPLModel model = ((XplClass) object).model;
+
+            if (model.fields.containsKey(expr.name.lexeme) && model.fields.get(expr.name.lexeme).isStatic) {
+                Object value = evaluate(expr.value);
+                model.staticFields.put(expr.name.lexeme, value);
+                return value;
+            }
+            throw new ControlFlow.RuntimeError(expr.name, "A propriedade estática '" + expr.name.lexeme + "' não existe ou não pode ser alterada no modelo " + model.name + ".");
+        }
 
         // 2. Garante que estamos a lidar com um Objeto real do nosso motor POO
         if (!(object instanceof XplInstance)) {

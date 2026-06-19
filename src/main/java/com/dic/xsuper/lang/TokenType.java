@@ -46,7 +46,8 @@ public enum TokenType {
     // --- Modificadores de Acesso ---
     PUB,
     PROT,
-    PRIV, AS, THIS, ABSTRACT, SUPER
+    PRIV, AS, THIS, ABSTRACT, SUPER, STATIC, DEFAULT,
+
 
 
 }

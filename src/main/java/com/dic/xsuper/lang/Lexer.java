@@ -54,6 +54,8 @@ public class Lexer {
         keywords.put("as", TokenType.AS);
         keywords.put("abstract", TokenType.ABSTRACT);
         keywords.put("super", TokenType.SUPER);
+        keywords.put("static", TokenType.STATIC);
+        keywords.put("default", TokenType.DEFAULT);
     }
 
     public Lexer(String source) {

@@ -15,10 +15,15 @@ public class XplInstance {
     public XplInstance(XplClass klass) {
         this.klass = klass;
 
-        // Inicializa a memória com as propriedades estruturadas no 'declare'
-        // Garante que a instância nasce com a estrutura de dados correta!
+        // Inicializa a memória ignorando os campos estáticos!
         for (String fieldName : klass.model.fields.keySet()) {
-            fields.put(fieldName, null); // Nasce com valor 'null'
+            Stmt.FieldDecl field = klass.model.fields.get(fieldName);
+
+            if (!field.isStatic) {
+                // Se não for estático, vai buscar o valor default (ou null se não existir)
+                Object defaultValue = klass.model.defaultInstanceFields.getOrDefault(fieldName, null);
+                fields.put(fieldName, defaultValue);
+            }
         }
     }
 

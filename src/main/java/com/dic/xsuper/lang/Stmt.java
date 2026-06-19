@@ -1,6 +1,7 @@
 package com.dic.xsuper.lang;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public abstract class Stmt {
@@ -189,6 +190,7 @@ public abstract class Stmt {
 
     public static class Function extends Stmt {
         public final Token accessModifier; // Guarda o 'pub' ou 'priv' (pode ser null)
+        public final boolean isStatic;
         public final boolean isAbstract;   // Verdadeiro se for um método abstrato
         public final Token name;
         public final List<Param> params;
@@ -196,9 +198,10 @@ public abstract class Stmt {
         public final List<Stmt> body;      // Será 'null' se isAbstract for verdadeiro!
 
         // Atualiza o construtor com os novos campos
-        public Function(Token accessModifier, boolean isAbstract, Token name,
+        public Function(Token accessModifier, boolean isStatic, boolean isAbstract, Token name,
                         List<Param> params, Token returnType, List<Stmt> body) {
             this.accessModifier = accessModifier;
+            this.isStatic = isStatic;
             this.isAbstract = isAbstract;
             this.name = name;
             this.params = params;
@@ -296,9 +299,11 @@ public abstract class Stmt {
         public final Token modifier; // PUB, PROT, ou PRIV (se omitido, o Parser injeta PRIV)
         public final Token name;
         public final TypeNode type;
+        public final boolean isStatic;
 
-        public FieldDecl(Token modifier, Token name, TypeNode type) {
+        public FieldDecl(Token modifier, boolean isStatic, Token name, TypeNode type) {
             this.modifier = modifier;
+            this.isStatic = isStatic;
             this.name = name;
             this.type = type;
         }
@@ -309,6 +314,7 @@ public abstract class Stmt {
                     "modifier=" + modifier +
                     ", name=" + name +
                     ", type=" + type +
+                    ", isStatic=" + isStatic +
                     '}';
         }
     }
@@ -391,15 +397,17 @@ public abstract class Stmt {
     public static class ImplementDecl extends Stmt {
         public final Token targetName;  // O alvo base (Ex: Mamifero)
         public final Token aliasName;   // A variante opcional (Ex: Mam1 - pode ser null)
+        public final java.util.Map<String, Expr> defaultState;
         public final java.util.List<Token> interfaces; // Os contratos (Ex: [CRUD, EXEC])
         public final java.util.List<Stmt.Function> methods; // As funções reais com corpo { ... }
         public final boolean isAbstract;
 
         public ImplementDecl(boolean isAbstract, Token targetName, Token aliasName,
-                             List<Token> interfaces, List<Stmt.Function> methods) {
+                             List<Token> interfaces, Map<String, Expr> defaultState, List<Stmt.Function> methods) {
             this.isAbstract = isAbstract;
             this.targetName = targetName;
             this.aliasName = aliasName;
+            this.defaultState = defaultState;
             this.interfaces = interfaces;
             this.methods = methods;
         }

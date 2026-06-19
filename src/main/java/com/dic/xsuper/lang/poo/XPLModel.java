@@ -15,6 +15,10 @@ public class XPLModel {
     // Os comportamentos vêm do 'implement'
     public final Map<String, Stmt.Function> methods = new HashMap<>();
 
+    // ⭐ A NOVA MEMÓRIA VIVA ⭐
+    public final Map<String, Object> staticFields = new HashMap<>();
+    public final Map<String, Object> defaultInstanceFields = new HashMap<>();
+
     // ⭐ AS NOVAS TRAVAS DE ESTADO ⭐
     public boolean hasBaseImplementation = false; // Fica true quando houver um 'implement Nome'
     public boolean isAbstract = false;             // Fica true se for 'abstract implement Nome'
