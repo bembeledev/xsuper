@@ -40,8 +40,9 @@ public class XplClass implements XplCallable {
         Stmt.Function initializer = model.findMethod("init");
 
         if (initializer != null) {
+            XPLModel owner = model.getOwnerOfMethod("init");
             // Transforma a AST da função num comportamento invocável
-            XplFunction constructor = new XplFunction(initializer, closure);
+            XplFunction constructor = new XplFunction(initializer, closure,owner);
 
             // Amarramos o context 'this' à nova instância e executamos imediatamente
             // passando os argumentos que vieram do 'new Modelo(args...)'

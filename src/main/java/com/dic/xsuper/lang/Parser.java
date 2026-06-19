@@ -808,6 +808,14 @@ public class Parser {
             return new Expr.Variable(previous());
         }
 
+        // ⭐ NOVO: Chamada ao método do Pai (ex: super.init)
+        if (match(TokenType.SUPER)) {
+            Token keyword = previous();
+            consume(TokenType.DOT, "Esperado '.' após a palavra 'super'.");
+            Token method = consume(TokenType.IDENTIFIER, "Esperado nome do método da superclasse.");
+            return new Expr.Super(keyword, method);
+        }
+
         if (match(TokenType.IDENTIFIER)) {
             return new Expr.Variable(previous()); // Acesso a uma variável na memória
         }

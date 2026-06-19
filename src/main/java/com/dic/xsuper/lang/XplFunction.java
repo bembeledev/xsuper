@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang;
 
+import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplInstance;
 
 import java.util.List;
@@ -7,10 +8,12 @@ import java.util.List;
 public class XplFunction implements XplCallable {
     private final Stmt.Function declaration;
     private final Environment closure; // Guarda o escopo onde a função foi criada
+    private final XPLModel ownerModel;
 
-    public XplFunction(Stmt.Function declaration, Environment closure) {
+    public XplFunction(Stmt.Function declaration, Environment closure, XPLModel ownerModel) {
         this.declaration = declaration;
         this.closure = closure;
+        this.ownerModel = ownerModel;
     }
 
     @Override
@@ -45,12 +48,12 @@ public class XplFunction implements XplCallable {
 
     // ⭐ Cria uma nova versão da função com o 'this' injetado no escopo!
     public XplFunction bind(XplInstance instance) {
-        // Cria um ambiente isolado em volta do ambiente atual
         Environment environment = new Environment(closure);
-
-        // Injeta a palavra mágica 'this' apontando para a própria instância
         environment.defineConst("this", instance);
-
-        return new XplFunction(declaration, environment);
+        // ⭐ O SEGREDO DO SUPER: Guardamos em que nível da árvore genealógica estamos!
+        if (ownerModel != null) {
+            environment.defineConst("__current_model", ownerModel);
+        }
+        return new XplFunction(declaration, environment, ownerModel);
     }
 }

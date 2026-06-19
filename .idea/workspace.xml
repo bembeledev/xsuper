@@ -4,33 +4,29 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings.">
-      <change afterPath="$PROJECT_DIR$/enum.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/init.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/map.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/poo.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/poo2.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TypeNode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplClass.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInterface.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base.">
+      <change afterPath="$PROJECT_DIR$/tests/adv.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fcs.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/fcs.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ArrayMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ArrayMethods.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/array.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/array.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/enum.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/enum.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fcs.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/fcs.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/init.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/init.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/map.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/map.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/object.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/object.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/script.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/script.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ObjectMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ObjectMethods.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/StringMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/StringMethods.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/test.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplClass.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/str.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/str.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,6 +84,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
     </key>
   </component>
   <component name="RunManager" selected="Application.com.dic.xsuper.Main">
@@ -179,7 +178,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781810476757</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base.">
+      <option name="closed" value="true" />
+      <created>1781899771897</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1781899771897</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -201,6 +208,7 @@
     <MESSAGE value="Comandos para Cript, Hisotry,Watch, etc" />
     <MESSAGE value="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'." />
     <MESSAGE value="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings." />
+    <MESSAGE value="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base." />
+    <option name="LAST_COMMIT_MESSAGE" value="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base." />
   </component>
 </project>

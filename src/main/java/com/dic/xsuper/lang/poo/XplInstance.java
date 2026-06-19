@@ -34,7 +34,8 @@ public class XplInstance {
         Stmt.Function method = klass.model.findMethod(name.lexeme);
 
         if (method != null) {
-            XplFunction function = new XplFunction(method, klass.closure);
+            XPLModel owner = klass.model.getOwnerOfMethod(name.lexeme);
+            XplFunction function = new XplFunction(method, klass.closure, owner);
             // Converte a função da AST para uma função invocável e injeta o 'this'
             return function.bind(this);
         }

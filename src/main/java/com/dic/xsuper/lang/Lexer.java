@@ -53,6 +53,7 @@ public class Lexer {
         keywords.put("priv", TokenType.PRIV);
         keywords.put("as", TokenType.AS);
         keywords.put("abstract", TokenType.ABSTRACT);
+        keywords.put("super", TokenType.SUPER);
     }
 
     public Lexer(String source) {

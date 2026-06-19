@@ -442,7 +442,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
         // Transforma a declaração da AST num Objeto Executável XplFunction
-        XplFunction function = new XplFunction(stmt, this.environment);
+        XplFunction function = new XplFunction(stmt, this.environment,null);
 
         // Guarda a função na memória (no escopo atual)
         environment.defineLet(stmt.name.lexeme, function);
@@ -866,6 +866,36 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // Em linguagens como C/Java, uma atribuição devolve o próprio valor atribuído
         return value;
+    }
+
+    @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        try {
+            // 1. Apanha a instância atual e em que classe estamos AGORA
+            Object currentInstance = environment.get("this");
+            XPLModel currentModel = (XPLModel) environment.get("__current_model");
+
+            // 2. Descobre quem é o Pai!
+            XPLModel superclass = currentModel.superclass;
+            if (superclass == null) {
+                throw new ControlFlow.RuntimeError(expr.keyword, "A classe '" + currentModel.name + "' não possui uma superclasse.");
+            }
+
+            // 3. Puxa o método lá de cima
+            Stmt.Function method = superclass.findMethod(expr.method.lexeme);
+            if (method == null) {
+                throw new ControlFlow.RuntimeError(expr.method, "Método '" + expr.method.lexeme + "' não encontrado na superclasse.");
+            }
+
+            // 4. Prepara a invocação!
+            XPLModel owner = superclass.getOwnerOfMethod(expr.method.lexeme);
+            XplFunction function = new XplFunction(method, this.globals, owner);
+
+            return function.bind((XplInstance) currentInstance);
+
+        } catch (RuntimeException e) {
+            throw new ControlFlow.RuntimeError(expr.keyword, "A palavra-chave 'super' só pode ser usada dentro de um método herdado.");
+        }
     }
 
     @Override

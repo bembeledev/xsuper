@@ -50,6 +50,13 @@ public class XPLModel {
         return null;
     }
 
+    // Devolve o modelo exato onde este método foi escrito originalmente
+    public XPLModel getOwnerOfMethod(String methodName) {
+        if (methods.containsKey(methodName)) return this;
+        if (superclass != null) return superclass.getOwnerOfMethod(methodName);
+        return null;
+    }
+
     @Override
     public String toString() {
         return "XPLModel{" +

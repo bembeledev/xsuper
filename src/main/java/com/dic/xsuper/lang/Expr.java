@@ -22,6 +22,7 @@ public abstract class Expr {
         R visitObjectLiteralExpr(ObjectLiteral expr);
         R visitNewExpr(New expr);
         Object visitSetExpr(Set expr);
+        R visitSuperExpr(Super expr);
     }
 
 
@@ -388,6 +389,24 @@ public abstract class Expr {
                     ", name=" + name +
                     ", value=" + value +
                     '}';
+        }
+    }
+
+    public static class Super extends Expr {
+        public final Token keyword; // O 'super'
+        public final Token method;  // O método (ex: 'init')
+
+        public Super(Token keyword, Token method) {
+            this.keyword = keyword;
+            this.method = method;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitSuperExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Super{method=" + method.lexeme + "}";
         }
     }
 }

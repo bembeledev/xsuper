@@ -22,6 +22,11 @@ declare Animal {
 // 3. A ALMA (O Comportamento Base e Abstrato)
 // ==========================================
 abstract implement Animal {
+
+     pub fun init(nome: string, id: int) {
+       this.nome = nome;
+       this.id = id;
+     }
     // Método concreto herdado por todos os filhos
     pub fun verIdade(): int {
         println("Tenho " + this.id + " anos");
@@ -53,6 +58,14 @@ abstract implement Animal as Fish {
 declare Mamifero extends Animal {
     pub localizacao: string;
 }
+
+implement Mamifero {
+    pub fun init(nome: string, id: int, local: string) {
+        super.init(nome, id); // O pai trata da genética base!
+        this.localizacao = local; // O filho foca-se na evolução!
+    }
+}
+
 
 // ==========================================
 // 6. O CAMARADA COMPLETO (Cumpre a Alma e a Lei)
@@ -86,10 +99,10 @@ implement Mamifero as Mam1 for CRUD {
 // ==========================================
 println("--- TESTE DE EXECUÇÃO ---", "#FFFF00");
 
-var erro = new Fish(); // A GUILHOTINA IA CORTAR ISTO! (Base abstrata)
-println(erro);
+//var erro = new Fish(); // A GUILHOTINA IA CORTAR ISTO! (Base abstrata)
+//println(erro);
 
-var leao = new Mam1();
+var leao = new Mam1(1,"1w");
 leao.id = 5;
 leao.localizacao = "Savana Africana";
 
@@ -103,5 +116,11 @@ println(reprod);
 
 // Executa método herdado da Implementação Base do Animal
 leao.verIdade();
+
+
+
+var mam = new Mamifero("Tato",21,"Oil");
+mam.verIdade();
+
 
 println(">> Execução concluída com sucesso da Arquitetura XPL!", "#00FF00");
