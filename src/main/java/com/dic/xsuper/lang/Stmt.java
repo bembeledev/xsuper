@@ -22,7 +22,8 @@ public abstract class Stmt {
         R visitDeclareDeclStmt(DeclareDecl declareDecl);
         R visitInterfaceDeclStmt(InterfaceDecl interfaceDecl);
         R visitImplementDeclStmt(ImplementDecl stmt);
-
+        R visitTryStmt(Try stmt);
+        R visitThrowStmt(Throw stmt);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -437,6 +438,54 @@ public abstract class Stmt {
         public Param(Token name, Token type) {
             this.name = name;
             this.type = type;
+        }
+    }
+
+    public static class Throw extends Stmt {
+        public final Token keyword;
+        public final Expr value;
+
+        public Throw(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitThrowStmt(this); }
+
+        @Override
+        public String toString() {
+            return "Throw{" +
+                    "keyword=" + keyword +
+                    ", value=" + value +
+                    '}';
+        }
+    }
+
+    public static class Try extends Stmt {
+        public final Stmt tryBlock;
+        public final Token catchName; // A variável que segura o erro (Ex: 'e')
+        public final Stmt catchBlock;
+        public final Stmt finallyBlock;
+
+        public Try(Stmt tryBlock, Token catchName, Stmt catchBlock, Stmt finallyBlock) {
+            this.tryBlock = tryBlock;
+            this.catchName = catchName;
+            this.catchBlock = catchBlock;
+            this.finallyBlock = finallyBlock;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitTryStmt(this); }
+
+        @Override
+        public String toString() {
+            return "Try{" +
+                    "tryBlock=" + tryBlock +
+                    ", catchName=" + catchName +
+                    ", catchBlock=" + catchBlock +
+                    ", finallyBlock=" + finallyBlock +
+                    '}';
         }
     }
 }

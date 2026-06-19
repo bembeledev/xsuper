@@ -56,6 +56,10 @@ public class Lexer {
         keywords.put("super", TokenType.SUPER);
         keywords.put("static", TokenType.STATIC);
         keywords.put("default", TokenType.DEFAULT);
+        keywords.put("try", TokenType.TRY);
+        keywords.put("catch", TokenType.CATCH);
+        keywords.put("finally", TokenType.FINALLY);
+        keywords.put("throw", TokenType.THROW);
     }
 
     public Lexer(String source) {

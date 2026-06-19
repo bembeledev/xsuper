@@ -433,6 +433,8 @@ public class Parser {
         if (match(TokenType.BREAK)) return breakStatement();
         if (match(TokenType.CONTINUE)) return continueStatement();
         if (match(TokenType.RETURN)) return returnStatement();
+        if (match(TokenType.TRY)) return tryStatement();
+        if (match(TokenType.THROW)) return throwStatement();
 
         // ESQUELETOS FUTUROS:
         // if (match(TokenType.WHILE)) return whileStatement();
@@ -443,6 +445,43 @@ public class Parser {
         // Se não for nada disso, assume que é uma expressão a tentar calcular algo (ex: a = 10; ou println("ola");)
         return expressionStatement();
     }
+
+    private Stmt throwStatement() {
+        Token keyword = previous();
+        Expr value = expression(); // O que vamos lançar? Pode ser uma string, número ou objeto!
+        consume(TokenType.SEMICOLON, "Esperado ';' após o valor do throw.");
+        return new Stmt.Throw(keyword, value);
+    }
+
+    private Stmt tryStatement() {
+        consume(TokenType.LBRACE, "Esperado '{' após 'try'.");
+        Stmt tryBlock = new Stmt.Block(block());
+
+        Token catchName = null;
+        Stmt catchBlock = null;
+        if (match(TokenType.CATCH)) {
+            consume(TokenType.LPAREN, "Esperado '(' após 'catch'.");
+            catchName = consume(TokenType.IDENTIFIER, "Esperado nome da variável para armazenar o erro.");
+            consume(TokenType.RPAREN, "Esperado ')' após a variável do erro.");
+
+            consume(TokenType.LBRACE, "Esperado '{' antes do bloco catch.");
+            catchBlock = new Stmt.Block(block());
+        }
+
+        Stmt finallyBlock = null;
+        if (match(TokenType.FINALLY)) {
+            consume(TokenType.LBRACE, "Esperado '{' antes do bloco finally.");
+            finallyBlock = new Stmt.Block(block());
+        }
+
+        // Validação Arquitetural: Um 'try' precisa de pelo menos um 'catch' ou um 'finally'!
+        if (catchBlock == null && finallyBlock == null) {
+            throw error(previous(), "O bloco 'try' exige pelo menos um 'catch' ou 'finally'.");
+        }
+
+        return new Stmt.Try(tryBlock, catchName, catchBlock, finallyBlock);
+    }
+
 
     private Stmt returnStatement() {
         Token keyword = previous();

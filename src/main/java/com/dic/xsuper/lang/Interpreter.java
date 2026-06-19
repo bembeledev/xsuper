@@ -405,6 +405,59 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitThrowStmt(Stmt.Throw stmt) {
+        Object value = evaluate(stmt.value);
+        // Dispara a exceção invisível no motor Java!
+        throw new ControlFlow.ThrowException(value);
+    }
+
+    @Override
+    public Void visitTryStmt(Stmt.Try stmt) {
+        try {
+            // 1. Tenta executar o bloco de código
+            execute(stmt.tryBlock);
+
+        } catch (ControlFlow.ThrowException e) {
+            // 2. Apanha erros lançados MANULAMENTE pelo utilizador (throw "Erro!")
+            if (stmt.catchBlock != null) {
+                executeCatchBlock(stmt, e.value);
+            } else {
+                throw e; // Se não houver catch (apenas finally), o erro sobe!
+            }
+
+        } catch (ControlFlow.RuntimeError e) {
+            // ⭐ 3. SUPER PODER: Apanha os erros FATALS nativos do teu próprio motor! (Ex: Divisão por Zero)
+            if (stmt.catchBlock != null) {
+                executeCatchBlock(stmt, e.getMessage());
+            } else {
+                throw e;
+            }
+
+        } finally {
+            // 4. O bloco 'finally' corre SEMPRE, quer tenha havido erro ou não!
+            if (stmt.finallyBlock != null) {
+                execute(stmt.finallyBlock);
+            }
+        }
+        return null;
+    }
+
+    // Método auxiliar para criar o escopo local do catch (Ex: catch(e))
+    private void executeCatchBlock(Stmt.Try stmt, Object errorValue) {
+        Environment catchEnv = new Environment(this.environment);
+        // Injeta a variável do erro (Ex: 'e') na memória temporária do Catch
+        catchEnv.defineLet(stmt.catchName.lexeme, errorValue);
+
+        Environment previous = this.environment;
+        try {
+            this.environment = catchEnv;
+            execute(stmt.catchBlock);
+        } finally {
+            this.environment = previous;
+        }
+    }
+
+    @Override
     public Void visitForCStyleStmt(Stmt.ForCStyle stmt) {
         // 1. Criamos uma "Jaula" (Escopo) só para o loop.
         // Assim, o 'let i = 1' não vaza para fora do for!

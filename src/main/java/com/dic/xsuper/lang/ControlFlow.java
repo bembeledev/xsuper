@@ -26,4 +26,13 @@ public class ControlFlow {
             this.value = value;
         }
     }
+
+    public static class ThrowException extends RuntimeException {
+        public final Object value;
+        public ThrowException(Object value) {
+            // Desativamos a stacktrace para máxima performance!
+            super(null, null, false, false);
+            this.value = value;
+        }
+    }
 }
