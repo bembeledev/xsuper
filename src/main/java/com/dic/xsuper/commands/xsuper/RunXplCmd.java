@@ -22,15 +22,15 @@ public class RunXplCmd implements Command {
     }
 
     @Override
-    public String getName() { return "xpl"; }
+    public String getName() { return "run"; }
 
     @Override
-    public String getDescription() { return "Executa um script XPL. Uso: xpl <script.xpl>"; }
+    public String getDescription() { return "Executa um script XPL. Uso: run <script.xpl>"; }
 
     @Override
     public Path execute(String[] args, Path currentDirectory) throws Exception {
         if (args.length < 2) {
-            System.out.println(ConsoleTheme.WARNING + "Uso correto: xpl <script.xpl>" + ConsoleTheme.RESET);
+            System.out.println(ConsoleTheme.WARNING + "Uso correto: run <script.xpl>" + ConsoleTheme.RESET);
             return currentDirectory;
         }
 
@@ -48,13 +48,16 @@ public class RunXplCmd implements Command {
         try {
             Lexer lexer = new Lexer(sourceCode);
             List<Token> tokens = lexer.tokenize();
+            /*for (Token a: tokens){
+                System.out.println(ConsoleTheme.TEXT + a + ConsoleTheme.RESET);
+            }*/
             System.out.println(ConsoleTheme.SUCCESS + ">> 3. Lexer: " + tokens.size() + " tokens extraídos." + ConsoleTheme.RESET);
             Parser parser = new Parser(tokens);
 
             List<Stmt> statements = parser.parse();
-            for (Stmt stms : statements) {
+            /*for (Stmt stms : statements) {
                 System.out.println(ConsoleTheme.TEXT + stms.toString() + ConsoleTheme.RESET);
-            }
+            }*/
             System.out.println(ConsoleTheme.SUCCESS + ">> 4. Parser: " + statements.size() + " declarações geradas na AST." + ConsoleTheme.RESET);
 
             if (statements.isEmpty()) {

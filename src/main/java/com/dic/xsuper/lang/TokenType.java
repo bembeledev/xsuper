@@ -33,7 +33,20 @@ public enum TokenType {
     STRING_LITERAL,
     TRUE,
     FALSE,
-
+    NEW,
     // Controlo Interno
-    EOF, NULL, ERROR
+    EOF, NULL, ERROR,
+
+    // --- Estrutura de Dados e Contratos ---
+    INTERFACE,
+    DECLARE,
+    IMPLEMENT,
+    EXTENDS,
+
+    // --- Modificadores de Acesso ---
+    PUB,
+    PROT,
+    PRIV, AS, THIS, ABSTRACT,
+
+
 }

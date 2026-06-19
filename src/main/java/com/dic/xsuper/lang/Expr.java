@@ -20,6 +20,8 @@ public abstract class Expr {
         R visitGetExpr(Get expr);
         R visitArrowFunctionExpr(ArrowFunction expr);
         R visitObjectLiteralExpr(ObjectLiteral expr);
+        R visitNewExpr(New expr);
+        Object visitSetExpr(Set expr);
     }
 
 
@@ -332,6 +334,59 @@ public abstract class Expr {
             return "ObjectLiteral{" +
                     "keys=" + keys +
                     ", values=" + values +
+                    '}';
+        }
+    }
+
+    public static class New extends Expr {
+        public final Token keyword;
+        public final Token className;
+        public final List<Expr> arguments;
+        public final String typeArguments;
+
+        public New(Token keyword, Token className, String typeArguments, List<Expr> arguments) {
+            this.keyword = keyword;
+            this.className = className;
+            this.arguments = arguments;
+            this.typeArguments = typeArguments;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitNewExpr(this); }
+
+        @Override
+        public String toString() {
+            return "New{" +
+                    "keyword=" + keyword +
+                    ", className=" + className +
+                    ", arguments=" + arguments +
+                    ", typeArguments='" + typeArguments + '\'' +
+                    '}';
+        }
+    }
+
+    public static class Set extends Expr {
+        public final Expr object;
+        public final Token name;
+        public final Expr value;
+
+        public Set(Expr object, Token name, Expr value) {
+            this.object = object;
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return (R) visitor.visitSetExpr(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Set{" +
+                    "object=" + object +
+                    ", name=" + name +
+                    ", value=" + value +
                     '}';
         }
     }

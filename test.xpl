@@ -28,7 +28,7 @@ for i in (inicio * 2, 50 / 2) {
 }
 
 // Função que processa dados e retorna o resultado
-fun ProcessarFicheiros(extensao) {
+fun ProcessarFicheiros(extensao:string) {
     println("A procurar ficheiros com a extensão: " + extensao, "#00FF00");
 
     // Executa comando nativo do teu terminal Xplorer!
@@ -38,7 +38,7 @@ fun ProcessarFicheiros(extensao) {
 }
 
 // Uma função matemática pura
-fun Somar(a, b): int {
+fun Somar(a:int, b:int): int {
     return a + b;
 }
 
@@ -50,3 +50,12 @@ println(mensagem, "#FFFF00");
 
 let calculo = Somar(50, 10);
 println("Resultado da soma: " + calculo);
+
+fun valor(nome:string):string {
+    println(nome);
+    return nome;
+}
+
+let ana = valor("Ola ").toUpperCase().repeat(3);
+
+println(ana);

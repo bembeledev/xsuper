@@ -1,4 +1,7 @@
-package com.dic.xsuper.lang;
+package com.dic.xsuper.lang.helpers;
+
+import com.dic.xsuper.lang.Interpreter;
+import com.dic.xsuper.lang.XplCallable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,19 +21,14 @@ public class ArrayMethods {
      * Retorna o valor de uma propriedade da lista (ex: length, isEmpty, first, last).
      */
     public static Object getProperty(List<Object> list, String propertyName) {
-        switch (propertyName) {
-            case "length":
-                return (long) list.size();
-            case "isEmpty":
-                return list.isEmpty();
-            case "first":
-                return list.isEmpty() ? null : list.get(0);
-            case "last":
-                return list.isEmpty() ? null : list.get(list.size() - 1);
-            default:
-                throw new RuntimeException(
-                        "Propriedade '" + propertyName + "' não encontrada em Array/List.");
-        }
+        return switch (propertyName) {
+            case "length" -> (long) list.size();
+            case "isEmpty" -> list.isEmpty();
+            case "first" -> list.isEmpty() ? null : list.getFirst();
+            case "last" -> list.isEmpty() ? null : list.getLast();
+            default -> throw new RuntimeException(
+                    "Propriedade '" + propertyName + "' não encontrada em Array/List.");
+        };
     }
 
     // ==========================================
@@ -50,9 +48,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; } // variádico
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        for (Object arg : arguments) {
-                            list.add(arg);
-                        }
+                        list.addAll(arguments);
                         return (long) list.size(); // retorna novo tamanho
                     }
                 };
@@ -61,7 +57,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        return list.isEmpty() ? null : list.remove(list.size() - 1);
+                        return list.isEmpty() ? null : list.removeLast();
                     }
                 };
 
@@ -71,7 +67,7 @@ public class ArrayMethods {
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
                         // Insere no início na ordem inversa para manter a ordem original
                         for (int i = arguments.size() - 1; i >= 0; i--) {
-                            list.add(0, arguments.get(i));
+                            list.addFirst(arguments.get(i));
                         }
                         return (long) list.size();
                     }
@@ -81,7 +77,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        return list.isEmpty() ? null : list.remove(0);
+                        return list.isEmpty() ? null : list.removeFirst();
                     }
                 };
 
@@ -142,7 +138,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; } // 1 a 3 args
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object value = arguments.isEmpty() ? null : arguments.get(0);
+                        Object value = arguments.isEmpty() ? null : arguments.getFirst();
                         int start = resolveIndex(getIntArg(arguments, 1, 0), list.size());
                         int end = resolveIndex(getIntArg(arguments, 2, list.size()), list.size());
                         for (int i = start; i < end && i < list.size(); i++) {
@@ -178,7 +174,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; } // 1 ou 2 args
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.get(0);
+                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
                         int start = resolveIndex(getIntArg(arguments, 1, 0), list.size());
                         for (int i = start; i < list.size(); i++) {
                             if (Objects.equals(list.get(i), target)) {
@@ -193,7 +189,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.get(0);
+                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
                         int start = resolveIndex(getIntArg(arguments, 1, list.size() - 1), list.size());
                         for (int i = Math.min(start, list.size() - 1); i >= 0; i--) {
                             if (Objects.equals(list.get(i), target)) {
@@ -208,7 +204,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.get(0);
+                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
                         return list.contains(target);
                     }
                 };
@@ -279,7 +275,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; } // 0 ou 1 (separator)
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        String sep = arguments.isEmpty() ? "," : arguments.get(0).toString();
+                        String sep = arguments.isEmpty() ? "," : arguments.getFirst().toString();
                         StringBuilder sb = new StringBuilder();
                         for (int i = 0; i < list.size(); i++) {
                             if (i > 0) sb.append(sep);
@@ -343,7 +339,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("forEach exige uma função callback.");
                         }
@@ -362,7 +358,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("map exige uma função callback.");
                         }
@@ -382,7 +378,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("filter exige uma função callback.");
                         }
@@ -406,7 +402,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return -1; } // 1 ou 2 args
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException(methodName + " exige uma função callback.");
                         }
@@ -426,11 +422,11 @@ public class ArrayMethods {
                                 throw new RuntimeException("Reduce em lista vazia sem valor inicial.");
                             }
                             if (isRight) {
-                                accumulator = list.get(list.size() - 1);
+                                accumulator = list.getLast();
                                 startIdx = list.size() - 2;
                                 endIdx = -1;
                             } else {
-                                accumulator = list.get(0);
+                                accumulator = list.getFirst();
                                 startIdx = 1;
                                 endIdx = list.size();
                             }
@@ -452,7 +448,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("flatMap exige uma função callback.");
                         }
@@ -499,7 +495,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findIndex exige uma função callback.");
                         }
@@ -521,7 +517,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findLast exige uma função callback.");
                         }
@@ -543,7 +539,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findLastIndex exige uma função callback.");
                         }
@@ -565,7 +561,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("some exige uma função callback.");
                         }
@@ -587,7 +583,7 @@ public class ArrayMethods {
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                        Object callback = arguments.getFirst();
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("every exige uma função callback.");
                         }
@@ -613,8 +609,8 @@ public class ArrayMethods {
                         boolean inPlace = methodName.equals("sort");
                         List<Object> target = inPlace ? list : new ArrayList<>(list);
 
-                        if (!arguments.isEmpty() && arguments.get(0) instanceof XplCallable) {
-                            XplCallable comparator = (XplCallable) arguments.get(0);
+                        if (!arguments.isEmpty() && arguments.getFirst() instanceof XplCallable) {
+                            XplCallable comparator = (XplCallable) arguments.getFirst();
                             // Ordenação com insertion sort (falível) para respeitar callback
                             for (int i = 1; i < target.size(); i++) {
                                 int j = i;

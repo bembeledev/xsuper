@@ -1,16 +1,20 @@
 package com.dic.xsuper.lang;
 
 import com.dic.xsuper.core.CommandRegistry;
+import com.dic.xsuper.lang.helpers.ArrayMethods;
+import com.dic.xsuper.lang.helpers.ObjectMethods;
+import com.dic.xsuper.lang.helpers.StringMethods;
+import com.dic.xsuper.lang.poo.XPLModel;
+import com.dic.xsuper.lang.poo.XplClass;
+import com.dic.xsuper.lang.poo.XplInstance;
+import com.dic.xsuper.lang.poo.XplInterface;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
@@ -21,6 +25,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Path currentDirectory;
     // 2. O ambiente atual aponta para a caixa global logo no início!
     private Environment environment = globals;
+    // ⭐ O NOSSO REGISTRY GLOBAL ⭐
+    // Guarda tanto os modelos-base (Declare) quanto as variantes (Implement as)
+    private final Map<String, XPLModel> registry_model = new HashMap<>();
+    private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
         this.registry = registry;
@@ -92,6 +100,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 return memoryStream.toString(StandardCharsets.UTF_8).trim();
             }
         });
+
+        // Define o construtor nativo do 'Map' no escopo global!
+        globals.defineConst("Map", new XplCallable() {
+            @Override public int arity() { return 0; } // Construtor vazio new Map()
+            @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                // Devolve um HashMap novo e vazio!
+                return new java.util.LinkedHashMap<String, Object>();
+            }
+            @Override public String toString() { return "<native class Map>"; }
+        });
     }
 
     public void interpret(List<Stmt> statements) {
@@ -131,7 +149,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // Verificação Básica de Tipos (se a anotação :long, :string, etc. foi usada)
         if (stmt.typeAnnotation != null && value != null) {
-            checkTypeCompatability(stmt.typeAnnotation, value);
+            checkTypeCompatability(stmt.typeAnnotation.name, value);
         }
 
         // Delega para o teu Environment aplicar as regras restritas!
@@ -210,7 +228,204 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitEnumStmt(Stmt.Enum stmt) {
+        // 1. Imprime no terminal para garantirmos que o Parser leu o Enum e o enviou para aqui
+        System.out.println("[XPL Engine] -> Compilando Enum: " + stmt.name.lexeme);
+
+        // 2. Cria o Map do Enum mantendo a ordem (LinkedHashMap)
+        java.util.Map<String, Object> enumMap = new java.util.LinkedHashMap<>();
+
+        for (Token constant : stmt.constants) {
+            enumMap.put(constant.lexeme, constant.lexeme);
+        }
+
+        // ⭐ 3. A INTEGRAÇÃO PERFEITA COM O TEU ENVIRONMENT ⭐
+        // Guardamos como CONSTANTE para que a tua linguagem o proteja de reatribuições!
+        environment.defineConst(stmt.name.lexeme, enumMap);
+
+        return null;
+    }
+
+    @Override
+    public Void visitDeclareDeclStmt(Stmt.DeclareDecl stmt) {
+        String modelName = stmt.name.lexeme;
+
+
+        System.out.println("[XPL Engine] -> Compilando Modelo de Dados (Declare): " + modelName);
+
+        // 1. Resolve a herança (Extends)
+        XPLModel superclass = null;
+        if (stmt.superclass != null) {
+            superclass = registry_model.get(stmt.superclass.lexeme);
+            if (superclass == null) {
+                throw new ControlFlow.RuntimeError(stmt.superclass,
+                        "Erro: O modelo pai '" + stmt.superclass.lexeme + "' não foi encontrado ou declarado antes de " + modelName + ".");
+            }
+        }
+
+        // 2. Cria o Molde (Blueprint) Base
+        XPLModel model = new XPLModel(modelName, superclass);
+        model.canBeInstantiated = false; // Declare puro NÃO nasce.
+
+        // Se este modelo tem um pai, ele herda IMEDIATAMENTE todos os campos do pai!
+        if (superclass != null) {
+            model.fields.putAll(superclass.fields);
+        }
+
+        // 3. Injeta as propriedades (Campos de Dados)
+        for (Stmt.FieldDecl field : stmt.fields) {
+            model.addField(field);
+        }
+
+        // 4. Arquiva o Molde no teu Registry de POO!
+        // Sem isto, o 'implement' nunca conseguiria fundir os métodos.
+        registry_model.put(modelName, model);
+
+        return null;
+    }
+
+    @Override
+    public Void visitInterfaceDeclStmt(Stmt.InterfaceDecl stmt) {
+        String interfaceName = stmt.name.lexeme;
+        System.out.println("[XPL Engine] -> Registando Interface: " + interfaceName);
+
+
+        // 1. Converte a Declaração da AST num Contrato em Memória
+        XplInterface contract = new XplInterface(stmt);
+
+        // 2. Guarda no Arquivo de Contratos
+        registry_Interfaces.put(interfaceName, contract);
+
+        return null;
+    }
+
+
+    @Override
+    public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
+        String baseName = stmt.targetName.lexeme;
+
+        // 1. Vai buscar o modelo base (Declare) ao teu NOVO map!
+        XPLModel baseModel = registry_model.get(baseName);
+        if (baseModel == null) {
+            throw new ControlFlow.RuntimeError(stmt.targetName, "Erro Fatal: O modelo base '" + baseName + "' não foi declarado.");
+        }
+
+        XPLModel activeModel; // O modelo que vamos validar, registar e instanciar
+
+        // ⭐ 2. A BIFURCAÇÃO (BASE vs VARIANTE) ⭐
+        if (stmt.aliasName == null) {
+            // ---> É UMA IMPLEMENTAÇÃO DE BASE! <---
+            // Modificamos o próprio baseModel diretamente para NÃO perder as flags!
+            baseModel.hasBaseImplementation = true;
+
+            // Injeta os métodos diretamente no ADN do modelo base
+            for (Stmt.Function method : stmt.methods) {
+                baseModel.addMethod(method);
+            }
+            if (stmt.isAbstract) {
+                baseModel.isAbstract = true; // Carimba o modelo na RAM como Abstrato!
+            }
+            activeModel = baseModel;
+            System.out.println("[XPL Engine] -> Injetando Comportamento (Base): " + activeModel.name);
+
+        } else {
+            // ---> É UMA VARIANTE! (Ex: implement Mamifero as Mam1) <---
+            String variantName = stmt.aliasName.lexeme;
+
+            // Criamos uma ramificação limpa
+            activeModel = new XPLModel(variantName, baseModel.superclass);
+
+            // Uma variante É uma implementação base de si mesma!
+            activeModel.hasBaseImplementation = true;
+
+            // ⭐ A PEÇA QUE FALTAVA: A Variante também pode ser abstrata! ⭐
+            if (stmt.isAbstract) {
+                activeModel.isAbstract = true;
+            }
+
+            // Copia a memória (fields) do modelo base para a variante
+            activeModel.fields.putAll(baseModel.fields);
+
+            // Injeta os métodos específicos da variante
+            for (Stmt.Function method : stmt.methods) {
+                activeModel.addMethod(method);
+            }
+
+            // Regista a nova variante no Registry Interno, sem apagar a Base!
+            registry_model.put(variantName, activeModel);
+
+            // Log da injeção
+            System.out.println("[XPL Engine] -> Injetando Comportamento (Variante): " + variantName + " (Base: " + baseName + ")");
+        }
+
+        // ⭐ 3. A GUILHOTINA: VALIDAÇÃO DE CONTRATOS (TYPE CHECKING) ⭐
+        for (Token interfaceToken : stmt.interfaces) {
+            String interfaceName = interfaceToken.lexeme;
+            XplInterface contract = registry_Interfaces.get(interfaceName);
+
+            if (contract == null) {
+                throw new ControlFlow.RuntimeError(interfaceToken, "Erro de Linkage: A interface '" + interfaceName + "' não foi encontrada no Registry.");
+            }
+
+            // O motor cruza a lista do contrato com os métodos do activeModel (Usando Busca Genética!)
+            for (String requiredMethod : contract.requiredMethods.keySet()) {
+                // Evolução: Em vez de usar apenas containsKey, usa o findMethod para suportar contratos cumpridos por herança!
+                if (activeModel.findMethod(requiredMethod) == null) {
+                    throw new ControlFlow.RuntimeError(stmt.targetName,
+                            "Quebra de Contrato Fatal: O modelo '" + activeModel.name + "' não implementou o método obrigatório '" + requiredMethod + "()' exigido pela interface '" + interfaceName + "'.");
+                }
+            }
+        }
+
+        // 4. Instancia a classe para a memória RAM (O Global Environment)
+        XplClass executableClass = new XplClass(activeModel, this.globals);
+        globals.defineConst(activeModel.name, executableClass);
+
+        return null;
+    }
+
+    @Override
     public Void visitForCStyleStmt(Stmt.ForCStyle stmt) {
+        // 1. Criamos uma "Jaula" (Escopo) só para o loop.
+        // Assim, o 'let i = 1' não vaza para fora do for!
+        Environment previous = this.environment;
+
+        try {
+            this.environment = new Environment(previous);
+
+            // 2. Inicialização (ex: let i:int = 1;)
+            if (stmt.init != null) {
+                execute(stmt.init);
+            }
+
+            // 3. A Roda do Loop
+            while (true) {
+                // Avalia a condição (ex: i <= 12)
+                if (stmt.condition != null) {
+                    if (!isTruthy(evaluate(stmt.condition))) {
+                        break; // A condição deu falso? Sai do loop!
+                    }
+                }
+
+                // Executa o corpo do loop (ex: println(i);)
+                try {
+                    execute(stmt.body);
+                } catch (ControlFlow.BreakException e) {
+                    break; // Sai do loop imediatamente
+                } catch (ControlFlow.ContinueException e) {
+                    // O continue salta o resto do corpo, mas VAI para o incremento!
+                }
+
+                // 4. Incremento (ex: i++)
+                if (stmt.increment != null) {
+                    evaluate(stmt.increment);
+                }
+            }
+        } finally {
+            // ⭐ CRÍTICO: Restaura a memória original para apagar a variável 'i'
+            this.environment = previous;
+        }
+
         return null;
     }
 
@@ -526,6 +741,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
+        // ⭐ NOVO: É uma instância da nossa POO? ⭐
+        if (object instanceof XplInstance) {
+            // Delega para o método get() do XplInstance.java (que vai buscar a variável ou o método)
+            return ((XplInstance) object).get(expr.name);
+        }
+
         throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos e Strings possuem propriedades/métodos.");
     }
     @Override
@@ -583,6 +804,68 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             map.put(key, value);
         }
         return map;
+    }
+
+    @Override
+    public Object visitNewExpr(Expr.New expr) {
+        String modelName = expr.className.lexeme;
+        XPLModel model = registry_model.get(modelName);
+
+        // 1. Verifica se o modelo sequer existe
+        if (model == null) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "Erro: O modelo '" + modelName + "' não foi declarado.");
+        }
+
+        // 2. Só agora verificamos as regras de negócio (as "Guilhotinas")
+        if (!model.hasBaseImplementation) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "ERRO FATAL: O modelo '" + modelName + "' não possui uma implementação base.");
+        }
+
+        if (model.isAbstract) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "ERRO FATAL: Operação Ilegal. O modelo '" + modelName + "' possui uma implementação abstrata e não pode ser instanciado diretamente.");
+        }
+
+        // ⭐ 3. A CORREÇÃO: Avaliar os argumentos como fazemos no call()! ⭐
+        List<Object> arguments = new ArrayList<>();
+        for (Expr argument : expr.arguments) {
+            arguments.add(evaluate(argument)); // Transforma Expr no valor real (String, Long, etc)
+        }
+
+        // Se passou pelas validações, instancia!
+        XplClass klass = new XplClass(model, environment);
+
+        // ⭐ 4. SUPER-BÓNUS: A Guilhotina do Construtor! ⭐
+        // Aproveitamos e protegemos para que não deixem faltar argumentos no 'new'
+        if (klass.arity() != -1 && arguments.size() != klass.arity()) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "O construtor do modelo '" + modelName + "' espera " + klass.arity() + " argumentos, mas obteve " + arguments.size() + ".");
+        }
+
+        // Passamos a lista de argumentos perfeitamente processada!
+        return klass.call(this, arguments);
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set expr) {
+        // 1. Avalia quem é o dono da propriedade (o objeto à esquerda do ponto)
+        Object object = evaluate(expr.object);
+
+        // 2. Garante que estamos a lidar com um Objeto real do nosso motor POO
+        if (!(object instanceof XplInstance)) {
+            throw new ControlFlow.RuntimeError(expr.name, "Apenas instâncias de modelos (objetos) possuem propriedades que podem ser alteradas.");
+        }
+
+        // 3. Avalia o valor que queremos injetar (à direita do '=')
+        Object value = evaluate(expr.value);
+
+        // 4. Delega a responsabilidade para a Instância (que vai validar se a propriedade existe)
+        ((XplInstance) object).set(expr.name, value);
+
+        // Em linguagens como C/Java, uma atribuição devolve o próprio valor atribuído
+        return value;
     }
 
     @Override

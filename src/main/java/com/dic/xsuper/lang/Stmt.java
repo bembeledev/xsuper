@@ -18,6 +18,10 @@ public abstract class Stmt {
         R visitForInRangeStmt(ForInRange forInRange);
         R visitForInStmt(ForIn forIn);
         R visitEnumStmt(Enum stmt);
+        R visitDeclareDeclStmt(DeclareDecl declareDecl);
+        R visitInterfaceDeclStmt(InterfaceDecl interfaceDecl);
+        R visitImplementDeclStmt(ImplementDecl stmt);
+
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -43,12 +47,12 @@ public abstract class Stmt {
     }
 
     public static class VarDecl extends Stmt {
-        public final Token keyword; // let, var ou const
+        public final Token keyword;
         public final Token name;
-        public final Token typeAnnotation; // Novo: Guarda o token do tipo (int, float, etc.) ou null se for implícito
+        public final TypeNode typeAnnotation; // ⭐ A EVOLUÇÃO: Agora usa a árvore de tipos!
         public final Expr initializer;
 
-        public VarDecl(Token keyword, Token name, Token typeAnnotation, Expr initializer) {
+        public VarDecl(Token keyword, Token name, TypeNode typeAnnotation, Expr initializer) {
             this.keyword = keyword;
             this.name = name;
             this.typeAnnotation = typeAnnotation;
@@ -57,17 +61,8 @@ public abstract class Stmt {
 
         @Override
         public <R> R accept(Visitor<R> visitor) { return visitor.visitVarDeclStmt(this); }
-
-        @Override
-        public String toString() {
-            return "VarDecl{" +
-                    "keyword=" + keyword +
-                    ", name=" + name +
-                    ", typeAnnotation=" + typeAnnotation +
-                    ", initializer=" + initializer +
-                    '}';
-        }
     }
+
     public static class Block extends Stmt {
         public final List<Stmt> statements;
 
@@ -137,10 +132,10 @@ public abstract class Stmt {
     public static class ForCStyle extends Stmt {
         public final Stmt init; // O 'a' no teu "for (a=0; a<=12; a=a + 1 ){}"
         public final Expr condition;      // i<1; iz=12
-        public final Stmt increment;      // i++, i--,
+        public final Expr increment;      // i++, i--,
         public final Stmt body;          // O bloco {}
 
-        public ForCStyle(Stmt init, Expr condition, Stmt increment, Stmt body) {
+        public ForCStyle(Stmt init, Expr condition, Expr increment, Stmt body) {
             this.init = init;
             this.condition = condition;
             this.increment = increment;
@@ -193,12 +188,18 @@ public abstract class Stmt {
     }
 
     public static class Function extends Stmt {
+        public final Token accessModifier; // Guarda o 'pub' ou 'priv' (pode ser null)
+        public final boolean isAbstract;   // Verdadeiro se for um método abstrato
         public final Token name;
-        public final List<Token> params;
-        public final Token returnType; // Ex: T_INT (pode ser null se não retornar nada)
-        public final List<Stmt> body;
+        public final List<Param> params;
+        public final Token returnType;
+        public final List<Stmt> body;      // Será 'null' se isAbstract for verdadeiro!
 
-        public Function(Token name, List<Token> params, Token returnType, List<Stmt> body) {
+        // Atualiza o construtor com os novos campos
+        public Function(Token accessModifier, boolean isAbstract, Token name,
+                        List<Param> params, Token returnType, List<Stmt> body) {
+            this.accessModifier = accessModifier;
+            this.isAbstract = isAbstract;
             this.name = name;
             this.params = params;
             this.returnType = returnType;
@@ -206,16 +207,8 @@ public abstract class Stmt {
         }
 
         @Override
-        public <R> R accept(Visitor<R> visitor) { return visitor.visitFunctionStmt(this); }
-
-        @Override
-        public String toString() {
-            return "Function{" +
-                    "name=" + name +
-                    ", params=" + params +
-                    ", returnType=" + returnType +
-                    ", body=" + body +
-                    '}';
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitFunctionStmt(this);
         }
     }
 
@@ -288,5 +281,154 @@ public abstract class Stmt {
 
         @Override
         public <R> R accept(Visitor<R> visitor) { return visitor.visitEnumStmt(this); }
+
+        @Override
+        public String toString() {
+            return "Enum{" +
+                    "name=" + name +
+                    ", constants=" + constants +
+                    '}';
+        }
+    }
+
+    // Representa um atributo/campo: "pub nome: string;"
+    public static class FieldDecl {
+        public final Token modifier; // PUB, PROT, ou PRIV (se omitido, o Parser injeta PRIV)
+        public final Token name;
+        public final TypeNode type;
+
+        public FieldDecl(Token modifier, Token name, TypeNode type) {
+            this.modifier = modifier;
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return "FieldDecl{" +
+                    "modifier=" + modifier +
+                    ", name=" + name +
+                    ", type=" + type +
+                    '}';
+        }
+    }
+
+    // Representa uma assinatura de método: "prot escrever(): string;"
+    public static class FunctionSig {
+        public final Token modifier; // PUB, PROT, PRIV
+        public final Token name;
+        // public final List<Token> parameters; (Simplificado para o exemplo)
+        public final TypeNode returnType;
+        public final List<Stmt.Param> parameters;
+
+        public FunctionSig(Token modifier, Token name, List<Stmt.Param> parameters, TypeNode returnType) {
+            this.modifier = modifier;
+            this.name = name;
+            this.parameters = parameters;
+            this.returnType = returnType;
+        }
+
+        @Override
+        public String toString() {
+            return "FunctionSig{" +
+                    "modifier=" + modifier +
+                    ", name=" + name +
+                    ", returnType=" + returnType +
+                    ", parameters=" + parameters +
+                    '}';
+        }
+    }
+
+    public static class DeclareDecl extends Stmt {
+        public final Token name;
+        public final Token superclass;
+        public final java.util.List<FieldDecl> fields;
+
+
+        public DeclareDecl(Token name, Token superclass, java.util.List<FieldDecl> fields) {
+            this.name = name;
+            this.superclass = superclass;
+            this.fields = fields;
+
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitDeclareDeclStmt(this); }
+
+        @Override
+        public String toString() {
+            return "DeclareDecl{" +
+                    "name=" + name +
+                    ", superclass=" + superclass +
+                    ", fields=" + fields +
+                    '}';
+        }
+    }
+
+    public static class InterfaceDecl extends Stmt {
+        public final Token name;
+        public final java.util.List<FunctionSig> methods;
+
+        public InterfaceDecl(Token name, java.util.List<FunctionSig> methods) {
+            this.name = name;
+            this.methods = methods;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitInterfaceDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "InterfaceDecl{" +
+                    "name=" + name +
+                    ", methods=" + methods +
+                    '}';
+        }
+    }
+
+    public static class ImplementDecl extends Stmt {
+        public final Token targetName;  // O alvo base (Ex: Mamifero)
+        public final Token aliasName;   // A variante opcional (Ex: Mam1 - pode ser null)
+        public final java.util.List<Token> interfaces; // Os contratos (Ex: [CRUD, EXEC])
+        public final java.util.List<Stmt.Function> methods; // As funções reais com corpo { ... }
+        public final boolean isAbstract;
+
+        public ImplementDecl(boolean isAbstract, Token targetName, Token aliasName,
+                             List<Token> interfaces, List<Stmt.Function> methods) {
+            this.isAbstract = isAbstract;
+            this.targetName = targetName;
+            this.aliasName = aliasName;
+            this.interfaces = interfaces;
+            this.methods = methods;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitImplementDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "ImplementDecl{" +
+                    "targetName=" + targetName +
+                    ", aliasName=" + aliasName +
+                    ", interfaces=" + interfaces +
+                    ", methods=" + methods +
+                    ", isAbstract=" + isAbstract +
+                    '}';
+        }
+    }
+
+    // Representa um parâmetro fortemente tipado: nome: tipo
+    public static class Param {
+        public final Token name;
+        public final Token type;
+
+        public Param(Token name, Token type) {
+            this.name = name;
+            this.type = type;
+        }
     }
 }

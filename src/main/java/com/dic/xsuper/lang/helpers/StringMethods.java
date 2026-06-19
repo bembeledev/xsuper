@@ -1,4 +1,7 @@
-package com.dic.xsuper.lang;
+package com.dic.xsuper.lang.helpers;
+
+import com.dic.xsuper.lang.Interpreter;
+import com.dic.xsuper.lang.XplCallable;
 
 import java.util.ArrayList;
 import java.util.List;

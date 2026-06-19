@@ -1,5 +1,7 @@
 package com.dic.xsuper.lang;
 
+import com.dic.xsuper.lang.poo.XplInstance;
+
 import java.util.List;
 
 public class XplFunction implements XplCallable {
@@ -23,7 +25,7 @@ public class XplFunction implements XplCallable {
 
         // Injeta os argumentos passados para dentro das variáveis locais
         for (int i = 0; i < declaration.params.size(); i++) {
-            environment.defineLet(declaration.params.get(i).lexeme, arguments.get(i));
+            environment.defineLet(declaration.params.get(i).name.lexeme, arguments.get(i));
         }
 
         try {
@@ -39,5 +41,16 @@ public class XplFunction implements XplCallable {
     @Override
     public String toString() {
         return "<fun " + declaration.name.lexeme + ">";
+    }
+
+    // ⭐ Cria uma nova versão da função com o 'this' injetado no escopo!
+    public XplFunction bind(XplInstance instance) {
+        // Cria um ambiente isolado em volta do ambiente atual
+        Environment environment = new Environment(closure);
+
+        // Injeta a palavra mágica 'this' apontando para a própria instância
+        environment.defineConst("this", instance);
+
+        return new XplFunction(declaration, environment);
     }
 }

@@ -46,44 +46,301 @@ public class Parser {
     // Se não for uma declaração, cai para um "Statement" (Comando de execução normal).
     // ==========================================
 
+    private Stmt enumDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Esperado nome do Enum.");
+        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do Enum.");
+
+        List<Token> constants = new ArrayList<>();
+
+        if (!check(TokenType.RBRACE)) {
+            do {
+                constants.add(consume(TokenType.IDENTIFIER, "Esperado nome da constante do Enum."));
+            } while (match(TokenType.COMMA));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do Enum.");
+        return new Stmt.Enum(name, constants);
+    }
+
+
     private Stmt declaration() {
+        // Se for uma declaração, consome-a. Se falhar, sincroniza.
         if (match(TokenType.FUN)) return functionDeclaration();
         if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration();
+        if (match(TokenType.INTERFACE)) return interfaceDeclaration();
+        if (match(TokenType.DECLARE))   return declareDeclaration();
+        //if (match(TokenType.IMPLEMENT)) return implementDeclaration();
 
-        // ESQUELETOS FUTUROS QUE PODES IMPLEMENTAR:
-        // Se a tua linguagem tiver módulos/imports: import "ficheiro.xpl";
-        // if (match(TokenType.IMPORT)) return importDeclaration();
+        // ⭐ A NOVA BIFURCAÇÃO DA ALMA (IMPLEMENT) ⭐
+        if (match(TokenType.ABSTRACT)) {
+            consume(TokenType.IMPLEMENT, "Esperado 'implement' após a palavra 'abstract'.");
+            return implementDeclaration(true); // Passa 'true' porque é uma implementação abstrata!
+        }
+        if (match(TokenType.IMPLEMENT)) {
+            return implementDeclaration(false); // É uma implementação normal!
+        }
 
-        // Se decidires implementar enums: enum Cor { RED, BLUE }
-        // if (match(TokenType.ENUM)) return enumDeclaration();
+        if (match(TokenType.T_ENUM)) return enumDeclaration();
 
+        // Se NÃO é uma declaração, é um statement (comando)
         return statement();
     }
 
+    private Stmt declareDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Esperado nome do modelo de dados (declare).");
+
+        Token superclass = null;
+        if (match(TokenType.EXTENDS)) {
+            superclass = consume(TokenType.IDENTIFIER, "Esperado nome do modelo pai após 'extends'.");
+        }
+
+        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do declare.");
+
+        java.util.List<Stmt.FieldDecl> fields = new java.util.ArrayList<>();
+
+        // Removida a lista de methods! O declare só guarda variáveis.
+
+        // Percorre tudo até fechar a chaveta
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+
+            // 1. O Modificador de Acesso (Default é PRIV)
+            Token modifier;
+            if (match(TokenType.PUB, TokenType.PROT, TokenType.PRIV)) {
+                modifier = previous();
+            } else {
+                // Token PRIV fantasma para proteção por defeito
+                modifier = new Token(TokenType.PRIV, "priv", null, peek().line, peek().column);
+            }
+
+            // 2. O Nome do campo
+            Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade.");
+
+            // 3. Tipagem Forte do Campo
+            consume(TokenType.COLON, "Esperado ':' após o nome da propriedade para definir o tipo.");
+            TypeNode type = parseTypeAnnotation(); // Usa o teu método que devolve TypeNode
+
+            consume(TokenType.SEMICOLON, "Esperado ';' após declaração da propriedade.");
+
+            fields.add(new Stmt.FieldDecl(modifier, memberName, type));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do declare.");
+
+        // ⭐ NOTA: Atualiza a tua classe Stmt.DeclareDecl para deixar de pedir a lista de methods!
+        return new Stmt.DeclareDecl(name, superclass, fields);
+    }
+
+    private Stmt interfaceDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da interface.");
+        consume(TokenType.LBRACE, "Esperado '{' antes do corpo da interface.");
+
+        // ⭐ 1. MUDANÇA: A lista passa a ser de FunctionSig
+        java.util.List<Stmt.FunctionSig> methods = new java.util.ArrayList<>();
+
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+
+            // ⭐ 1. Capturar o Modificador (Opcional na interface, mas suportado!)
+            Token modifier = null;
+            if (match(TokenType.PUB, TokenType.PRIV, TokenType.PROT)) { // Garante que PROT está no teu Lexer!
+                modifier = previous();
+            }
+
+            consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para definir um método na interface.");
+            Token methodName = consume(TokenType.IDENTIFIER, "Esperado nome do método.");
+
+            // 2. Parâmetros (Mantém-se igual, mesmo que o tenhas simplificado no teu comentário)
+            consume(TokenType.LPAREN, "Esperado '(' após o nome do método.");
+            java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
+            if (!check(TokenType.RPAREN)) {
+                do {
+                    Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
+                    Token paramType = advance();
+                    if (paramType.type != TokenType.T_INT && paramType.type != TokenType.T_FLOAT &&
+                            paramType.type != TokenType.T_STRING && paramType.type != TokenType.T_ARRAY &&
+                            paramType.type != TokenType.T_OBJECT && paramType.type != TokenType.T_ENUM &&
+                            paramType.type != TokenType.IDENTIFIER) {
+                        throw error(paramType, "Tipo de parâmetro inválido.");
+                    }
+                    parameters.add(new Stmt.Param(paramName, paramType));
+                } while (match(TokenType.COMMA));
+            }
+            consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
+
+            // ⭐ 3. Embrulhar o Retorno no novo TypeNode!
+            TypeNode returnTypeNode = null;
+            if (match(TokenType.COLON)) {
+                if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+                    returnTypeNode = new TypeNode.Simple(previous()); // Cria o TypeNode.Simple!
+                } else {
+                    throw error(peek(), "Esperado tipo de retorno válido após ':'.");
+                }
+            }
+
+            consume(TokenType.SEMICOLON, "Esperado ';' após a assinatura do método na interface.");
+
+            // ⭐ 4. A Nova Instanciação (Ajusta os parâmetros consoante o construtor real da tua classe)
+            // Se a tua classe final tiver a lista de parâmetros descomentada, envia os 'parameters' também!
+            methods.add(new Stmt.FunctionSig(modifier, methodName, parameters, returnTypeNode));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo da interface.");
+        return new Stmt.InterfaceDecl(name, methods);
+
+    }
+
+    private Stmt implementDeclaration(boolean isAbstractImplement) {
+        // 1. O Alvo Base (Ex: Mamifero ou Animal)
+        Token targetName = consume(TokenType.IDENTIFIER, "Esperado nome do modelo de dados base.");
+
+        // 2. A Variante / Alias (Opcional - Ex: as Mam1)
+        Token aliasName = null;
+        if (match(TokenType.AS)) {
+            aliasName = consume(TokenType.IDENTIFIER, "Esperado nome da variante após 'as'.");
+        }
+
+        // 3. Os Contratos (Opcional - Ex: for CRUD, EXEC)
+        // Como podemos ter 'abstract implement Animal {}', o 'for' nem sempre existe!
+        java.util.List<Token> interfaces = new java.util.ArrayList<>();
+        if (match(TokenType.FOR)) {
+            do {
+                interfaces.add(consume(TokenType.IDENTIFIER, "Esperado nome da interface."));
+            } while (match(TokenType.COMMA));
+        }
+
+        // 4. O Corpo com o Código
+        consume(TokenType.LBRACE, "Esperado '{' antes do corpo da implementação.");
+
+        java.util.List<Stmt.Function> methods = new java.util.ArrayList<>();
+
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+
+            // ⭐ 1. Modificadores de Acesso (pub / priv)
+            Token modifier = null;
+            if (match(TokenType.PUB, TokenType.PRIV)) {
+                modifier = previous();
+            }
+
+            // ⭐ 2. Modificador de Abstração (abstract)
+            boolean isAbstract = false;
+            if (match(TokenType.ABSTRACT)) {
+                isAbstract = true;
+            }
+
+            // ⭐ 3. A Palavra-chave OBRIGATÓRIA
+            consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para declarar um método.");
+
+            // 4. Nome do Método
+            Token methodName = consume(TokenType.IDENTIFIER, "Esperado nome do método.");
+
+            // 5. Parâmetros ( )
+            consume(TokenType.LPAREN, "Esperado '(' após o nome do método.");
+            java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
+            if (!check(TokenType.RPAREN)) {
+                do {
+                    if (parameters.size() >= 255) {
+                        error(peek(), "Não podes ter mais de 255 parâmetros.");
+                    }
+
+                    Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
+
+                    Token paramType = advance();
+                    if (paramType.type != TokenType.T_INT && paramType.type != TokenType.T_FLOAT &&
+                            paramType.type != TokenType.T_STRING && paramType.type != TokenType.T_ARRAY &&
+                            paramType.type != TokenType.T_OBJECT && paramType.type != TokenType.T_ENUM &&
+                            paramType.type != TokenType.IDENTIFIER) {
+                        throw error(paramType, "Tipo de parâmetro inválido na assinatura do método.");
+                    }
+
+                    parameters.add(new Stmt.Param(paramName, paramType));
+
+                } while (match(TokenType.COMMA));
+            }
+            consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
+
+            // 6. Tipo de Retorno (Ex: : int)
+            Token returnType = null;
+            if (match(TokenType.COLON)) {
+                if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+                    returnType = previous();
+                } else {
+                    throw error(peek(), "Esperado tipo de retorno válido após ':'.");
+                }
+            }
+
+            // ⭐ 7. A BIFURCAÇÃO: Abstrato vs Concreto ⭐
+            java.util.List<Stmt> body = null;
+            if (isAbstract) {
+                consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
+            } else {
+                consume(TokenType.LBRACE, "Esperado '{' antes do corpo do método.");
+                body = block();
+            }
+
+            // ⭐ 8. Instanciação Perfeita com o Novo Construtor!
+            methods.add(new Stmt.Function(modifier, isAbstract, methodName, parameters, returnType, body));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do implement.");
+
+        return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, methods);
+    }
+
+
     private Stmt functionDeclaration() {
+        // 1. Modificadores de Acesso (Opcionais - Se a tua AST já suportar)
+        Token modifier = null;
+        if (match(TokenType.PUB, TokenType.PRIV)) {
+            modifier = previous();
+        }
+
+        // 2. Modificador Abstract (Opcional)
+        boolean isAbstract = false;
+        if (match(TokenType.ABSTRACT)) {
+            isAbstract = true;
+        }
+
+        // ⭐ 3. A NOVA REGRA DE SINTAXE: O TOKEN 'fun' É OBRIGATÓRIO ⭐
+        consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para declarar um método ou função.");
+
+        // 4. Nome da Função
         Token name = consume(TokenType.IDENTIFIER, "Esperado nome da função.");
         consume(TokenType.LPAREN, "Esperado '(' após o nome da função.");
 
-        List<Token> parameters = new ArrayList<>();
+        // 5. Parâmetros (com a tua tipagem forte!)
+        List<Stmt.Param> parameters = new ArrayList<>();
         if (!check(TokenType.RPAREN)) {
             do {
-                parameters.add(consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro."));
+                Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
+                consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
+                Token paramType = advance(); // Captura o tipo (int, string, etc.)
+                parameters.add(new Stmt.Param(paramName, paramType));
             } while (match(TokenType.COMMA));
         }
         consume(TokenType.RPAREN, "Esperado ')' após os parâmetros.");
 
+        // 6. Tipo de Retorno (ex: : int)
         Token returnType = null;
         if (match(TokenType.COLON)) {
-            if (match(TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
-                returnType = previous();
-            } else {
-                throw error(peek(), "Esperado tipo de retorno válido (int, float, string...).");
-            }
+            returnType = advance(); // Captura o tipo de retorno
         }
 
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo da função.");
-        List<Stmt> body = block();
-        return new Stmt.Function(name, parameters, returnType, body);
+        // ⭐ 7. A BIFURCAÇÃO DA ABSTRAÇÃO (O Grande Salto!) ⭐
+        if (isAbstract) {
+            // Se for um método abstrato, NÃO PODE ter corpo. Exige ponto-e-vírgula!
+            consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
+
+            // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
+            return new Stmt.Function(modifier, isAbstract, name, parameters, returnType, null);
+        } else {
+            // Se for um método concreto, EXIGE as chaves e o corpo de código!
+            consume(TokenType.LBRACE, "Esperado '{' antes do corpo da função concreta.");
+            List<Stmt> body = block();
+
+            // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
+            return new Stmt.Function(modifier, isAbstract, name, parameters, returnType, body);
+        }
     }
 
     private Stmt varDeclaration() {
@@ -95,13 +352,10 @@ public class Parser {
 
         Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável.");
 
-        Token typeAnnotation = null;
+        // ⭐ A EVOLUÇÃO: Agora usamos a Árvore de Tipos (TypeNode) em vez de String!
+        TypeNode typeAnnotation = null;
         if (match(TokenType.COLON)) {
-            if (match(TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
-                typeAnnotation = previous();
-            } else {
-                throw error(peek(), "Esperado tipo válido após ':'.");
-            }
+            typeAnnotation = parseTypeAnnotation(); // Devolve um TypeNode.Simple ou TypeNode.Generic
         }
 
         Expr initializer = null;
@@ -114,7 +368,37 @@ public class Parser {
         }
 
         consume(TokenType.SEMICOLON, "Esperado ';' após a declaração da variável.");
+
+        // O teu VarDecl agora recebe o TypeNode estruturado com sucesso!
         return new Stmt.VarDecl(keyword, name, typeAnnotation, initializer);
+    }
+
+    private TypeNode parseTypeAnnotation() {
+        Token baseName;
+
+        // 1. Lê a base do tipo (T_INT, T_STRING, IDENTIFIER, etc.)
+        if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+            baseName = previous();
+        } else {
+            throw error(peek(), "Esperado nome do tipo (ex: int, String, Map).");
+        }
+
+        // 2. Verifica se existem Tipos Genéricos '< ... >'
+        if (match(TokenType.LESS)) {
+            java.util.List<TypeNode> generics = new java.util.ArrayList<>();
+            do {
+                // Recursão: Lê o tipo interior e guarda na lista (ex: String e Integer)
+                generics.add(parseTypeAnnotation());
+            } while (match(TokenType.COMMA));
+
+            consume(TokenType.GREATER, "Esperado '>' após os tipos genéricos.");
+
+            // Retorna o nó complexo!
+            return new TypeNode.Generic(baseName, generics);
+        }
+
+        // Se não tiver '<', retorna um nó simples
+        return new TypeNode.Simple(baseName);
     }
 
     // ==========================================
@@ -124,7 +408,8 @@ public class Parser {
 
     private Stmt statement() {
         // Redirecionamento inteligente: Dependendo da palavra-chave inicial, escolhe a regra certa.
-        if (match(TokenType.FOR)) return forDispatcher(); // Mudei o nome para organizares melhor os teus For Loops
+        if (match(TokenType.FOR)) return forDispatcher();
+        // Mudei o nome para organizares melhor os teus For Loops
         if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.BREAK)) return breakStatement();
         if (match(TokenType.CONTINUE)) return continueStatement();
@@ -194,8 +479,10 @@ public class Parser {
 
         Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável.");
 
-        Token typeAnnotation = null;
+        Token typeAnnotation;
         if (match(TokenType.COLON)){
+            System.out.println(previous());
+
             if (match(TokenType.T_INT, TokenType.T_FLOAT)) {
                 typeAnnotation = previous();
             } else {
@@ -204,7 +491,7 @@ public class Parser {
         }else {
             throw error(keyword, "Esperado ':' após o nome da variável.");
         }
-        Expr initializer = null;
+        Expr initializer;
         if (match(TokenType.ASSIGN)) {
             initializer = expression();
         } else {
@@ -213,16 +500,19 @@ public class Parser {
         consume(TokenType.SEMICOLON, "Esperado ';' após a declaração da variável.");
 
         Expr condition = expression();
-        consume(TokenType.SEMICOLON, "Esperado ';' após a codição do for-c-style.");
-        Expr incrementExp = expression();
+        consume(TokenType.SEMICOLON, "Esperado ';' após a condição do for-c-style.");
 
-        consume(TokenType.RPAREN, "Esperado ')' o incremento do loop for-c-style.");
+        // ⭐ Lemos a Expressão pura!
+        Expr increment = expression();
+
+        consume(TokenType.RPAREN, "Esperado ')' após o incremento do loop for-c-style.");
         consume(TokenType.LBRACE, "Esperado '{' após a expressão do for-c-style.");
 
-        Stmt init = new Stmt.VarDecl(keyword, name, typeAnnotation, initializer);
-        Stmt increment = new Stmt.ExpressionStmt(incrementExp);
+        Stmt init = new Stmt.VarDecl(keyword, name, new TypeNode.Simple(typeAnnotation), initializer);
         Stmt body = new Stmt.Block(block());
-        return new Stmt.ForCStyle(init,condition,increment,body);
+
+        // Passamos o 'increment' diretamente como Expr para a AST!
+        return new Stmt.ForCStyle(init, condition, increment, body);
     }
 
     // ESQUELETO FUTURO: for a in (1, 10, 2)
@@ -357,6 +647,11 @@ public class Parser {
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
+            }
+            // ⭐ 2. É UMA PROPRIEDADE DE OBJETO? (ex: m.nome = "Leão") ⭐
+            else if (expr instanceof Expr.Get get) {
+                // Transformamos o 'Get' num 'Set'!
+                return new Expr.Set(get.object, get.name, value);
             }
             // NOVO: Se o que está à esquerda do '=' for um acesso a Array!
             else if (expr instanceof Expr.IndexAccess access) {
@@ -509,6 +804,10 @@ public class Parser {
             return new Expr.Literal(previous().literal);
         }
 
+        if (match(TokenType.THIS)) {
+            return new Expr.Variable(previous());
+        }
+
         if (match(TokenType.IDENTIFIER)) {
             return new Expr.Variable(previous()); // Acesso a uma variável na memória
         }
@@ -537,6 +836,37 @@ public class Parser {
             return expr;
         }
 
+        // ⭐ NOVO: Instanciação de classes
+        // Instanciação de classes (ex: new Map() ou new Map<String, Integer>())
+        if (match(TokenType.NEW)) {
+            Token keyword = previous();
+            Token className = consume(TokenType.IDENTIFIER, "Esperado nome da classe após 'new'.");
+
+            // ⭐ NOVO: Lê os tipos genéricos, se existirem! ⭐
+            StringBuilder typeArgs = new StringBuilder();
+            if (match(TokenType.LESS)) { // Se encontrou o '<'
+                typeArgs.append("<");
+                do {
+                    // Reutilizamos a tua função que lê os tipos!
+                    typeArgs.append(parseTypeAnnotation());
+                } while (match(TokenType.COMMA));
+
+                consume(TokenType.GREATER, "Esperado '>' após os argumentos genéricos.");
+                typeArgs.append(">");
+            }
+
+            consume(TokenType.LPAREN, "Esperado '(' após o nome da classe.");
+            List<Expr> arguments = new ArrayList<>();
+            if (!check(TokenType.RPAREN)) {
+                do {
+                    arguments.add(expression());
+                } while (match(TokenType.COMMA));
+            }
+            consume(TokenType.RPAREN, "Esperado ')' após os argumentos.");
+
+            // Passamos o typeArgs.toString() para a árvore
+            return new Expr.New(keyword, className, typeArgs.toString(), arguments);
+        }
         throw error(peek(), "Expressão inesperada.");
     }
 
@@ -603,12 +933,16 @@ public class Parser {
         while (!isAtEnd()) {
             if (previous().type == TokenType.SEMICOLON) return;
             switch (peek().type) {
+                // Adiciona as novas palavras-chave para ele saber onde parar de saltar!
                 case FUN: case VAR: case LET: case CONST:
-                case FOR: case IF: return;
-                default: advance();
+                case FOR: case IF: case INTERFACE: case DECLARE: case IMPLEMENT:
+                    return;
             }
+            advance();
         }
     }
+
+
 
     private static class ParseException extends RuntimeException {}
 }

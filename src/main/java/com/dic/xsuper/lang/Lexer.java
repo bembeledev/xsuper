@@ -29,7 +29,7 @@ public class Lexer {
         keywords.put("else", TokenType.ELSE);
         keywords.put("break", TokenType.BREAK);
         keywords.put("continue", TokenType.CONTINUE);
-        keywords.put("long", TokenType.T_INT);
+        keywords.put("int", TokenType.T_INT);
         keywords.put("float", TokenType.T_FLOAT);
         keywords.put("string", TokenType.T_STRING);
         keywords.put("array", TokenType.T_ARRAY);
@@ -40,6 +40,19 @@ public class Lexer {
         keywords.put("true", TokenType.TRUE);
         keywords.put("false", TokenType.FALSE);
         keywords.put("null", TokenType.NULL); // ou NIL, dependendo de como chamaste
+        keywords.put("new", TokenType.NEW);
+        // Estruturas de Orientação a Dados
+        keywords.put("interface", TokenType.INTERFACE);
+        keywords.put("declare", TokenType.DECLARE);
+        keywords.put("implement", TokenType.IMPLEMENT);
+        keywords.put("extends", TokenType.EXTENDS);
+        keywords.put("this", TokenType.THIS);
+        // Modificadores de Encapsulamento
+        keywords.put("pub", TokenType.PUB);
+        keywords.put("prot", TokenType.PROT);
+        keywords.put("priv", TokenType.PRIV);
+        keywords.put("as", TokenType.AS);
+        keywords.put("abstract", TokenType.ABSTRACT);
     }
 
     public Lexer(String source) {
@@ -52,7 +65,7 @@ public class Lexer {
             columnStart = currentColumn;
             scanToken();
         }
-        tokens.add(new Token(TokenType.EOF, "", null, (int)line, (int)currentColumn));
+        tokens.add(new Token(TokenType.EOF, "", null, line, currentColumn));
         return tokens;
     }
 
