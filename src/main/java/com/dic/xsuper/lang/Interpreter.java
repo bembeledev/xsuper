@@ -43,7 +43,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
-                if (arguments.size() < 1 || arguments.size() > 2)
+                if (arguments.isEmpty() || arguments.size() > 2)
                     throw new RuntimeException("println espera 1 ou 2 argumentos.");
                 String text = stringify(arguments.get(0));
                 if (arguments.size() == 2) {
@@ -86,7 +86,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
-                String commandStr = stringify(arguments.get(0));
+                String commandStr = stringify(arguments.getFirst());
                 PrintStream originalOut = System.out;
                 ByteArrayOutputStream memoryStream = new ByteArrayOutputStream();
                 try (PrintStream captureOut = new PrintStream(memoryStream, true, StandardCharsets.UTF_8)) {
@@ -411,30 +411,58 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         throw new ControlFlow.ThrowException(value);
     }
 
+    // ⭐ 1. VALIDADOR DE TIPOS DO CATCH ⭐
+    private boolean isTypeMatch(Object value, TypeNode typeAnnotation) {
+        TokenType expectedType = typeAnnotation.name.type;
+
+        if (expectedType == TokenType.T_STRING && value instanceof String) return true;
+        if (expectedType == TokenType.T_INT && value instanceof Long) return true;
+        if (expectedType == TokenType.T_FLOAT && (value instanceof Double || value instanceof Long)) return true;
+        if (expectedType == TokenType.T_ARRAY && value instanceof List) return true;
+        if (expectedType == TokenType.T_OBJECT && value instanceof Map) return true;
+
+        // É um Objeto Orientado a Dados (POO)?
+        if (expectedType == TokenType.IDENTIFIER && value instanceof XplInstance instance) {
+            // Usa o rastreador genético para aceitar filhos num catch de pais!
+            return instance.klass.model.isSubclassOf(typeAnnotation.name.lexeme);
+        }
+
+        return false;
+    }
+
+    // ⭐ 2. O ROTEADOR PRINCIPAL ⭐
     @Override
     public Void visitTryStmt(Stmt.Try stmt) {
         try {
-            // 1. Tenta executar o bloco de código
             execute(stmt.tryBlock);
-
         } catch (ControlFlow.ThrowException e) {
-            // 2. Apanha erros lançados MANULAMENTE pelo utilizador (throw "Erro!")
-            if (stmt.catchBlock != null) {
-                executeCatchBlock(stmt, e.value);
-            } else {
-                throw e; // Se não houver catch (apenas finally), o erro sobe!
+            handleCatch(stmt, e.value, e); // Lida com o throw manual
+        } catch (ControlFlow.RuntimeError e) {
+
+            Object errorValue = e.getMessage(); // Por padrão, os erros do motor são Strings
+
+            // 🚀 SUPER PODER: Injeção Nativa de POO 🚀
+            // Se o utilizador tiver feito 'declare Error', nós embrulhamos o erro nativo do motor XPL dentro dessa classe!
+            if (registry_model.containsKey("Error")) {
+                XPLModel errModel = registry_model.get("Error");
+                if (errModel.hasBaseImplementation) {
+                    XplClass errClass = new XplClass(errModel, globals);
+                    XplInstance errInst = new XplInstance(errClass);
+
+                    // Procura inteligentemente onde colocar a mensagem de erro (aceita 'mensage', 'mensagem', 'message')
+                    for (String field : errModel.fields.keySet()) {
+                        if (field.toLowerCase().contains("mensa") || field.toLowerCase().contains("messa")) {
+                            errInst.set(new Token(TokenType.IDENTIFIER, field, null, -1, -1), e.getMessage());
+                            break;
+                        }
+                    }
+                    errorValue = errInst; // Agora o erro nativo do motor é um objeto XPL legítimo!
+                }
             }
 
-        } catch (ControlFlow.RuntimeError e) {
-            // ⭐ 3. SUPER PODER: Apanha os erros FATALS nativos do teu próprio motor! (Ex: Divisão por Zero)
-            if (stmt.catchBlock != null) {
-                executeCatchBlock(stmt, e.getMessage());
-            } else {
-                throw e;
-            }
+            handleCatch(stmt, errorValue, e);
 
         } finally {
-            // 4. O bloco 'finally' corre SEMPRE, quer tenha havido erro ou não!
             if (stmt.finallyBlock != null) {
                 execute(stmt.finallyBlock);
             }
@@ -442,18 +470,34 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    // Método auxiliar para criar o escopo local do catch (Ex: catch(e))
-    private void executeCatchBlock(Stmt.Try stmt, Object errorValue) {
-        Environment catchEnv = new Environment(this.environment);
-        // Injeta a variável do erro (Ex: 'e') na memória temporária do Catch
-        catchEnv.defineLet(stmt.catchName.lexeme, errorValue);
+    // ⭐ 3. O ROTEADOR SEQUENCIAL ⭐
+    private void handleCatch(Stmt.Try stmt, Object errorValue, RuntimeException originalException) {
+        boolean caught = false;
 
-        Environment previous = this.environment;
-        try {
-            this.environment = catchEnv;
-            execute(stmt.catchBlock);
-        } finally {
-            this.environment = previous;
+        // Testa os blocos catch por ordem (Top-Down). O mais específico deve vir primeiro!
+        for (Stmt.CatchClause clause : stmt.catchClauses) {
+            if (isTypeMatch(errorValue, clause.type)) {
+
+                // Cria um escopo isolado só para a variável de erro
+                Environment catchEnv = new Environment(this.environment);
+                catchEnv.defineLet(clause.name.lexeme, errorValue);
+
+                Environment previous = this.environment;
+                try {
+                    this.environment = catchEnv;
+                    execute(clause.body); // Executa apenas este catch!
+                } finally {
+                    this.environment = previous;
+                }
+
+                caught = true;
+                break; // O erro foi tratado, salta fora!
+            }
+        }
+
+        // Se o erro era um 'NumberError' e não havia nenhum catch compatível... ele explode!
+        if (!caught) {
+            throw originalException;
         }
     }
 
@@ -541,18 +585,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // Se o utilizador não passou o jump, o padrão é 1.
         double jumpVal = 1.0;
+
         if (stmt.jump.isPresent()) {
+            // 1. Se o utilizador forneceu um jump explicitamente, usamos sempre o dele!
             jumpVal = toDouble(evaluate(stmt.jump.get()));
+
+        } else if (startVal > endVal) {
+            // ⭐ 2. A MAGIA CORRIGIDA:
+            // Se o utilizador NÃO forneceu o jump, e o início for maior que o fim, invertemos automaticamente para -1!
+            jumpVal = -1.0;
         }
 
         // Validação de segurança crítica
         if (jumpVal == 0) {
             throw new ControlFlow.RuntimeError(stmt.loopVariable, "Erro de Loop: O incremento (jump) não pode ser zero.");
-        }
-
-        // Magia de usabilidade: Se o start for maior que o end e não houver jump, inverte automaticamente para -1
-        if (startVal > endVal && stmt.jump.isPresent()) {
-            jumpVal = -1.0;
         }
 
         // Descobre a direção do loop
@@ -566,7 +612,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             Environment loopEnv = new Environment(this.environment);
 
             // Um toque de classe: se o número for inteiro (ex: 5.0), guarda como Long (5) para ficar limpo.
-            Object valueToStore = (current == Math.floor(current)) ? (long) current : current;
+            Object valueToStore;
+            if (current == Math.floor(current)) {
+                valueToStore = (long) current;
+            } else {
+                valueToStore = current;
+            }
 
             // Injeta a variável (ex: 'a') na memória
             loopEnv.defineLet(stmt.loopVariable.lexeme, valueToStore);
@@ -615,18 +666,25 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitCompoundAssignExpr(Expr.CompoundAssign expr) {
-        // 1. Vai buscar o valor atual da variável à memória
-        Object currentValue = environment.get(expr.name.lexeme);
-        // 2. Calcula o valor da direita
+        // 1. Lê o valor atual onde quer que ele esteja (Variável, Array ou Objeto/Classe)
+        Object currentValue = switch (expr.target) {
+            case Expr.Variable variable -> environment.get(variable.name.lexeme);
+            case Expr.Get get -> visitGetExpr(get);
+            case Expr.IndexAccess indexAccess -> visitIndexAccessExpr(indexAccess);
+            case null, default ->
+                    throw new ControlFlow.RuntimeError(expr.operator, "Alvo de atribuição composta inválido.");
+        };
+
+        // 2. Calcula o valor da direita (ex: o '5' no += 5)
         Object rightValue = evaluate(expr.value);
 
-        // 3. Faz as contas
+        // 3. Faz as contas baseadas no operador
         Object newValue = null;
         switch (expr.operator.type) {
             case PLUS_ASSIGN:
-                if (currentValue instanceof Double || rightValue instanceof Double) newValue = toDouble(currentValue) + toDouble(rightValue);
+                if (currentValue instanceof String || rightValue instanceof String) newValue = stringify(currentValue) + stringify(rightValue);
+                else if (currentValue instanceof Double || rightValue instanceof Double) newValue = toDouble(currentValue) + toDouble(rightValue);
                 else if (currentValue instanceof Long && rightValue instanceof Long) newValue = (long) currentValue + (long) rightValue;
-                else if (currentValue instanceof String || rightValue instanceof String) newValue = currentValue + String.valueOf(rightValue);
                 break;
             case MINUS_ASSIGN:
                 if (currentValue instanceof Double || rightValue instanceof Double) newValue = toDouble(currentValue) - toDouble(rightValue);
@@ -651,17 +709,35 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         if (newValue == null) throw new ControlFlow.RuntimeError(expr.operator, "Operação inválida para estes tipos de dados.");
 
-        // 4. Guarda o novo valor na memória!
-        environment.assign(expr.name.lexeme, newValue);
+        // 4. Guarda o novo valor no lugar correto (Memória local, Objeto ou Classe Estática!)
+        if (expr.target instanceof Expr.Variable) {
+            environment.assign(((Expr.Variable) expr.target).name.lexeme, newValue);
+        } else if (expr.target instanceof Expr.Get getExpr) {
+            Object obj = evaluate(getExpr.object);
+            if (obj instanceof XplClass) { // ⭐ Injeta na memória ESTÁTICA
+                ((XplClass) obj).model.staticFields.put(getExpr.name.lexeme, newValue);
+            } else if (obj instanceof XplInstance) {
+                ((XplInstance) obj).set(getExpr.name, newValue);
+            }
+        } else {
+            Expr.IndexAccess idx = (Expr.IndexAccess) expr.target;// Usa o teu próprio IndexAssign para atualizar o array!
+            visitIndexAssignExpr(new Expr.IndexAssign(idx.object, idx.bracket, idx.index, new Expr.Literal(newValue)));
+        }
+
         return newValue;
     }
 
     @Override
     public Object visitUpdateExpr(Expr.Update expr) {
-        // 1. Vai buscar o valor atual
-        Object currentValue = environment.get(expr.name.lexeme);
+        // 1. Lê o valor atual onde quer que ele esteja
+        Object currentValue = switch (expr.target) {
+            case Expr.Variable variable -> environment.get(variable.name.lexeme);
+            case Expr.Get get -> visitGetExpr(get);
+            case Expr.IndexAccess indexAccess -> visitIndexAccessExpr(indexAccess);
+            case null, default -> throw new ControlFlow.RuntimeError(expr.operator, "Alvo inválido.");
+        };
 
-        // 2. Prepara o novo valor
+        // 2. Incrementa o valor
         Object newValue = null;
         if (currentValue instanceof Double) {
             double val = (double) currentValue;
@@ -670,14 +746,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             long val = (long) currentValue;
             newValue = (expr.operator.type == TokenType.PLUS_PLUS) ? val + 1L : val - 1L;
         } else {
-            throw new ControlFlow.RuntimeError(expr.operator, "Só podes incrementar ou decrementar números.");
+            throw new ControlFlow.RuntimeError(expr.operator, "Só podes incrementar números.");
         }
 
-        // 3. Atualiza na memória
-        environment.assign(expr.name.lexeme, newValue);
+        // 3. Guarda o valor de volta (Variável, Instância ou Classe Estática!)
+        if (expr.target instanceof Expr.Variable) {
+            environment.assign(((Expr.Variable) expr.target).name.lexeme, newValue);
+        } else if (expr.target instanceof Expr.Get getExpr) {
+            Object obj = evaluate(getExpr.object);
+            if (obj instanceof XplClass) { // ⭐ Injeta na memória ESTÁTICA
+                ((XplClass) obj).model.staticFields.put(getExpr.name.lexeme, newValue);
+            } else if (obj instanceof XplInstance) {
+                ((XplInstance) obj).set(getExpr.name, newValue);
+            }
+        } else {
+            Expr.IndexAccess idx = (Expr.IndexAccess) expr.target;
+            visitIndexAssignExpr(new Expr.IndexAssign(idx.object, idx.bracket, idx.index, new Expr.Literal(newValue)));
+        }
 
-        // Se for a++ (postfix), devolve o valor antigo ANTES de atualizar!
-        // Se for ++a (prefix), devolve o novo valor!
         return expr.isPrefix ? newValue : currentValue;
     }
 
@@ -687,8 +773,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object object = evaluate(expr.object);
         Object index = evaluate(expr.index);
 
-        if (object instanceof List) {
-            List<?> list = (List<?>) object;
+        if (object instanceof List<?> list) {
             if (index instanceof Long) {
                 int idx = (int) (long) index; // Convertemos Long para Int porque as listas do Java pedem Int
                 if (idx >= 0 && idx < list.size()) {
@@ -698,8 +783,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
             throw new ControlFlow.RuntimeError(expr.bracket, "O índice do Array tem de ser um número inteiro.");
         }
-        if (object instanceof Map) {
-            Map<?, ?> map = (Map<?, ?>) object;
+        if (object instanceof Map<?, ?> map) {
             return map.get(index.toString());
         }
 
@@ -750,16 +834,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 List<Object> list = (List<Object>) object;
 
                 // 1. Tenta ver se é uma propriedade direta (ex: arr.length, arr.first)
-                switch (expr.name.lexeme) {
-                    case "length":
-                    case "isEmpty":
-                    case "first":
-                    case "last":
-                        return ArrayMethods.getProperty(list, expr.name.lexeme);
-                }
+                return switch (expr.name.lexeme) {
+                    case "length", "isEmpty", "first", "last" -> ArrayMethods.getProperty(list, expr.name.lexeme);
+                    default ->
 
-                // 2. Se não for propriedade, devolve o método para ser executado
-                return ArrayMethods.getMethod(list, expr.name.lexeme);
+                        // 2. Se não for propriedade, devolve o método para ser executado
+                            ArrayMethods.getMethod(list, expr.name.lexeme);
+                };
 
             } catch (RuntimeException e) {
                 throw new ControlFlow.RuntimeError(expr.name, e.getMessage());
@@ -773,16 +854,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 String str = (String) object;
 
                 // ⭐ 1. INTERCETA AS PROPRIEDADES PRIMEIRO (Sem parêntesis) ⭐
-                switch (expr.name.lexeme) {
-                    case "length":
-                    case "size":
-                    case "isEmpty":
-                    case "empty":
-                        return StringMethods.getProperty(str, expr.name.lexeme);
-                }
+                return switch (expr.name.lexeme) {
+                    case "length", "size", "isEmpty", "empty" -> StringMethods.getProperty(str, expr.name.lexeme);
+                    default ->
 
-                // 2. Se não for propriedade, devolve a função para o visitCallExpr executar
-                return StringMethods.getMethod(str, expr.name.lexeme);
+                        // 2. Se não for propriedade, devolve a função para o visitCallExpr executar
+                            StringMethods.getMethod(str, expr.name.lexeme);
+                };
 
             } catch (RuntimeException e) {
                 throw new ControlFlow.RuntimeError(expr.name, e.getMessage());
@@ -860,7 +938,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 Environment arrowEnv = new Environment(closure);
 
                 // 2. Injeta o valor do parâmetro lá para dentro
-                arrowEnv.defineLet(expr.parameter.lexeme, arguments.get(0));
+                arrowEnv.defineLet(expr.parameter.lexeme, arguments.getFirst());
 
                 // 3. Executa o corpo da função e devolve o resultado!
                 Environment previous = interpreter.environment; // Acede através da instância atual
@@ -1034,9 +1112,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         switch (expr.operator.type) {
             case PLUS:
+                if (left instanceof String || right instanceof String) return stringify(left) + stringify(right);
                 if (left instanceof Double || right instanceof Double) return toDouble(left) + toDouble(right);
                 if (left instanceof Long && right instanceof Long) return (long) left + (long) right;
-                if (left instanceof String || right instanceof String) return left + String.valueOf(right);
                 throw new ControlFlow.RuntimeError(expr.operator, "Os operandos devem ser números ou strings.");
             case MINUS:
                 checkNumberOperands(expr.operator, left, right);

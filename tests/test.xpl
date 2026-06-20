@@ -17,7 +17,7 @@ for i in (10, 1) {
 // Loop com salto customizado
 for i in (0, 100, 20) {
    for j in (10, 1) {
-       println(J+"Contagem decrescente: " + i);
+       println(j+"Contagem decrescente: " + i);
    }
 }
 

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class XplInstance {
-    private XplClass klass;
+    public XplClass klass;
     private final Map<String, Object> fields = new HashMap<>();
 
     public XplInstance(XplClass klass) {

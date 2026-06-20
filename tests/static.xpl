@@ -1,26 +1,26 @@
 declare Animal {
     pub nome: string;
-    pub static INSTANCIAS: int;
+    pub static INSTANCE: int;
 }
 
 implement Animal {
     default {
         nome: "ANA",
-        INSTANCIAS: 100
+        INSTANCE: 100
     }
 
     pub fun init(){
-     //Animal.INSTANCIAS++;
+      Animal.INSTANCE++;
     }
 
     pub static fun verContador() {
-        println("Animais Totals: " + Animal.INSTANCIAS);
+        println("Animais Totals: " + Animal.INSTANCE);
     }
 }
 
 Animal.verContador(); // Imprime: Animais Totais: 100
-Animal.INSTANCIAS = 5;
+Animal.INSTANCE += 5;
 
 var obj = new Animal();
 Animal.verContador(); // Imprime: Animais Totais: 100
-println(obj.nome); // Imprime: ANA
+println(Animal.INSTANCE); // Imprime: ANA

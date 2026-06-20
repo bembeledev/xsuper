@@ -97,13 +97,13 @@ println(" -> some (==5):   " + num.some(x => x == 5));
 println(" -> every (>0):   " + num.every(x => x > 0));
 
 // Funções nomeadas para métodos que enviam mais de 1 parâmetro:
-fun Redutor(acc, atual, indice) {
+fun Redutor(acc:int, atual:int, indice:int):int {
     return acc + atual;
 }
 println(" -> reduce(soma): " + num.reduce(Redutor, 0)); // 15
 
 println(" -> forEach:");
-fun ImprimirIndice(valor, idx) {
+fun ImprimirIndice(valor:int, idx:int) {
     println("      Item[" + idx + "] = " + valor);
 }
 num.forEach(ImprimirIndice);

@@ -4,15 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(poo): implementar estado estático e inicialização limpa com bloco 'default'&#10;&#10;- Adiciona suporte no Lexer e Parser para as palavras-chave `static` e `default`.&#10;- Permite a inicialização limpa de estado padrão e estático dentro do `implement`, mantendo a pureza estrutural de tipos no `declare`.&#10;- Atualiza `XPLModel` para atuar como um Singleton global que gere memória viva através de `staticFields` e `defaultInstanceFields`.&#10;- Modifica a fábrica `XplInstance` para popular automaticamente novas instâncias utilizando os valores de fallback do bloco `default`.&#10;- Altera o Interpretador (`visitGetExpr` e `visitSetExpr`) para suportar a resolução, leitura, escrita e invocação de propriedades e métodos estáticos sem necessidade de instanciação (ex: `Classe.metodo()`).">
-      <change afterPath="$PROJECT_DIR$/tests/error.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): implementar tratamento de erros robusto (try/catch/finally/throw)&#10;&#10;- Adiciona tokens `TRY`, `CATCH`, `FINALLY` e `THROW` ao Lexer.&#10;- Cria nós sintáticos `Stmt.Try` e `Stmt.Throw` na AST para gerir a captura e o lançamento de exceções.&#10;- Implementa a classe `ControlFlow.ThrowException` de alta performance (sem stacktrace) para transportar erros no motor Java.&#10;- Modifica o Interpretador para capturar tanto erros manuais (`throw`) como falhas nativas (`RuntimeError`).&#10;- Injeta dinamicamente a variável de erro no escopo local do `catch` e garante a execução imutável do bloco `finally`.&#10;- Torna a execução do XPL resiliente a falhas críticas (ex: divisão por zero), evitando o colapso do motor.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ControlFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ControlFlow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/array.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/array.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/error.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/error.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/map.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/map.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/static.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/static.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,27 +51,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Application.Main.executor": "Run",
-    "Application.TestXPL.executor": "Run",
-    "Application.com.dic.xsuper.Main.executor": "Run",
-    "Maven.xsuper-xplorer [clean].executor": "Run",
-    "Maven.xsuper-xplorer [install].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/ferna/Documents/GitHub/FileManager",
-    "onboarding.tips.debug.path": "C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.fileTypes"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
+    &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
@@ -188,7 +193,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781905283873</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="feat(core): implementar tratamento de erros robusto (try/catch/finally/throw)&#10;&#10;- Adiciona tokens `TRY`, `CATCH`, `FINALLY` e `THROW` ao Lexer.&#10;- Cria nós sintáticos `Stmt.Try` e `Stmt.Throw` na AST para gerir a captura e o lançamento de exceções.&#10;- Implementa a classe `ControlFlow.ThrowException` de alta performance (sem stacktrace) para transportar erros no motor Java.&#10;- Modifica o Interpretador para capturar tanto erros manuais (`throw`) como falhas nativas (`RuntimeError`).&#10;- Injeta dinamicamente a variável de erro no escopo local do `catch` e garante a execução imutável do bloco `finally`.&#10;- Torna a execução do XPL resiliente a falhas críticas (ex: divisão por zero), evitando o colapso do motor.">
+      <option name="closed" value="true" />
+      <created>1781906129717</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1781906129725</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -213,6 +226,7 @@
     <MESSAGE value="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base." />
     <MESSAGE value="feat(poo): implementar suporte à palavra-chave 'super' para herança e polimorfismo&#10;&#10;- Adiciona reconhecimento do token `SUPER` no Lexer e suporte sintático para `super.metodo()` no Parser (`Expr.Super`).&#10;- Implementa rastreamento genético (`getOwnerOfMethod`) no `XPLModel` para identificar a classe exata de origem de cada método.&#10;- Modifica `XplFunction`, `XplInstance` e `XplClass` para injetarem e preservarem o contexto da classe atual (`__current_model`) em tempo de execução.&#10;- Adiciona `visitSuperExpr` no Interpretador para resolver e invocar métodos da superclasse dinamicamente, mantendo o escopo e encapsulamento da instância atual (`this`).&#10;- Habilita a reutilização de construtores (`init`) e delegação de comportamentos entre classes pai e filho, evitando duplicação de lógica." />
     <MESSAGE value="feat(poo): implementar estado estático e inicialização limpa com bloco 'default'&#10;&#10;- Adiciona suporte no Lexer e Parser para as palavras-chave `static` e `default`.&#10;- Permite a inicialização limpa de estado padrão e estático dentro do `implement`, mantendo a pureza estrutural de tipos no `declare`.&#10;- Atualiza `XPLModel` para atuar como um Singleton global que gere memória viva através de `staticFields` e `defaultInstanceFields`.&#10;- Modifica a fábrica `XplInstance` para popular automaticamente novas instâncias utilizando os valores de fallback do bloco `default`.&#10;- Altera o Interpretador (`visitGetExpr` e `visitSetExpr`) para suportar a resolução, leitura, escrita e invocação de propriedades e métodos estáticos sem necessidade de instanciação (ex: `Classe.metodo()`)." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(poo): implementar estado estático e inicialização limpa com bloco 'default'&#10;&#10;- Adiciona suporte no Lexer e Parser para as palavras-chave `static` e `default`.&#10;- Permite a inicialização limpa de estado padrão e estático dentro do `implement`, mantendo a pureza estrutural de tipos no `declare`.&#10;- Atualiza `XPLModel` para atuar como um Singleton global que gere memória viva através de `staticFields` e `defaultInstanceFields`.&#10;- Modifica a fábrica `XplInstance` para popular automaticamente novas instâncias utilizando os valores de fallback do bloco `default`.&#10;- Altera o Interpretador (`visitGetExpr` e `visitSetExpr`) para suportar a resolução, leitura, escrita e invocação de propriedades e métodos estáticos sem necessidade de instanciação (ex: `Classe.metodo()`)." />
+    <MESSAGE value="feat(core): implementar tratamento de erros robusto (try/catch/finally/throw)&#10;&#10;- Adiciona tokens `TRY`, `CATCH`, `FINALLY` e `THROW` ao Lexer.&#10;- Cria nós sintáticos `Stmt.Try` e `Stmt.Throw` na AST para gerir a captura e o lançamento de exceções.&#10;- Implementa a classe `ControlFlow.ThrowException` de alta performance (sem stacktrace) para transportar erros no motor Java.&#10;- Modifica o Interpretador para capturar tanto erros manuais (`throw`) como falhas nativas (`RuntimeError`).&#10;- Injeta dinamicamente a variável de erro no escopo local do `catch` e garante a execução imutável do bloco `finally`.&#10;- Torna a execução do XPL resiliente a falhas críticas (ex: divisão por zero), evitando o colapso do motor." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(core): implementar tratamento de erros robusto (try/catch/finally/throw)&#10;&#10;- Adiciona tokens `TRY`, `CATCH`, `FINALLY` e `THROW` ao Lexer.&#10;- Cria nós sintáticos `Stmt.Try` e `Stmt.Throw` na AST para gerir a captura e o lançamento de exceções.&#10;- Implementa a classe `ControlFlow.ThrowException` de alta performance (sem stacktrace) para transportar erros no motor Java.&#10;- Modifica o Interpretador para capturar tanto erros manuais (`throw`) como falhas nativas (`RuntimeError`).&#10;- Injeta dinamicamente a variável de erro no escopo local do `catch` e garante a execução imutável do bloco `finally`.&#10;- Torna a execução do XPL resiliente a falhas críticas (ex: divisão por zero), evitando o colapso do motor." />
   </component>
 </project>

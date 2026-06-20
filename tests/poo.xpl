@@ -1,9 +1,9 @@
 println(">>> A INICIAR MOTOR DE DADOS <<<", "#00FFFF");
 
 interface CRUD {
-    add(nome: string);
-    delete(id: int);
-    getId();
+    pub fun add(nome: string);
+    pub fun delete(id: int);
+    pub fun getId():int;
 }
 
 
@@ -14,7 +14,7 @@ declare Animal {
 }
 
 declare Mamifero extends Animal {
-    pub fun localizacao: string;
+    pub localizacao: string;
 }
 
 
@@ -27,7 +27,7 @@ abstract implement Animal {
 }
 
 implement Animal as Fish {
-    pub verIdade():int {
+    pub fun verIdade():int {
         println("Tenho "+ this.id+" anos");
         return this.id;
     }
@@ -47,9 +47,9 @@ implement Mamifero as Mam1 for CRUD {
 }
 
 implement Mamifero as Mam2 for CRUD {
-     fun add() { println("A guardar Mam2 na Base de Dados B..."); }
-     fun delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
-     fun getId():int{return this.id;}
+     pub fun add() { println("A guardar Mam2 na Base de Dados B..."); }
+     pub fun delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
+     pub fun getId():int{return this.id;}
 }
 
 var m = new Mam1();
@@ -65,7 +65,7 @@ m.id = 12;
 println("Nome: "+ m.nome);
 println("Local: "+ m.localizacao);
 m2.id = 21;
-println(m.getId()*m2.getID());
+println(m.getId()*m2.getId());
 m.add(12);
 m.delete(100);
 // O visitGetExpr também vai encontrar o método add(), mas a Invocação... falaremos a seguir!

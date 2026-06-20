@@ -173,14 +173,15 @@ public abstract class Expr {
                     '}';
         }
     }
-    // Nó para a += 5, a *= 2, etc.
+
+    // Nó para a += 5, arr[0] += 2, Animal.INSTANCE += 1
     public static class CompoundAssign extends Expr {
-        public final Token name;
+        public final Expr target; // ⭐ MUDOU: Agora é uma Expressão (Alvo)!
         public final Token operator;
         public final Expr value;
 
-        public CompoundAssign(Token name, Token operator, Expr value) {
-            this.name = name;
+        public CompoundAssign(Expr target, Token operator, Expr value) {
+            this.target = target;
             this.operator = operator;
             this.value = value;
         }
@@ -191,21 +192,21 @@ public abstract class Expr {
         @Override
         public String toString() {
             return "CompoundAssign{" +
-                    "name=" + name +
+                    "target=" + target +
                     ", operator=" + operator +
                     ", value=" + value +
                     '}';
         }
     }
 
-    // Nó para a++, a--
+    // Nó para a++, arr[0]++, Animal.INSTANCE++
     public static class Update extends Expr {
-        public final Token name;
+        public final Expr target; // ⭐ MUDOU: Agora é uma Expressão (Alvo)!
         public final Token operator;
-        public final boolean isPrefix; // false para a++, true para ++a (se quiseres no futuro)
+        public final boolean isPrefix;
 
-        public Update(Token name, Token operator, boolean isPrefix) {
-            this.name = name;
+        public Update(Expr target, Token operator, boolean isPrefix) {
+            this.target = target;
             this.operator = operator;
             this.isPrefix = isPrefix;
         }
@@ -216,7 +217,7 @@ public abstract class Expr {
         @Override
         public String toString() {
             return "Update{" +
-                    "name=" + name +
+                    "target=" + target +
                     ", operator=" + operator +
                     ", isPrefix=" + isPrefix +
                     '}';

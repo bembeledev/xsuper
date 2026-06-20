@@ -61,6 +61,13 @@ public class XPLModel {
         return null;
     }
 
+    // ⭐ VALIDAÇÃO DE ÁRVORE GENEALÓGICA PARA O CATCH ⭐
+    public boolean isSubclassOf(String typeName) {
+        if (this.name.equals(typeName)) return true; // É a própria classe!
+        if (this.superclass != null) return this.superclass.isSubclassOf(typeName); // Pergunta ao pai!
+        return false;
+    }
+
     @Override
     public String toString() {
         return "XPLModel{" +

@@ -65,7 +65,7 @@ public class Parser {
 
     private Stmt declaration() {
         // Se for uma declaração, consome-a. Se falhar, sincroniza.
-        if (match(TokenType.FUN)) return functionDeclaration();
+        if (check(TokenType.FUN)) return functionDeclaration();
         if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration();
         if (match(TokenType.INTERFACE)) return interfaceDeclaration();
         if (match(TokenType.DECLARE))   return declareDeclaration();
@@ -315,10 +315,7 @@ public class Parser {
         }
 
         // 2. Modificador Abstract (Opcional)
-        boolean isAbstract = false;
-        if (match(TokenType.ABSTRACT)) {
-            isAbstract = true;
-        }
+        boolean isAbstract = match(TokenType.ABSTRACT);
 
         // ⭐ 3. A NOVA REGRA DE SINTAXE: O TOKEN 'fun' É OBRIGATÓRIO ⭐
         consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para declarar um método ou função.");
@@ -457,15 +454,21 @@ public class Parser {
         consume(TokenType.LBRACE, "Esperado '{' após 'try'.");
         Stmt tryBlock = new Stmt.Block(block());
 
-        Token catchName = null;
-        Stmt catchBlock = null;
-        if (match(TokenType.CATCH)) {
+        // ⭐ NOVO: Lê vários blocos catch em loop!
+        java.util.List<Stmt.CatchClause> catchClauses = new java.util.ArrayList<>();
+        while (match(TokenType.CATCH)) {
             consume(TokenType.LPAREN, "Esperado '(' após 'catch'.");
-            catchName = consume(TokenType.IDENTIFIER, "Esperado nome da variável para armazenar o erro.");
-            consume(TokenType.RPAREN, "Esperado ')' após a variável do erro.");
 
+            Token catchName = consume(TokenType.IDENTIFIER, "Esperado nome da variável para o erro.");
+            consume(TokenType.COLON, "Esperado ':' após a variável para definir o tipo de erro a capturar.");
+
+            TypeNode catchType = parseTypeAnnotation(); // Usa o teu sistema de tipagem nativo!
+
+            consume(TokenType.RPAREN, "Esperado ')' após o tipo do erro.");
             consume(TokenType.LBRACE, "Esperado '{' antes do bloco catch.");
-            catchBlock = new Stmt.Block(block());
+
+            Stmt.Block catchBlock = new Stmt.Block(block());
+            catchClauses.add(new Stmt.CatchClause(catchName, catchType, catchBlock));
         }
 
         Stmt finallyBlock = null;
@@ -474,12 +477,11 @@ public class Parser {
             finallyBlock = new Stmt.Block(block());
         }
 
-        // Validação Arquitetural: Um 'try' precisa de pelo menos um 'catch' ou um 'finally'!
-        if (catchBlock == null && finallyBlock == null) {
+        if (catchClauses.isEmpty() && finallyBlock == null) {
             throw error(previous(), "O bloco 'try' exige pelo menos um 'catch' ou 'finally'.");
         }
 
-        return new Stmt.Try(tryBlock, catchName, catchBlock, finallyBlock);
+        return new Stmt.Try(tryBlock, catchClauses, finallyBlock);
     }
 
 
@@ -720,16 +722,11 @@ public class Parser {
         }
 
         // 2. Atribuição Composta (+=, -=, *=, /=, %=, #=)
-        if (match(TokenType.PLUS_ASSIGN, TokenType.MINUS_ASSIGN,
-                TokenType.STAR_ASSIGN, TokenType.SLASH_ASSIGN,
-                TokenType.MODULO_ASSIGN, TokenType.HASH_ASSIGN)) {
-
+        if (match(TokenType.PLUS_ASSIGN, TokenType.MINUS_ASSIGN, TokenType.STAR_ASSIGN, TokenType.SLASH_ASSIGN, TokenType.MODULO_ASSIGN, TokenType.HASH_ASSIGN)) {
             Token operator = previous();
             Expr value = assignment();
-
-            if (expr instanceof Expr.Variable) {
-                Token name = ((Expr.Variable) expr).name;
-                return new Expr.CompoundAssign(name, operator, value);
+            if (expr instanceof Expr.Variable || expr instanceof Expr.Get || expr instanceof Expr.IndexAccess) {
+                return new Expr.CompoundAssign(expr, operator, value); // Aceita Get!
             }
             throw error(operator, "Alvo de atribuição composta inválido.");
         }
@@ -737,11 +734,8 @@ public class Parser {
         // 3. Incremento e Decremento (++, --)
         if (match(TokenType.PLUS_PLUS, TokenType.MINUS_MINUS)) {
             Token operator = previous();
-
-            if (expr instanceof Expr.Variable) {
-                Token name = ((Expr.Variable) expr).name;
-                // isPrefix = false porque o operador veio DEPOIS do nome (ex: a++)
-                return new Expr.Update(name, operator, false);
+            if (expr instanceof Expr.Variable || expr instanceof Expr.Get || expr instanceof Expr.IndexAccess) {
+                return new Expr.Update(expr, operator, false); // Aceita Get!
             }
             throw error(operator, "Alvo inválido para incremento/decremento.");
         }

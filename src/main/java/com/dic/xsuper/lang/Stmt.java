@@ -297,10 +297,10 @@ public abstract class Stmt {
 
     // Representa um atributo/campo: "pub nome: string;"
     public static class FieldDecl {
-        public final Token modifier; // PUB, PROT, ou PRIV (se omitido, o Parser injeta PRIV)
+        public final Token modifier;
+        public final boolean isStatic; // ⭐ NOVO
         public final Token name;
         public final TypeNode type;
-        public final boolean isStatic;
 
         public FieldDecl(Token modifier, boolean isStatic, Token name, TypeNode type) {
             this.modifier = modifier;
@@ -313,9 +313,9 @@ public abstract class Stmt {
         public String toString() {
             return "FieldDecl{" +
                     "modifier=" + modifier +
+                    ", isStatic=" + isStatic +
                     ", name=" + name +
                     ", type=" + type +
-                    ", isStatic=" + isStatic +
                     '}';
         }
     }
@@ -462,16 +462,36 @@ public abstract class Stmt {
         }
     }
 
+    // ⭐ A NOVA CLÁUSULA CATCH ⭐
+    public static class CatchClause {
+        public final Token name;      // Ex: 'e'
+        public final TypeNode type;   // Ex: 'NumberError' ou 'string'
+        public final Stmt.Block body; // O código { ... }
+
+        public CatchClause(Token name, TypeNode type, Stmt.Block body) {
+            this.name = name;
+            this.type = type;
+            this.body = body;
+        }
+
+        @Override
+        public String toString() {
+            return "CatchClause{" +
+                    "name=" + name +
+                    ", type=" + type +
+                    ", body=" + body +
+                    '}';
+        }
+    }
+
     public static class Try extends Stmt {
         public final Stmt tryBlock;
-        public final Token catchName; // A variável que segura o erro (Ex: 'e')
-        public final Stmt catchBlock;
+        public final java.util.List<CatchClause> catchClauses; // Agora é uma LISTA de catches!
         public final Stmt finallyBlock;
 
-        public Try(Stmt tryBlock, Token catchName, Stmt catchBlock, Stmt finallyBlock) {
+        public Try(Stmt tryBlock, java.util.List<CatchClause> catchClauses, Stmt finallyBlock) {
             this.tryBlock = tryBlock;
-            this.catchName = catchName;
-            this.catchBlock = catchBlock;
+            this.catchClauses = catchClauses;
             this.finallyBlock = finallyBlock;
         }
 
@@ -482,10 +502,10 @@ public abstract class Stmt {
         public String toString() {
             return "Try{" +
                     "tryBlock=" + tryBlock +
-                    ", catchName=" + catchName +
-                    ", catchBlock=" + catchBlock +
+                    ", catchClauses=" + catchClauses +
                     ", finallyBlock=" + finallyBlock +
                     '}';
         }
     }
+
 }
