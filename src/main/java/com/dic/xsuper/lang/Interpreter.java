@@ -932,6 +932,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (object instanceof XplInstance) {
             XplInstance instance = (XplInstance) object;
 
+
+            // 🚀0. INJEÇÃO NATIVA: O Método toObject() 🚀
+            if (expr.name.lexeme.equals("toObject")) {
+                // Devolve uma função nativa anónima para ser executada ()
+                return new XplCallable() { // Usa a tua interface de funções nativas!
+                    @Override
+                    public int arity() { return 0; }
+
+                    @Override
+                    public Object call(Interpreter interpreter, java.util.List<Object> args) {
+                        // Copia todas as propriedades vivas e CONGELA-AS num mapa imutável!
+                        java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
+                        return java.util.Collections.unmodifiableMap(snapshot);
+                    }
+                };
+            }
+
             // 1. É uma variável/propriedade?
             if (instance.fields.containsKey(expr.name.lexeme)) {
                 Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
@@ -1103,9 +1120,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new ControlFlow.RuntimeError(expr.name, "A propriedade estática '" + expr.name.lexeme + "' não existe ou não pode ser alterada no modelo " + model.name + ".");
         }
 
+        // ⭐ É Atribuição num Mapa/Dicionário? (E proteção de Imutabilidade) ⭐
+        if (object instanceof java.util.Map) {
+            try {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> map = (java.util.Map<String, Object>) object;
+                Object dictValue = evaluate(expr.value);
+                map.put(expr.name.lexeme, dictValue);
+                return dictValue;
+            } catch (UnsupportedOperationException e) {
+                // Apanha o mapa congelado do toObject()!
+                throw new ControlFlow.RuntimeError(expr.name, "Erro de Segurança: Este objeto é estritamente imutável (Read-Only) pois foi exportado via toObject(). Nenhuma propriedade pode ser modificada ou removida.");
+            }
+        }
+
         // 2. É Atribuição numa Instância POO? (Ex: leao.nome = "Simba")
-        if (object instanceof XplInstance) {
-            XplInstance instance = (XplInstance) object;
+        if (object instanceof XplInstance instance) {
             Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
 
             if (field != null) {
@@ -1328,15 +1358,62 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ==========================================
 
     // Converte literais do Java para representação XPL segura no terminal
+    // ⭐ A MAGIA DO TOSTRING NATIVO (AGORA RECURSIVO!) ⭐
     private String stringify(Object object) {
         if (object == null) return "null";
+
+        // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
+        if (object instanceof XplInstance instance) {
+            Stmt.Function toStringMethod = instance.klass.model.findMethod("toString");
+
+            if (toStringMethod != null && toStringMethod.params.isEmpty()) {
+                try {
+                    XPLModel owner = instance.klass.model.getOwnerOfMethod("toString");
+                    XplFunction func = new XplFunction(toStringMethod, instance.klass.closure, owner);
+                    Object result = func.bind(instance).call(this, new java.util.ArrayList<>());
+                    return String.valueOf(result);
+                } catch (Exception e) {
+                    return "<Erro ao executar toString() na Instância de " + instance.klass.model.name + ">";
+                }
+            }
+            return "<Instância de " + instance.klass.model.name + ">";
+        }
+
+        // ⭐ 2. INJEÇÃO RECURSIVA EM LISTAS (Arrays) ⭐
+        if (object instanceof List<?> list) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            for (int i = 0; i < list.size(); i++) {
+                sb.append(stringify(list.get(i))); // RECURSIVIDADE: Chama a magia de novo!
+                if (i < list.size() - 1) sb.append(", ");
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+
+        // ⭐ 3. INJEÇÃO RECURSIVA EM MAPAS (Dicionários/toObject) ⭐
+        if (object instanceof Map<?, ?> map) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{");
+            int i = 0;
+            for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
+                sb.append(entry.getKey().toString()).append(": ").append(stringify(entry.getValue()));
+                if (i < map.size() - 1) sb.append(", ");
+                i++;
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+
+        // 4. Comportamento numérico base
         if (object instanceof Double) {
             String text = object.toString();
             if (text.endsWith(".0")) {
-                text = text.substring(0, text.length() - 2); // Exibe 10 em vez de 10.0
+                text = text.substring(0, text.length() - 2);
             }
             return text;
         }
+
         return object.toString();
     }
 
