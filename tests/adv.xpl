@@ -24,11 +24,9 @@ var pessoas = [];
 
 for i in (1,10){
     let p = new Pessoa("Nome_" + i, i*2);
-    println(p.nome);
-    println(p.idade);
     pessoas.push(p);
 }
 
 var str = pessoas[0].toString();
-println(str);
+println(pessoas);
 

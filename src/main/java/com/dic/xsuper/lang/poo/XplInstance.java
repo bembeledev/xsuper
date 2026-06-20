@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class XplInstance {
     public XplClass klass;
-    private final Map<String, Object> fields = new HashMap<>();
+    public final Map<String, Object> fields = new HashMap<>();
 
     public XplInstance(XplClass klass) {
         this.klass = klass;

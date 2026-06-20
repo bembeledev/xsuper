@@ -195,24 +195,40 @@ public abstract class Stmt {
         public final boolean isAbstract;   // Verdadeiro se for um método abstrato
         public final Token name;
         public final List<Param> params;
-        public final Token returnType;
+        public final TypeNode returnType;
+        public final List<Token> thrownExceptions;
         public final List<Stmt> body;      // Será 'null' se isAbstract for verdadeiro!
 
         // Atualiza o construtor com os novos campos
         public Function(Token accessModifier, boolean isStatic, boolean isAbstract, Token name,
-                        List<Param> params, Token returnType, List<Stmt> body) {
+                        List<Param> params, TypeNode returnType, List<Token> thrownExceptions, List<Stmt> body) {
             this.accessModifier = accessModifier;
             this.isStatic = isStatic;
             this.isAbstract = isAbstract;
             this.name = name;
             this.params = params;
             this.returnType = returnType;
+            this.thrownExceptions = thrownExceptions;
             this.body = body;
         }
 
         @Override
         public <R> R accept(Visitor<R> visitor) {
             return visitor.visitFunctionStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Function{" +
+                    "accessModifier=" + accessModifier +
+                    ", isStatic=" + isStatic +
+                    ", isAbstract=" + isAbstract +
+                    ", name=" + name +
+                    ", params=" + params +
+                    ", returnType=" + returnType +
+                    ", thrownExceptions=" + thrownExceptions +
+                    ", body=" + body +
+                    '}';
         }
     }
 
@@ -299,12 +315,16 @@ public abstract class Stmt {
     public static class FieldDecl {
         public final Token modifier;
         public final boolean isStatic; // ⭐ NOVO
+        public final boolean isFinal;    // ⭐ NOVO
+        public final boolean isReadonly; // ⭐ NOVO
         public final Token name;
         public final TypeNode type;
 
-        public FieldDecl(Token modifier, boolean isStatic, Token name, TypeNode type) {
+        public FieldDecl(Token modifier, boolean isStatic, boolean isFinal, boolean isReadonly, Token name, TypeNode type) {
             this.modifier = modifier;
             this.isStatic = isStatic;
+            this.isFinal = isFinal;
+            this.isReadonly = isReadonly;
             this.name = name;
             this.type = type;
         }
@@ -314,6 +334,8 @@ public abstract class Stmt {
             return "FieldDecl{" +
                     "modifier=" + modifier +
                     ", isStatic=" + isStatic +
+                    ", isFinal=" + isFinal +
+                    ", isReadonly=" + isReadonly +
                     ", name=" + name +
                     ", type=" + type +
                     '}';

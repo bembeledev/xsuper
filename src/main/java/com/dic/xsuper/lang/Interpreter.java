@@ -130,6 +130,42 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return expr.accept(this);
     }
 
+
+    // ⭐ A POLÍCIA DE ENCAPSULAMENTO ⭐
+    private void checkAccess(Token name, Stmt.FieldDecl field, XPLModel targetModel, boolean isWriting) {
+
+        // 1. Regra do FINAL: Ninguém escreve num Final! (O valor só nasce pelo bloco 'default')
+        if (isWriting && field.isFinal) {
+            throw new ControlFlow.RuntimeError(name, "Erro de Segurança: A propriedade '" + name.lexeme + "' é FINAL e não pode ser alterada.");
+        }
+
+        // Descobre em que classe estamos a rodar AGORA (quem é o invasor?)
+        XPLModel currentModel = null;
+        try {
+            currentModel = (XPLModel) environment.get("__current_model");
+        } catch (Exception e) {} // Se der erro, estamos no espaço global (script)
+
+        boolean isInsideClass = (currentModel != null && currentModel.name.equals(targetModel.name));
+        boolean isSubclass = (currentModel != null && currentModel.isSubclassOf(targetModel.name));
+
+        // 2. Regra do READONLY / DYN: Leitura pública, Escrita privada!
+        if (isWriting && field.isReadonly && !isInsideClass) {
+            throw new ControlFlow.RuntimeError(name, "Erro de Acesso: A propriedade '" + name.lexeme + "' é READONLY. Só pode ser alterada dentro da própria classe.");
+        }
+
+        // 3. Regra do PRIV (Privado): Só a própria classe lê e escreve!
+        if (field.modifier.type == TokenType.PRIV && !isInsideClass) {
+            throw new ControlFlow.RuntimeError(name, "Erro de Acesso: A propriedade '" + name.lexeme + "' é PRIVADA. Só a classe '" + targetModel.name + "' pode aceder.");
+        }
+
+        // 4. Regra do PROT (Protegido): Só a classe e os filhos (herança) acedem!
+        if (field.modifier.type == TokenType.PROT && !isSubclass) {
+            throw new ControlFlow.RuntimeError(name, "Erro de Acesso: A propriedade '" + name.lexeme + "' é PROTEGIDA. Só acessível por herança.");
+        }
+    }
+
+
+
     // ==========================================
     // EXECUÇÃO DE DECLARAÇÕES (STATEMENTS)
     // ==========================================
@@ -892,10 +928,29 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-        // ⭐ NOVO: É uma instância da nossa POO? ⭐
+// ⭐ É uma instância da nossa POO? ⭐
         if (object instanceof XplInstance) {
-            // Delega para o método get() do XplInstance.java (que vai buscar a variável ou o método)
-            return ((XplInstance) object).get(expr.name);
+            XplInstance instance = (XplInstance) object;
+
+            // 1. É uma variável/propriedade?
+            if (instance.fields.containsKey(expr.name.lexeme)) {
+                Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
+
+                // 🛑 CHAMA A POLÍCIA ANTES DE LER! 🛑
+                if (field != null) {
+                    checkAccess(expr.name, field, instance.klass.model, false);
+                }
+
+                return instance.fields.get(expr.name.lexeme);
+            }
+
+            // 2. É um Comportamento/Método? (Delega para o método nativo que injeta o 'this')
+            Stmt.Function method = instance.klass.model.findMethod(expr.name.lexeme);
+            if (method != null) {
+                return instance.get(expr.name);
+            }
+
+            throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + expr.name.lexeme + "' não existe na instância.");
         }
 
         // ⭐ É uma Classe/Fábrica (Acesso Estático)? ⭐
@@ -904,6 +959,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             // 1. É um Dado Estático?
             if (model.staticFields.containsKey(expr.name.lexeme)) {
+                Stmt.FieldDecl field = model.fields.get(expr.name.lexeme);
+
+                // 🛑 A Polícia protege as leituras estáticas!
+                if (field != null) {
+                    checkAccess(expr.name, field, model, false);
+                }
+
                 return model.staticFields.get(expr.name.lexeme);
             }
 
@@ -918,7 +980,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método estático '" + expr.name.lexeme + "' não existe no modelo " + model.name + ".");
         }
 
-        throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos e Strings possuem propriedades/métodos.");
+        throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos, Strings, Instâncias e Classes possuem propriedades/métodos.");
     }
     @Override
     public Object visitArrowFunctionExpr(Expr.ArrowFunction expr) {
@@ -1021,34 +1083,43 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitSetExpr(Expr.Set expr) {
-        // 1. Avalia quem é o dono da propriedade (o objeto à esquerda do ponto)
+        // 1. Avalia quem é o dono e o valor
         Object object = evaluate(expr.object);
+        Object value = evaluate(expr.value);
 
         // ⭐ É Atribuição numa variável estática? (Ex: Animal.INSTANCIAS = 5) ⭐
         if (object instanceof XplClass) {
             XPLModel model = ((XplClass) object).model;
 
             if (model.fields.containsKey(expr.name.lexeme) && model.fields.get(expr.name.lexeme).isStatic) {
-                Object value = evaluate(expr.value);
+                Stmt.FieldDecl field = model.fields.get(expr.name.lexeme);
+
+                // 🛑 A Polícia protege também as variáveis estáticas!
+                checkAccess(expr.name, field, model, true);
+
                 model.staticFields.put(expr.name.lexeme, value);
                 return value;
             }
             throw new ControlFlow.RuntimeError(expr.name, "A propriedade estática '" + expr.name.lexeme + "' não existe ou não pode ser alterada no modelo " + model.name + ".");
         }
 
-        // 2. Garante que estamos a lidar com um Objeto real do nosso motor POO
-        if (!(object instanceof XplInstance)) {
-            throw new ControlFlow.RuntimeError(expr.name, "Apenas instâncias de modelos (objetos) possuem propriedades que podem ser alteradas.");
+        // 2. É Atribuição numa Instância POO? (Ex: leao.nome = "Simba")
+        if (object instanceof XplInstance) {
+            XplInstance instance = (XplInstance) object;
+            Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
+
+            if (field != null) {
+                // 🛑 CHAMA A POLÍCIA ANTES DE ESCREVER! 🛑
+                checkAccess(expr.name, field, instance.klass.model, true);
+
+                instance.set(expr.name, value);
+                return value;
+            }
+            throw new ControlFlow.RuntimeError(expr.name, "A propriedade '" + expr.name.lexeme + "' não existe no modelo " + instance.klass.model.name + ".");
         }
 
-        // 3. Avalia o valor que queremos injetar (à direita do '=')
-        Object value = evaluate(expr.value);
-
-        // 4. Delega a responsabilidade para a Instância (que vai validar se a propriedade existe)
-        ((XplInstance) object).set(expr.name, value);
-
-        // Em linguagens como C/Java, uma atribuição devolve o próprio valor atribuído
-        return value;
+        // 3. Se não for Classe nem Instância, é um erro estrutural!
+        throw new ControlFlow.RuntimeError(expr.name, "Apenas instâncias e classes XPL possuem propriedades modificáveis.");
     }
 
     @Override

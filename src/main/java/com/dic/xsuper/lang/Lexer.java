@@ -60,6 +60,9 @@ public class Lexer {
         keywords.put("catch", TokenType.CATCH);
         keywords.put("finally", TokenType.FINALLY);
         keywords.put("throw", TokenType.THROW);
+        keywords.put("throws", TokenType.THROWS);
+        keywords.put("readonly", TokenType.READONLY);
+        keywords.put("final", TokenType.FINAL);
     }
 
     public Lexer(String source) {

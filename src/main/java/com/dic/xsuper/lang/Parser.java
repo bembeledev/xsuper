@@ -17,6 +17,8 @@ public class Parser {
     // Rastreador de profundidade para aplicar a regra rigorosa do 'var'
     private int scopeDepth = 0;
 
+
+
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
@@ -103,27 +105,34 @@ public class Parser {
         // Percorre tudo até fechar a chaveta
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
 
-            // 1. O Modificador de Acesso (Default é PRIV)
-            Token modifier;
-            if (match(TokenType.PUB, TokenType.PROT, TokenType.PRIV)) {
-                modifier = previous();
-            } else {
-                // Token PRIV fantasma para proteção por defeito
-                modifier = new Token(TokenType.PRIV, "priv", null, peek().line, peek().column);
+            // ⭐1. O Colecionador de Modificadores ⭐
+            Token accessModifier = null;
+            boolean isStatic = false, isFinal = false, isReadonly = false;
+
+            while (match(TokenType.PUB, TokenType.PRIV, TokenType.PROT, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+                Token t = previous();
+                switch (t.type) {
+                    case PUB: case PRIV: case PROT:
+                        if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso (pub, priv, prot).");
+                        accessModifier = t;
+                        break;
+                    case STATIC: isStatic = true; break;
+                    case FINAL: isFinal = true; break;
+                    case READONLY: isReadonly = true; break;
+                }
             }
 
-            boolean isStatic = match(TokenType.STATIC);
+            // Se o programador não escreveu pub/priv/prot, o padrão por segurança é PRIV!
+            if (accessModifier == null) {
+                accessModifier = new Token(TokenType.PRIV, "priv", null, peek().line, peek().column);
+            }
 
-            // 2. O Nome do campo
             Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade.");
+            consume(TokenType.COLON, "Esperado ':' após a propriedade.");
+            TypeNode type = parseTypeAnnotation();
+            consume(TokenType.SEMICOLON, "Esperado ';' no final da declaração.");
 
-            // 3. Tipagem Forte do Campo
-            consume(TokenType.COLON, "Esperado ':' após o nome da propriedade para definir o tipo.");
-            TypeNode type = parseTypeAnnotation(); // Usa o teu método que devolve TypeNode
-
-            consume(TokenType.SEMICOLON, "Esperado ';' após declaração da propriedade.");
-
-            fields.add(new Stmt.FieldDecl(modifier, isStatic, memberName, type));
+            fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
         }
 
         consume(TokenType.RBRACE, "Esperado '}' após o corpo do declare.");
@@ -278,14 +287,26 @@ public class Parser {
             }
             consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
 
-            // 6. Tipo de Retorno (Ex: : int)
-            Token returnType = null;
+            // ⭐ 6. Tipo de Retorno (Ex: : int)
+            TypeNode returnType = null; // Mudámos de Token para TypeNode!
             if (match(TokenType.COLON)) {
                 if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
-                    returnType = previous();
+
+                    // Envolvemos o token lido dentro de um TypeNode para satisfazer a AST!
+                    returnType = new TypeNode.Simple(previous());
+
                 } else {
                     throw error(peek(), "Esperado tipo de retorno válido após ':'.");
                 }
+            }
+
+            // ⭐ 6.5 A NOVA CLÁUSULA THROWS (O Contrato de Segurança) ⭐
+            java.util.List<Token> thrownExceptions = new java.util.ArrayList<>();
+            if (match(TokenType.THROWS)) {
+                do {
+                    Token errorName = consume(TokenType.IDENTIFIER, "Esperado nome da exceção após 'throws'.");
+                    thrownExceptions.add(errorName);
+                } while (match(TokenType.COMMA)); // Permite 'throws IOError, NetError'
             }
 
             // ⭐ 7. A BIFURCAÇÃO: Abstrato vs Concreto ⭐
@@ -298,7 +319,8 @@ public class Parser {
             }
 
             // ⭐ 8. Instanciação Perfeita com o Novo Construtor!
-            methods.add(new Stmt.Function(modifier,isStatic, isAbstract, methodName, parameters, returnType, body));
+            // Nota: Passamos a lista 'thrownExceptions' para a AST.
+            methods.add(new Stmt.Function(modifier, isStatic, isAbstract, methodName, parameters, returnType, thrownExceptions, body));
         }
 
         consume(TokenType.RBRACE, "Esperado '}' após o corpo do implement.");
@@ -337,9 +359,18 @@ public class Parser {
         consume(TokenType.RPAREN, "Esperado ')' após os parâmetros.");
 
         // 6. Tipo de Retorno (ex: : int)
-        Token returnType = null;
+        TypeNode returnType = null;
         if (match(TokenType.COLON)) {
-            returnType = advance(); // Captura o tipo de retorno
+            returnType = parseTypeAnnotation();
+        }
+
+        // ⭐ NOVO: Ler a cláusula 'throws' ⭐
+        List<Token> thrownExceptions = new ArrayList<>();
+        if (match(TokenType.THROWS)) {
+            do {
+                Token errorName = consume(TokenType.IDENTIFIER, "Esperado nome da exceção após 'throws'.");
+                thrownExceptions.add(errorName);
+            } while (match(TokenType.COMMA)); // Suporta múltiplas: throws IOError, NetError
         }
 
         // ⭐ 7. A BIFURCAÇÃO DA ABSTRAÇÃO (O Grande Salto!) ⭐
@@ -348,14 +379,14 @@ public class Parser {
             consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, null);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, thrownExceptions,null);
         } else {
             // Se for um método concreto, EXIGE as chaves e o corpo de código!
             consume(TokenType.LBRACE, "Esperado '{' antes do corpo da função concreta.");
             List<Stmt> body = block();
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, body);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType,thrownExceptions, body);
         }
     }
 
