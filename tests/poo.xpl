@@ -10,7 +10,7 @@ interface CRUD {
 declare Animal {
     pub nome: string;
     pub especie: string;
-    priv id: int;
+    pub id: int;
 }
 
 declare Mamifero extends Animal {

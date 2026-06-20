@@ -30,6 +30,7 @@ public class Lexer {
         keywords.put("break", TokenType.BREAK);
         keywords.put("continue", TokenType.CONTINUE);
         keywords.put("int", TokenType.T_INT);
+        keywords.put("bool", TokenType.T_BOOL);
         keywords.put("float", TokenType.T_FLOAT);
         keywords.put("string", TokenType.T_STRING);
         keywords.put("array", TokenType.T_ARRAY);
@@ -95,6 +96,15 @@ public class Lexer {
             case '.': addToken(TokenType.DOT); break;
             case ':': addToken(TokenType.COLON); break;
             case ';': addToken(TokenType.SEMICOLON); break;
+            case '&':
+                addToken(match('&') ? TokenType.AND : TokenType.BIT_AND);
+                break;
+            case '|':
+                addToken(match('|') ? TokenType.OR : TokenType.BIT_OR);
+                break;
+            case '^':
+                addToken(TokenType.BIT_XOR); // Bónus: Ou Exclusivo (XOR) de bits
+                break;
             case '-': {
                 if (match('=')) addToken(TokenType.MINUS_ASSIGN);
                 else if (match('-')) addToken(TokenType.MINUS_MINUS);
@@ -129,17 +139,44 @@ public class Lexer {
             break;
             case '=': {
                 if (match('=')) {
-                    addToken(TokenType.EQUAL);
-                } else if (match('>')) { // =>
-                    addToken(TokenType.FAT_ARROW);
+                    // ⭐ Já leu '=='. Será que vem um terceiro '=' para formar '==='?
+                    if (match('=')) {
+                        addToken(TokenType.STRICT_EQUAL);     // ===
+                    } else {
+                        addToken(TokenType.EQUAL);            // ==
+                    }
+                } else if (match('>')) {
+                    addToken(TokenType.FAT_ARROW);            // =>
                 } else {
-                    addToken(TokenType.ASSIGN);
+                    addToken(TokenType.ASSIGN);               // =
                 }
+                break;
             }
-            break;
-            case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.BANG); break;
-            case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
-            case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
+
+            case '!': {
+                if (match('=')) {
+                    // ⭐ Já leu '!='. Será que vem um terceiro '=' para formar '!=='?
+                    if (match('=')) {
+                        addToken(TokenType.STRICT_NOT_EQUAL); // !==
+                    } else {
+                        addToken(TokenType.NOT_EQUAL);        // !=
+                    }
+                } else {
+                    addToken(TokenType.BANG);                 // !
+                }
+                break;
+            }
+            case '<':
+                if (match('<')) addToken(TokenType.SHIFT_LEFT);
+                else if (match('=')) addToken(TokenType.LESS_EQUAL);
+                else addToken(TokenType.LESS);
+                break;
+
+            case '>':
+                if (match('>')) addToken(TokenType.SHIFT_RIGHT);
+                else if (match('=')) addToken(TokenType.GREATER_EQUAL);
+                else addToken(TokenType.GREATER);
+                break;
 
             // Ignorar espaços e quebras de linha
             case ' ':

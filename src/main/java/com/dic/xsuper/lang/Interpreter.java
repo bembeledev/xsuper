@@ -222,16 +222,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    @Override
-    public Void visitIfStmt(Stmt.If stmt) {
-        if (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.thenBranch);
-        } else if (stmt.elseBranch != null) {
-            execute(stmt.elseBranch);
-        }
-        return null;
-    }
-
 
     @Override
     public Void visitForInStmt(Stmt.ForIn stmt) {
@@ -1290,6 +1280,78 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitIfExpr(Expr.If expr) {
+        Object condValue = evaluate(expr.condition);
+
+        Stmt branchToRun = isTruthy(condValue) ? expr.thenBranch : expr.elseBranch;
+
+        if (branchToRun == null) return null;
+
+        return evaluateBranchAsExpression(branchToRun);
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        // 1. Avalia APENAS o lado esquerdo primeiro!
+        Object left = evaluate(expr.left);
+
+        // 2. A Magia do Curto-Circuito
+        if (expr.operator.type == TokenType.OR) {
+            // Se for '||' e a esquerda já for VERDADEIRA, a condição inteira já é verdadeira.
+            // Ignoramos completamente a direita e devolvemos o valor esquerdo!
+            if (isTruthy(left)) return left;
+
+        } else {
+            // Se não é OR, é AND ('&&').
+            // Se for '&&' e a esquerda for FALSA, a condição inteira já falhou.
+            // Ignoramos a direita (evitando crashes) e devolvemos o valor esquerdo!
+            if (!isTruthy(left)) return left;
+        }
+
+        // 3. Se o curto-circuito não foi ativado (ex: 'falso || X' ou 'verdadeiro && X'),
+        // a resposta final depende exclusivamente do lado direito.
+        return evaluate(expr.right);
+    }
+
+    // ⭐ O MOTOR DA "ÚLTIMA LINHA" (Retorno Implícito) ⭐
+    private Object evaluateBranchAsExpression(Stmt branch) {
+        // 1. É um Bloco { ... }? Executa tudo e captura a última respiração!
+        if (branch instanceof Stmt.Block) {
+            java.util.List<Stmt> statements = ((Stmt.Block) branch).statements;
+            if (statements.isEmpty()) return null;
+
+            Environment previous = this.environment;
+            try {
+                this.environment = new Environment(previous);
+                Object lastValue = null;
+
+                for (Stmt stmt : statements) {
+                    if (stmt instanceof Stmt.ExpressionStmt) {
+                        // Se for uma expressão solta (Ex: 'v ** 3;'), guardamos o seu valor!
+                        lastValue = evaluate(((Stmt.ExpressionStmt) stmt).expression);
+                    } else {
+                        // Se for um 'var x = 1' ou um 'while', o valor gerado é null
+                        execute(stmt);
+                        lastValue = null;
+                    }
+                }
+                return lastValue; // O valor da linha final!
+            } finally {
+                this.environment = previous;
+            }
+        }
+        // 2. É uma expressão simples (O inline do Python ou um if de 1 linha sem {})?
+        else if (branch instanceof Stmt.ExpressionStmt) {
+            return evaluate(((Stmt.ExpressionStmt) branch).expression);
+        }
+        // 3. É um comando normal (Ex: return x; ou break;)?
+        else {
+            execute(branch);
+            return null;
+        }
+    }
+
+    @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         return environment.get(expr.name.lexeme);
     }
@@ -1309,6 +1371,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             checkNumberOperand(expr.operator, right);
             if (right instanceof Double) return -(double) right;
             if (right instanceof Long) return -(long) right;
+        } else if (expr.operator.type == TokenType.BANG) {
+            return !isTruthy(right);
         }
         return null;
     }
@@ -1372,6 +1436,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 return isEqual(left, right);
             case NOT_EQUAL:
                 return !isEqual(left, right);
+            // ==========================================
+            // 1. IGUALDADE ESTRITA (=== e !==)
+            // ==========================================
+            case STRICT_EQUAL:
+                return isEqualStrict(left, right);
+            case STRICT_NOT_EQUAL:
+                return !isEqualStrict(left, right);
+
+            // ==========================================
+            // 2. OPERADORES DE BITS (Bitwise)
+            // ==========================================
+            case BIT_AND:
+                return toBitLong(expr.operator, left) & toBitLong(expr.operator, right);
+            case BIT_OR:
+                return toBitLong(expr.operator, left) | toBitLong(expr.operator, right);
+            case BIT_XOR:
+                return toBitLong(expr.operator, left) ^ toBitLong(expr.operator, right);
+            case SHIFT_LEFT:
+                return toBitLong(expr.operator, left) << toBitLong(expr.operator, right);
+            case SHIFT_RIGHT:
+                return toBitLong(expr.operator, left) >> toBitLong(expr.operator, right);
         }
         return null;
     }
@@ -1426,6 +1511,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (obj instanceof Double) return (double) obj;
         if (obj instanceof Long) return (double) (long) obj;
         return 0.0;
+    }
+
+
+    // Assistente da Igualdade Estrita (Compara Memória/Tipo antes do valor)
+    private boolean isEqualStrict(Object a, Object b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        // Se as classes nativas do Java forem diferentes (ex: Long vs String), é Falso!
+        if (!a.getClass().equals(b.getClass())) return false;
+        return a.equals(b);
+    }
+
+    // Assistente de Conversão de Bits
+    private long toBitLong(Token op, Object operand) {
+        if (operand instanceof Double) return ((Double) operand).longValue();
+        if (operand instanceof Long) return (Long) operand;
+        throw new ControlFlow.RuntimeError(op, "Operadores de bits (&, |, <<, >>) requerem valores inteiros.");
     }
 
     private void checkNumberOperand(Token operator, Object operand) {

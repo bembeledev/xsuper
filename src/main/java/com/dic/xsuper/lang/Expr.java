@@ -26,6 +26,8 @@ public abstract class Expr {
         R visitCastExpr(Cast expr);
         R visitTypeCheckExpr(TypeCheck typeCheck);
         R visitTypeofExpr(Typeof typeof);
+        R visitIfExpr(If expr);
+        R visitLogicalExpr(Logical logical);
     }
 
 
@@ -481,6 +483,59 @@ public abstract class Expr {
                     ", operator=" + operator +
                     ", type=" + type +
                     ", isForced=" + isForced +
+                    '}';
+        }
+    }
+
+    // ⭐ O IF PROMOVIDO A EXPRESSÃO ⭐
+    public static class If extends Expr {
+        public final Expr condition;
+        public final Stmt thenBranch; // Usamos Stmt para suportar tanto Blocos {} como simples Expressões!
+        public final Stmt elseBranch; // Pode ser null
+
+        public If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
+            this.condition = condition;
+            this.thenBranch = thenBranch;
+            this.elseBranch = elseBranch;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitIfExpr(this); }
+
+        @Override
+        public String toString() {
+            return "If{" +
+                    "condition=" + condition +
+                    ", thenBranch=" + thenBranch +
+                    ", elseBranch=" + elseBranch +
+                    '}';
+        }
+    }
+
+    public static class Logical extends Expr {
+        // ⭐ AS VARIÁVEIS ONDE GUARDAMOS OS DADOS ⭐
+        public final Expr left;      // O lado esquerdo (ex: a > 10)
+        public final Token operator;  // O token '&&' ou '||'
+        public final Expr right;     // O lado direito (ex: b < 5)
+
+        public Logical(Expr expr, Token operator, Expr right) {
+            this.left = expr;        // Guardamos o teu 'expr' no campo 'left'
+            this.operator = operator;
+            this.right = right;
+        }
+
+        // ⭐ A PORTA DE ENTRADA DO INTERPRETADOR (Visitor) ⭐
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitLogicalExpr(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Logical{" +
+                    "left=" + left +
+                    ", operator=" + operator +
+                    ", right=" + right +
                     '}';
         }
     }

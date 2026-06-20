@@ -10,7 +10,7 @@ public abstract class Stmt {
         R visitExpressionStmt(ExpressionStmt stmt);
         R visitVarDeclStmt(VarDecl stmt);
         R visitBlockStmt(Block stmt);
-        R visitIfStmt(If stmt);
+
         R visitForCStyleStmt(ForCStyle stmt);
         R visitFunctionStmt(Function stmt);
         R visitBreakStmt(Break stmt);
@@ -79,30 +79,6 @@ public abstract class Stmt {
         public String toString() {
             return "Block{" +
                     "statements=" + statements +
-                    '}';
-        }
-    }
-
-    public static class If extends Stmt {
-        public final Expr condition;
-        public final Stmt thenBranch;
-        public final Stmt elseBranch;
-
-        public If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
-            this.condition = condition;
-            this.thenBranch = thenBranch;
-            this.elseBranch = elseBranch;
-        }
-
-        @Override
-        public <R> R accept(Visitor<R> visitor) { return visitor.visitIfStmt(this); }
-
-        @Override
-        public String toString() {
-            return "If{" +
-                    "condition=" + condition +
-                    ", thenBranch=" + thenBranch +
-                    ", elseBranch=" + elseBranch +
                     '}';
         }
     }

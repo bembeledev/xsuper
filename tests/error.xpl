@@ -1,9 +1,9 @@
 println(">>> TESTE DE TRATAMENTO DE ERROS <<<", "#00FFFF");
 
 declare Error {
-    pub mensage: string;
+    pub message: string;
 }
-implement Error { default { mensage: "Erro Desconhecido" } }
+implement Error { default { message: "Erro Desconhecido" } }
 
 declare NumberError extends Error {
     pub valorTentado: int;
@@ -12,13 +12,13 @@ implement NumberError { default { valorTentado: 0 } }
 
 try {
     let err = new NumberError();
-    err.mensage = "Falha ao calcular salário";
+    err.message = "Falha ao calcular salário";
     err.valorTentado = 500;
 
     throw err; // Atiramos a instância!
 
 } catch(e: NumberError) {
-    println("Capturado erro numérico: " + e.mensage);
+    println("Capturado erro numérico: " + e.message);
     println("Valor que falhou: " + e.valorTentado);
 } catch(e: Error) {
     println("Capturado erro genérico!");

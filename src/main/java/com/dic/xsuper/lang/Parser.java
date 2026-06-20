@@ -453,11 +453,12 @@ public class Parser {
     // Comandos que não criam variáveis globais, mas executam lógicas (If, For, Print, Atribuições).
     // ==========================================
 
+
+
     private Stmt statement() {
         // Redirecionamento inteligente: Dependendo da palavra-chave inicial, escolhe a regra certa.
         if (match(TokenType.FOR)) return forDispatcher();
         // Mudei o nome para organizares melhor os teus For Loops
-        if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.BREAK)) return breakStatement();
         if (match(TokenType.CONTINUE)) return continueStatement();
         if (match(TokenType.RETURN)) return returnStatement();
@@ -472,6 +473,31 @@ public class Parser {
 
         // Se não for nada disso, assume que é uma expressão a tentar calcular algo (ex: a = 10; ou println("ola");)
         return expressionStatement();
+    }
+
+    // ⭐ O NOVO IF (Bloco) - Agora devolve uma Expressão! ⭐
+    private Expr.If ifExpressionBlock() {
+        // Lê a condição (usando a tua sintaxe)
+        Expr condition = expression();
+        consume(TokenType.LBRACE, "Esperado '{' após a condição do if.");
+        Stmt thenBranch = new Stmt.Block(block());
+
+        Stmt elseBranch = null;
+
+        // Suporte a IF ELSE encadeado (A tua recursão genial adaptada!)
+        if (match(TokenType.ELSE)) {
+            if (match(TokenType.IF)) {
+                // Chamamos a recursão, mas embrulhamos o 'Expr.If' devolvido
+                // dentro de um 'ExpressionStmt' para caber no 'elseBranch' (que espera um Stmt).
+                Expr.If elseIfExpr = ifExpressionBlock();
+                elseBranch = new Stmt.ExpressionStmt(elseIfExpr);
+            } else {
+                consume(TokenType.LBRACE, "Esperado '{' após 'else'.");
+                elseBranch = new Stmt.Block(block());
+            }
+        }
+
+        return new Expr.If(condition, thenBranch, elseBranch);
     }
 
     private Stmt throwStatement() {
@@ -632,24 +658,6 @@ public class Parser {
         return null;
     }
 
-    private Stmt ifStatement() {
-        Expr condition = expression();
-        consume(TokenType.LBRACE, "Esperado '{' após a condição do if.");
-        Stmt thenBranch = new Stmt.Block(block());
-        Stmt elseBranch = null;
-
-        // Suporte a IF ELSE encadeado
-        if (match(TokenType.ELSE)) {
-            if (match(TokenType.IF)) {
-                elseBranch = ifStatement(); // Recursão genial para resolver o "else if"
-            } else {
-                consume(TokenType.LBRACE, "Esperado '{' após 'else'.");
-                elseBranch = new Stmt.Block(block());
-            }
-        }
-
-        return new Stmt.If(condition, thenBranch, elseBranch);
-    }
 
     private Expr objectLiteral() {
         List<Expr> keys = new ArrayList<>();
@@ -701,7 +709,18 @@ public class Parser {
 
     private Stmt expressionStatement() {
         Expr expr = expression();
-        consume(TokenType.SEMICOLON, "Esperado ';' após a expressão.");
+
+        // Se a expressão for um If (que já termina limpo em '}'), não exigimos o ';'
+        // ⭐ A REGRA DO RETORNO IMPLÍCITO ⭐
+        if (!(expr instanceof Expr.If)) {
+            if (check(TokenType.SEMICOLON)) {
+                advance(); // Consome o ';' limpo
+            } else if (!check(TokenType.RBRACE)) {
+                // Só atira erro se faltar o ';' E não for a última respiração antes de fechar a chaveta '}'!
+                throw error(peek(), "Esperado ';' após a expressão.");
+            }
+        }
+
         return new Stmt.ExpressionStmt(expr);
     }
 
@@ -713,22 +732,41 @@ public class Parser {
     // ==========================================
 
     private Expr expression() {
-        return assignment(); // Inicia a escada
+        return inlineIf(); // Inicia a escada
+    }
+
+    // ⭐ O LEITOR PYTHONIC (x if cond else y) ⭐
+    private Expr inlineIf() {
+        Expr expr = assignment(); // Puxa a tua base de precedência normal
+
+        if (match(TokenType.IF)) {
+            Expr condition = expression();
+            consume(TokenType.ELSE, "Esperado 'else' na expressão 'if' inline (Ex: valor if cond else default).");
+            Expr elseExpr = expression();
+
+            // Truque de Mestre: Embrulhamos as expressões simples em Stmt.ExpressionStmt para caberem na AST!
+            Stmt thenBranch = new Stmt.ExpressionStmt(expr);
+            Stmt elseBranch = new Stmt.ExpressionStmt(elseExpr);
+
+            return new Expr.If(condition, thenBranch, elseBranch);
+        }
+
+        return expr;
     }
 
     private Expr assignment() {
 
-        // ⭐Detetar Arrow Function de 1 parâmetro (ex: e => e.toUpperCase())
-        // Se o token atual for uma palavra e o token SEGUINTE for '=>'
+        // ⭐ Detetar Arrow Function de 1 parâmetro (Ex: e => e.toUpperCase()) [INTACTO!]
         if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
             Token param = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro da Arrow Function.");
             consume(TokenType.FAT_ARROW, "Esperado '=>' após o parâmetro.");
 
-            Expr body = expression(); // Lê o que a função faz!
+            Expr body = expression();
             return new Expr.ArrowFunction(param, body);
         }
 
-        Expr expr = equality();
+        // ⭐ A PONTE DE ENGENHARIA: Em vez de equality(), chamamos o topo da hierarquia lógica!
+        Expr expr = logicalOr();
 
         // 1. Atribuição Simples (=)
         if (match(TokenType.ASSIGN)) {
@@ -739,12 +777,9 @@ public class Parser {
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
             }
-            // ⭐ 2. É UMA PROPRIEDADE DE OBJETO? (ex: m.nome = "Leão") ⭐
             else if (expr instanceof Expr.Get get) {
-                // Transformamos o 'Get' num 'Set'!
                 return new Expr.Set(get.object, get.name, value);
             }
-            // NOVO: Se o que está à esquerda do '=' for um acesso a Array!
             else if (expr instanceof Expr.IndexAccess access) {
                 return new Expr.IndexAssign(access.object, access.bracket, access.index, value);
             }
@@ -757,7 +792,7 @@ public class Parser {
             Token operator = previous();
             Expr value = assignment();
             if (expr instanceof Expr.Variable || expr instanceof Expr.Get || expr instanceof Expr.IndexAccess) {
-                return new Expr.CompoundAssign(expr, operator, value); // Aceita Get!
+                return new Expr.CompoundAssign(expr, operator, value);
             }
             throw error(operator, "Alvo de atribuição composta inválido.");
         }
@@ -766,40 +801,112 @@ public class Parser {
         if (match(TokenType.PLUS_PLUS, TokenType.MINUS_MINUS)) {
             Token operator = previous();
             if (expr instanceof Expr.Variable || expr instanceof Expr.Get || expr instanceof Expr.IndexAccess) {
-                return new Expr.Update(expr, operator, false); // Aceita Get!
+                return new Expr.Update(expr, operator, false);
             }
             throw error(operator, "Alvo inválido para incremento/decremento.");
         }
 
         return expr;
     }
-    private Expr equality() {
-        Expr expr = comparison();
-        // Resolve os == e != (Esquerda para a direita)
-        while (match(TokenType.NOT_EQUAL, TokenType.EQUAL)) {
+
+
+    // =========================================================================
+    // A ESCADA DE PRECEDÊNCIA (Cola isto imediatamente abaixo do assignment)
+    // =========================================================================
+
+    // 1. OR Lógico (||) -> Curto-Circuito
+    private Expr logicalOr() {
+        Expr expr = logicalAnd();
+        while (match(TokenType.OR)) {
             Token operator = previous();
-            Expr right = comparison();
+            Expr right = logicalAnd();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // 2. AND Lógico (&&) -> Curto-Circuito
+    private Expr logicalAnd() {
+        Expr expr = bitwiseOr();
+        while (match(TokenType.AND)) {
+            Token operator = previous();
+            Expr right = bitwiseOr();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // 3. Bitwise OR (|)
+    private Expr bitwiseOr() {
+        Expr expr = bitwiseXor();
+        while (match(TokenType.BIT_OR)) {
+            Token operator = previous(); Expr right = bitwiseXor();
             expr = new Expr.Binary(expr, operator, right);
         }
         return expr;
     }
 
+    // 4. Bitwise XOR (^)
+    private Expr bitwiseXor() {
+        Expr expr = bitwiseAnd();
+        while (match(TokenType.BIT_XOR)) {
+            Token operator = previous(); Expr right = bitwiseAnd();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // 5. Bitwise AND (&)
+    private Expr bitwiseAnd() {
+        Expr expr = equality();
+        while (match(TokenType.BIT_AND)) {
+            Token operator = previous(); Expr right = equality();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // 6. Igualdade (==, !=, ===, !==)
+    private Expr equality() {
+        Expr expr = comparison();
+        while (match(TokenType.EQUAL, TokenType.NOT_EQUAL, TokenType.STRICT_EQUAL, TokenType.STRICT_NOT_EQUAL)) {
+            Token operator = previous(); Expr right = comparison();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // 7. Comparação e Tipagem (<, >, type, instance)
     private Expr comparison() {
-        Expr expr = term(); // Ou shift/bitwisse se já os tiveres
+        Expr expr = shift();
         while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.TYPE, TokenType.INSTANCE)) {
             Token operator = previous();
-
-            // ⭐ Se for uma validação de tipo, lê um TypeNode!
             if (operator.type == TokenType.TYPE || operator.type == TokenType.INSTANCE) {
                 TypeNode type = parseTypeAnnotation();
                 expr = new Expr.TypeCheck(expr, operator, type);
             } else {
-                Expr right = term();
+                Expr right = shift();
                 expr = new Expr.Binary(expr, operator, right);
             }
         }
         return expr;
     }
+
+    // 8. Deslocamento de Bits (<<, >>)
+    private Expr shift() {
+        Expr expr = term(); // Aqui desce para o teu term() normal (+ e -)
+        while (match(TokenType.SHIFT_LEFT, TokenType.SHIFT_RIGHT)) {
+            Token operator = previous(); Expr right = term();
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+
+
+    //**********************************
+
+
 
     private Expr term() {
         Expr expr = factor();
@@ -812,13 +919,25 @@ public class Parser {
         return expr;
     }
 
-    // 1. Atualiza o método que chamava o unary() (geralmente o factor() ou a multiplicação)
-    // Procura o teu método factor() e muda a primeira linha de 'Expr expr = unary();' para:
+    // 1. O Factor agora chama a Potência (power) em vez do cast!
     private Expr factor() {
-        Expr expr = cast(); // ⭐ Agora a multiplicação chama o cast primeiro!
+        Expr expr = power(); // ⭐ Mudou aqui!
         while (match(TokenType.STAR, TokenType.SLASH, TokenType.MODULO)) {
             Token operator = previous();
-            Expr right = cast(); // ⭐ E aqui também!
+            Expr right = power(); // ⭐ E aqui!
+            expr = new Expr.Binary(expr, operator, right);
+        }
+        return expr;
+    }
+
+    // ⭐ 2. O NOVO DEGRAU DA POTÊNCIA (Chama o cast) ⭐
+    private Expr power() {
+        Expr expr = cast();
+
+        // Nota: Se no teu TokenType a potência se chamar STAR_STAR, troca POWER por STAR_STAR
+        while (match(TokenType.POWER)) {
+            Token operator = previous();
+            Expr right = cast();
             expr = new Expr.Binary(expr, operator, right);
         }
         return expr;
@@ -849,7 +968,7 @@ public class Parser {
         }
 
         // Resolve operadores prefixados matemáticos (ex: -10)
-        if (match(TokenType.MINUS)) {
+        if (match(TokenType.MINUS, TokenType.BANG)) {
             Token operator = previous();
             Expr right = unary();
             return new Expr.Unary(operator, right);
@@ -912,10 +1031,17 @@ public class Parser {
         if (match(TokenType.FALSE)) return new Expr.Literal(false);
         if (match(TokenType.TRUE)) return new Expr.Literal(true);
         if (match(TokenType.NULL)) return new Expr.Literal(null); // ou TokenType.NIL
-
+        // No teu método primary():
+        if (match(TokenType.IF)) {
+            // Se a tua linguagem usa parêntesis obrigatórios no if (ex: if (cond)),
+            // lê-os aqui antes de chamar o bloco, ou deixa o ifExpressionBlock ler!
+            // (Vou assumir que o ifExpressionBlock resolve tudo segundo a tua lógica)
+            return ifExpressionBlock();
+        }
         if (match(TokenType.INT_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STRING_LITERAL)) {
             return new Expr.Literal(previous().literal);
         }
+
 
         if (match(TokenType.THIS)) {
             return new Expr.Variable(previous());
