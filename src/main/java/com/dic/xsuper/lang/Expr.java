@@ -29,6 +29,7 @@ public abstract class Expr {
         R visitIfExpr(If expr);
         R visitLogicalExpr(Logical logical);
         R visitSwitchExpr(Switch expr);
+        R visitMatchExpr(Match expr);
     }
 
 
@@ -580,6 +581,56 @@ public abstract class Expr {
             return "Switch{" +
                     "target=" + target +
                     ", cases=" + cases +
+                    ", defaultBranch=" + defaultBranch +
+                    '}';
+        }
+    }
+
+    // ⭐ O BRAÇO DO MATCH ⭐
+    public static class MatchArm {
+        public final TypeNode typeTest; // Ex: 'type String' (Pode ser null)
+        public final Expr valueTest;    // Ex: '200' ou '"OK"' (Pode ser null)
+        public final Expr guard;        // Ex: 'if (x > 10)' (Pode ser null)
+        public final Stmt body;         // O código a executar
+
+        public MatchArm(TypeNode typeTest, Expr valueTest, Expr guard, Stmt body) {
+            this.typeTest = typeTest;
+            this.valueTest = valueTest;
+            this.guard = guard;
+            this.body = body;
+        }
+
+        @Override
+        public String toString() {
+            return "MatchArm{" +
+                    "typeTest=" + typeTest +
+                    ", valueTest=" + valueTest +
+                    ", guard=" + guard +
+                    ", body=" + body +
+                    '}';
+        }
+    }
+
+    // ⭐ O COLOSSO: A Expressão Match ⭐
+    public static class Match extends Expr {
+        public final Expr target;
+        public final java.util.List<MatchArm> arms;
+        public final Stmt defaultBranch; // O 'default:' ou 'none:'
+
+        public Match(Expr target, java.util.List<MatchArm> arms, Stmt defaultBranch) {
+            this.target = target;
+            this.arms = arms;
+            this.defaultBranch = defaultBranch;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitMatchExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Match{" +
+                    "target=" + target +
+                    ", arms=" + arms +
                     ", defaultBranch=" + defaultBranch +
                     '}';
         }

@@ -1340,6 +1340,68 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Object visitMatchExpr(Expr.Match expr) {
+        Object targetVal = evaluate(expr.target);
+
+        for (Expr.MatchArm arm : expr.arms) {
+
+            // 1. Teste de Tipo falhou? Salta para o próximo braço!
+            if (arm.typeTest != null) {
+                if (!checkTypeMatch(targetVal, arm.typeTest)) continue;
+            }
+
+            // 2. Teste de Valor falhou? Salta!
+            if (arm.valueTest != null) {
+                Object valValue = evaluate(arm.valueTest);
+                if (!isEqualStrict(targetVal, valValue)) continue;
+            }
+
+            // 3. A Guarda Matemática 'if (cond)' deu falso? Salta!
+            if (arm.guard != null) {
+                Object guardResult = evaluate(arm.guard);
+                if (!isTruthy(guardResult)) continue;
+            }
+
+            // ⭐ PASSOU NA ALFÂNDEGA! Este é o braço vencedor.
+            return evaluateBranchAsExpression(arm.body);
+        }
+
+        // Se nenhum braço serviu, tenta a tua saída limpa (none: ou default:)
+        if (expr.defaultBranch != null) {
+            return evaluateBranchAsExpression(expr.defaultBranch);
+        }
+
+        return null;
+    }
+
+    // =========================================================================
+    // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
+    // =========================================================================
+    private boolean checkTypeMatch(Object obj, TypeNode typeNode) {
+        if (obj == null) return false; // null não herda nenhum tipo
+
+        String expectedName;
+        if (typeNode instanceof TypeNode.Simple) {
+            // Nota: Ajusta '.name.lexeme' para o nome exato da tua variável no TypeNode.Simple!
+            expectedName = ((TypeNode.Simple) typeNode).name.lexeme;
+        } else {
+            return false; // Ignoramos genéricos complexos no match por agora
+        }
+
+        return switch (expectedName) {
+            case "int" -> obj instanceof Long || obj instanceof Integer;
+            case "float" -> obj instanceof Double || obj instanceof Float;
+            case "String" -> obj instanceof String;
+            case "boolean" -> obj instanceof Boolean;
+            case "Array" -> obj instanceof List;
+            case "Object" -> obj instanceof Map;
+            default ->
+                // É o nome de uma classe XPL instanciada? Compara o nome da classe!
+                    obj.getClass().getSimpleName().equals(expectedName);
+        };
+    }
+
     // ⭐ O MOTOR DA "ÚLTIMA LINHA" (Retorno Implícito) ⭐
     private Object evaluateBranchAsExpression(Stmt branch) {
         // 1. É um Bloco { ... }? Executa tudo e captura a última respiração!

@@ -537,6 +537,58 @@ public class Parser {
         return new Expr.Switch(target, cases, defaultBranch);
     }
 
+    // ⭐ O LEITOR DO MATCH COMPLEXO ⭐
+    private Expr matchExpression() {
+        consume(TokenType.LPAREN, "Esperado '(' após 'match'.");
+        Expr target = expression();
+        consume(TokenType.RPAREN, "Esperado ')' após o alvo do match.");
+
+        consume(TokenType.LBRACE, "Esperado '{' antes dos braços do match.");
+
+        java.util.List<Expr.MatchArm> arms = new java.util.ArrayList<>();
+        Stmt defaultBranch = null;
+
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+            TypeNode typeTest = null;
+            Expr valueTest = null;
+            Expr guard = null;
+
+            // ⭐ A TUA REGRA: Suporte simultâneo a 'default:' e 'none:'
+            if (match(TokenType.DEFAULT, TokenType.NONE)) { // Garante que NONE está no teu Lexer!
+                consume(TokenType.COLON, "Esperado ':' após default/none.");
+                defaultBranch = statement();
+                continue;
+            }
+
+            // 1. É um teste de TIPO? (Ex: type String)
+            if (match(TokenType.TYPE)) {
+                typeTest = parseTypeAnnotation();
+                if (match(TokenType.IF)) { // type String if (len > 5)
+                    guard = expression();
+                }
+            }
+            // 2. É uma GUARDA PURA? (Ex: if (x > 100))
+            else if (match(TokenType.IF)) {
+                guard = expression();
+            }
+            // 3. É um VALOR EXATO? (Ex: 200, "OK", variavel)
+            else {
+                valueTest = expression();
+                if (match(TokenType.IF)) { // 200 if (modo == "seguro")
+                    guard = expression();
+                }
+            }
+
+            consume(TokenType.COLON, "Esperado ':' após a definição do padrão.");
+            Stmt body = statement(); // Lê a linha ou o bloco {}
+
+            arms.add(new Expr.MatchArm(typeTest, valueTest, guard, body));
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do match.");
+        return new Expr.Match(target, arms, defaultBranch);
+    }
+
     private Stmt throwStatement() {
         Token keyword = previous();
         Expr value = expression(); // O que vamos lançar? Pode ser uma string, número ou objeto!
@@ -1074,6 +1126,9 @@ public class Parser {
         }
         if (match(TokenType.SWITCH)) {
             return switchExpression();
+        }
+        if (match(TokenType.MATCH)) { // Garante que MATCH está no TokenType
+            return matchExpression();
         }
         if (match(TokenType.INT_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STRING_LITERAL)) {
             return new Expr.Literal(previous().literal);

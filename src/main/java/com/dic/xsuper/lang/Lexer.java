@@ -69,6 +69,8 @@ public class Lexer {
         keywords.put("instance", TokenType.INSTANCE);
         keywords.put("switch", TokenType.SWITCH);
         keywords.put("case", TokenType.CASE);
+        keywords.put("none", TokenType.NONE);
+        keywords.put("match", TokenType.MATCH);
     }
 
     public Lexer(String source) {

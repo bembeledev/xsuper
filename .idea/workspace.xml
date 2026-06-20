@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(parser): introduzir operador de potência, cleanup de dead-code e suporte a implicit return&#10;&#10;- Implementa o nó `power()` na hierarquia de precedência do Parser (entre `unary` e `factor`), resolvendo o parse error em operações com `**`.&#10;- Remove código zombie/duplicado de avaliação do nó `If` no método `primary()`.&#10;- Atualiza a mecânica de `expressionStatement` para adotar a semântica do Rust (Implicit Yielding), perdoando a ausência de `;` antes de fechamentos de bloco `}` para facilitar o retorno automático em expressões Orientadas a Bloco.">
-      <change afterPath="$PROJECT_DIR$/tests/switch.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição.">
+      <change afterPath="$PROJECT_DIR$/tests/match.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
@@ -244,7 +243,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781987269899</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição.">
+      <option name="closed" value="true" />
+      <created>1781988852645</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1781988852645</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -276,6 +283,7 @@
     <MESSAGE value="feat(core): implementar operador de cast estrito 'as' com suporte a primitivos e upcasting&#10;&#10;- Adiciona a palavra-chave `as` ao Lexer e introduz o nó sintático `Expr.Cast` na AST.&#10;- Atualiza o Parser para injetar o cast com alta precedência (imediatamente acima de operadores unários), permitindo resoluções complexas sem ambiguidade.&#10;- Desenvolve o motor de conversão no Interpretador (`visitCastExpr`), suportando:&#10;  * Conversões numéricas seguras (truncamento de double para long, e expansão de long para double).&#10;  * Parsing dinâmico de Strings em tempo de execução (usado em loops e coleções).&#10;  * Invocação implícita da cadeia `toString()` para casts de texto.&#10;  * Validação estrutural de Upcasting em instâncias POO, recorrendo ao rastreador genealógico (`isSubclassOf`), garantindo heranças seguras e compatibilidade com o congelamento `toObject()`." />
     <MESSAGE value="feat(core): implementar operadores de reflexão e cast seguro/forçado&#10;&#10;- Adiciona os operadores `typeof`, `type` e `instance` para inspeção avançada de tipos e validação de herança em tempo de execução.&#10;- Implementa os nós sintáticos `Expr.Typeof` e `Expr.TypeCheck` na AST.&#10;- Expande o operador de cast na gramática e no interpretador para suportar duas modalidades de segurança estrutural:&#10;  * Cast Seguro (`as`): Tenta a conversão e devolve `null` de forma silenciosa em caso de falha.&#10;  * Cast Forçado (`as!`): Atua como um contrato estrito, lançando um `RuntimeError` (ClassCastException) imediato caso os tipos sejam incompatíveis.&#10;- Refina as regras de extração do `Lexer` para reconhecer e processar o token `BANG` (`!`) isolado de forma correta, resolvendo o bloqueio de Parsing." />
     <MESSAGE value="feat(parser): introduzir operador de potência, cleanup de dead-code e suporte a implicit return&#10;&#10;- Implementa o nó `power()` na hierarquia de precedência do Parser (entre `unary` e `factor`), resolvendo o parse error em operações com `**`.&#10;- Remove código zombie/duplicado de avaliação do nó `If` no método `primary()`.&#10;- Atualiza a mecânica de `expressionStatement` para adotar a semântica do Rust (Implicit Yielding), perdoando a ausência de `;` antes de fechamentos de bloco `}` para facilitar o retorno automático em expressões Orientadas a Bloco." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(parser): introduzir operador de potência, cleanup de dead-code e suporte a implicit return&#10;&#10;- Implementa o nó `power()` na hierarquia de precedência do Parser (entre `unary` e `factor`), resolvendo o parse error em operações com `**`.&#10;- Remove código zombie/duplicado de avaliação do nó `If` no método `primary()`.&#10;- Atualiza a mecânica de `expressionStatement` para adotar a semântica do Rust (Implicit Yielding), perdoando a ausência de `;` antes de fechamentos de bloco `}` para facilitar o retorno automático em expressões Orientadas a Bloco." />
+    <MESSAGE value="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição." />
   </component>
 </project>
