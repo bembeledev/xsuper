@@ -12,7 +12,6 @@ var d = 100 as float;
 println("Inteiro para Float: " + d);          // O stringify tratará de mostrar como numérico puro
 
 
-
 println("==========================================", "#00FFFF");
 println("      SUPER XPL - STRESS TEST: CASTING    ", "#00FFFF");
 println("==========================================\n", "#00FFFF");

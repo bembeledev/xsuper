@@ -24,6 +24,8 @@ public abstract class Expr {
         Object visitSetExpr(Set expr);
         R visitSuperExpr(Super expr);
         R visitCastExpr(Cast expr);
+        R visitTypeCheckExpr(TypeCheck typeCheck);
+        R visitTypeofExpr(Typeof typeof);
     }
 
 
@@ -412,16 +414,61 @@ public abstract class Expr {
         }
     }
 
+    // ⭐ NOVO: O nó para o typeof(expr)
+    public static class Typeof extends Expr {
+        public final Token keyword;
+        public final Expr expression;
+
+        public Typeof(Token keyword, Expr expression) {
+            this.keyword = keyword;
+            this.expression = expression;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitTypeofExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Typeof{" +
+                    "keyword=" + keyword +
+                    ", expression=" + expression +
+                    '}';
+        }
+    }
+
+    // ⭐ NOVO: O nó para 'expr type Tipo' e 'expr instance Tipo'
+    public static class TypeCheck extends Expr {
+        public final Expr left;
+        public final Token operator; // Guarda o token 'type' ou 'instance'
+        public final TypeNode rightType;
+
+        public TypeCheck(Expr left, Token operator, TypeNode rightType) {
+            this.left = left;
+            this.operator = operator;
+            this.rightType = rightType;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitTypeCheckExpr(this); }
+
+        @Override
+        public String toString() {
+            return "TypeCheck{" +
+                    "left=" + left +
+                    ", operator=" + operator +
+                    ", rightType=" + rightType +
+                    '}';
+        }
+    }
+
     // ⭐ NOVO NÓ DE CONVERSÃO (CAST) ⭐
     public static class Cast extends Expr {
         public final Expr value;
         public final Token operator; // Guardamos o token 'as' para dar erros precisos
         public final TypeNode type;  // O tipo de destino (int, float, string, etc.)
+        public final boolean isForced;
 
-        public Cast(Expr value, Token operator, TypeNode type) {
+        public Cast(Expr value, Token operator, TypeNode type, boolean isForced) {
             this.value = value;
             this.operator = operator;
             this.type = type;
+            this.isForced = isForced;
         }
 
         @Override
@@ -433,6 +480,7 @@ public abstract class Expr {
                     "value=" + value +
                     ", operator=" + operator +
                     ", type=" + type +
+                    ", isForced=" + isForced +
                     '}';
         }
     }

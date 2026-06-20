@@ -1185,48 +1185,108 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitCastExpr(Expr.Cast expr) {
         Object value = evaluate(expr.value);
+
+        // Se for null, devolvemos null (não se pode fazer cast a nulls, a menos que seja um upcast que já era null)
         if (value == null) return null;
 
-        TokenType targetType = expr.type.name.type; // Ex: T_INT, T_FLOAT, T_STRING
+        TokenType targetType = expr.type.name.type;
 
         try {
             switch (targetType) {
-                // 1. CAST PARA INTEIRO (int)
                 case T_INT:
-                    if (value instanceof Double) return ((Double) value).longValue(); // Corta as casas decimais!
-                    if (value instanceof Long) return value;
-                    if (value instanceof String) return Long.parseLong((String) value);
+                    switch (value) {
+                        case Double aDouble -> {
+                            return aDouble.longValue();
+                        }
+                        case Long l -> {
+                            return value;
+                        }
+                        case String string -> {
+                            return Long.parseLong(string);
+                        }
+                        default -> {
+                        }
+                    }
                     break;
-
-                // 2. CAST PARA DECIMAL (float)
                 case T_FLOAT:
-                    if (value instanceof Long) return ((Long) value).doubleValue();
-                    if (value instanceof Double) return value;
-                    if (value instanceof String) return Double.parseDouble((String) value);
+                    switch (value) {
+                        case Long l -> {
+                            return l.doubleValue();
+                        }
+                        case Double v -> {
+                            return value;
+                        }
+                        case String string -> {
+                            return Double.parseDouble(string);
+                        }
+                        default -> {
+                        }
+                    }
                     break;
-
-                // 3. CAST PARA TEXTO (string)
                 case T_STRING:
-                    return stringify(value); // Usa a tua super função que chama o toString()!
-
-                // 4. CAST DE OBJETOS POO (Upcasting / Verificação)
+                    return stringify(value);
                 case IDENTIFIER:
-                    if (value instanceof XplInstance) {
-                        String targetClassName = expr.type.name.lexeme;
-                        XplInstance instance = (XplInstance) value;
-
-                        // O objeto herda ou é dessa classe?
-                        if (instance.klass.model.isSubclassOf(targetClassName)) {
-                            return value; // Cast seguro!
+                    if (value instanceof XplInstance instance) {
+                        if (instance.klass.model.isSubclassOf(expr.type.name.lexeme)) {
+                            return value; // Upcast seguro
                         }
                     }
                     break;
             }
         } catch (NumberFormatException e) {
-            throw new ControlFlow.RuntimeError(expr.operator, "Falha ao converter o valor '" + stringify(value) + "' para " + expr.type.name.lexeme + ".");
+            // O cast falhou matematicamente (ex: "texto" as! int)
         }
 
-        throw new ControlFlow.RuntimeError(expr.operator, "Tipo de Cast inválido. Não é possível converter para " + expr.type.name.lexeme + ".");
+        // ⭐ A DECISÃO: Seguro vs Forçado ⭐
+        if (expr.isForced) {
+            throw new ControlFlow.RuntimeError(expr.operator, "Cast Forçado Falhou (ClassCastException): Não é possível converter '" + stringify(value) + "' para o tipo " + expr.type.name.lexeme + ".");
+        }
+
+        return null; // Cast Seguro devolve null!
+    }
+
+    @Override
+    public Object visitTypeCheckExpr(Expr.TypeCheck expr) {
+        Object left = evaluate(expr.left);
+        String targetType = expr.rightType.name.lexeme;
+
+        if (expr.operator.type == TokenType.INSTANCE) {
+            // ⭐ INSTANCE: Exige correspondência exata de classe! Sem heranças.
+            if (left instanceof XplInstance) {
+                return ((XplInstance) left).klass.model.name.equals(targetType);
+            }
+            return false; // Primitivos não são instâncias exactas de classes
+        } else {
+            // ⭐ TYPE: Validação flexível (aceita primitivos e subclasses)
+            if (left == null) return false;
+            if (targetType.equals("int") && left instanceof Long) return true;
+            if (targetType.equals("float") && (left instanceof Double || left instanceof Long)) return true;
+            return switch (left) {
+                case String string when targetType.equals("string") -> true;
+                case Boolean b when targetType.equals("bool") -> true;
+                case List list when targetType.equals("array") -> true;
+                case XplInstance xplInstance -> xplInstance.klass.model.isSubclassOf(targetType); // O ADN bate certo?
+
+                default -> false;
+            };
+        }
+    }
+
+    @Override
+    public Object visitTypeofExpr(Expr.Typeof expr) {
+        Object value = evaluate(expr.expression);
+        return switch (value) {
+            case null -> "null";
+            case Long l -> "int";
+            case Double v -> "float";
+            case String string -> "string";
+            case Boolean b -> "bool";
+            case List list -> "array";
+            case Map map -> "object";
+            case XplInstance xplInstance -> xplInstance.klass.model.name;
+            case XplClass xplClass -> "class";
+            default -> "unknown";
+        };
     }
 
     @Override

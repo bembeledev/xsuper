@@ -117,10 +117,7 @@ println(reprod);
 // Executa método herdado da Implementação Base do Animal
 leao.verIdade();
 
-
-
 var mam = new Mamifero("Tato",21,"Oil");
 mam.verIdade();
-
 
 println(">> Execução concluída com sucesso da Arquitetura XPL!", "#00FF00");

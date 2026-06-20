@@ -34,7 +34,7 @@ fun ProcessarFicheiros(extensao:string) {
     // Executa comando nativo do teu terminal Xplorer!
     let resultado = shell("ps");
 
-    return "Processamento terminado!";
+    return resultado += "Processamento terminado!";
 }
 
 // Uma função matemática pura

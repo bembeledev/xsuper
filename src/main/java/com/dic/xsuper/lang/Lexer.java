@@ -63,6 +63,9 @@ public class Lexer {
         keywords.put("throws", TokenType.THROWS);
         keywords.put("readonly", TokenType.READONLY);
         keywords.put("final", TokenType.FINAL);
+        keywords.put("typeof", TokenType.TYPEOF);
+        keywords.put("type", TokenType.TYPE);
+        keywords.put("instance", TokenType.INSTANCE);
     }
 
     public Lexer(String source) {
@@ -134,7 +137,7 @@ public class Lexer {
                 }
             }
             break;
-            case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.ERROR); break;
+            case '!': addToken(match('=') ? TokenType.NOT_EQUAL : TokenType.BANG); break;
             case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
 

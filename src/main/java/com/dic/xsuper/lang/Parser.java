@@ -785,12 +785,18 @@ public class Parser {
     }
 
     private Expr comparison() {
-        Expr expr = term();
-        // Resolve os <, >, <=, >=
-        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL)) {
+        Expr expr = term(); // Ou shift/bitwisse se já os tiveres
+        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.TYPE, TokenType.INSTANCE)) {
             Token operator = previous();
-            Expr right = term();
-            expr = new Expr.Binary(expr, operator, right);
+
+            // ⭐ Se for uma validação de tipo, lê um TypeNode!
+            if (operator.type == TokenType.TYPE || operator.type == TokenType.INSTANCE) {
+                TypeNode type = parseTypeAnnotation();
+                expr = new Expr.TypeCheck(expr, operator, type);
+            } else {
+                Expr right = term();
+                expr = new Expr.Binary(expr, operator, right);
+            }
         }
         return expr;
     }
@@ -821,18 +827,27 @@ public class Parser {
     // 2. Cria a nova regra do CAST (que chama o unary por baixo)
     private Expr cast() {
         Expr expr = unary();
-
         while (match(TokenType.AS)) {
             Token operator = previous();
-            // Reaproveitamos o teu leitor de tipos que já usamos nos parâmetros e atributos!
+            // ⭐ A MAGIA SINTÁTICA: Se o próximo token for '!', é forçado!
+            boolean isForced = match(TokenType.BANG);
             TypeNode type = parseTypeAnnotation();
-            expr = new Expr.Cast(expr, operator, type);
+            expr = new Expr.Cast(expr, operator, type, isForced);
         }
-
         return expr;
     }
 
     private Expr unary() {
+
+        // ⭐ NOVO: Ler o typeof(expr)
+        if (match(TokenType.TYPEOF)) {
+            Token keyword = previous();
+            consume(TokenType.LPAREN, "Esperado '(' após 'typeof'.");
+            Expr expr = expression();
+            consume(TokenType.RPAREN, "Esperado ')' após a expressão.");
+            return new Expr.Typeof(keyword, expr);
+        }
+
         // Resolve operadores prefixados matemáticos (ex: -10)
         if (match(TokenType.MINUS)) {
             Token operator = previous();
