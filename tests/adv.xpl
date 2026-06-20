@@ -28,6 +28,5 @@ for i in (1,10){
     pessoas.push(p);
 }
 
-
 println(pessoas);
 

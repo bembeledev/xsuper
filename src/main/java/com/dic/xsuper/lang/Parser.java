@@ -806,14 +806,29 @@ public class Parser {
         return expr;
     }
 
+    // 1. Atualiza o método que chamava o unary() (geralmente o factor() ou a multiplicação)
+    // Procura o teu método factor() e muda a primeira linha de 'Expr expr = unary();' para:
     private Expr factor() {
-        Expr expr = unary();
-        // Resolve Multiplicações e Divisões (Precedência mais alta que a soma!)
-        while (match(TokenType.SLASH, TokenType.STAR, TokenType.POWER, TokenType.MODULO, TokenType.HASH)) {
+        Expr expr = cast(); // ⭐ Agora a multiplicação chama o cast primeiro!
+        while (match(TokenType.STAR, TokenType.SLASH, TokenType.MODULO)) {
             Token operator = previous();
-            Expr right = unary();
+            Expr right = cast(); // ⭐ E aqui também!
             expr = new Expr.Binary(expr, operator, right);
         }
+        return expr;
+    }
+
+    // 2. Cria a nova regra do CAST (que chama o unary por baixo)
+    private Expr cast() {
+        Expr expr = unary();
+
+        while (match(TokenType.AS)) {
+            Token operator = previous();
+            // Reaproveitamos o teu leitor de tipos que já usamos nos parâmetros e atributos!
+            TypeNode type = parseTypeAnnotation();
+            expr = new Expr.Cast(expr, operator, type);
+        }
+
         return expr;
     }
 

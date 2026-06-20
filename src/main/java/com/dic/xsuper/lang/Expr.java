@@ -23,6 +23,7 @@ public abstract class Expr {
         R visitNewExpr(New expr);
         Object visitSetExpr(Set expr);
         R visitSuperExpr(Super expr);
+        R visitCastExpr(Cast expr);
     }
 
 
@@ -408,6 +409,31 @@ public abstract class Expr {
         @Override
         public String toString() {
             return "Super{method=" + method.lexeme + "}";
+        }
+    }
+
+    // ⭐ NOVO NÓ DE CONVERSÃO (CAST) ⭐
+    public static class Cast extends Expr {
+        public final Expr value;
+        public final Token operator; // Guardamos o token 'as' para dar erros precisos
+        public final TypeNode type;  // O tipo de destino (int, float, string, etc.)
+
+        public Cast(Expr value, Token operator, TypeNode type) {
+            this.value = value;
+            this.operator = operator;
+            this.type = type;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitCastExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Cast{" +
+                    "value=" + value +
+                    ", operator=" + operator +
+                    ", type=" + type +
+                    '}';
         }
     }
 }

@@ -1183,6 +1183,53 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitCastExpr(Expr.Cast expr) {
+        Object value = evaluate(expr.value);
+        if (value == null) return null;
+
+        TokenType targetType = expr.type.name.type; // Ex: T_INT, T_FLOAT, T_STRING
+
+        try {
+            switch (targetType) {
+                // 1. CAST PARA INTEIRO (int)
+                case T_INT:
+                    if (value instanceof Double) return ((Double) value).longValue(); // Corta as casas decimais!
+                    if (value instanceof Long) return value;
+                    if (value instanceof String) return Long.parseLong((String) value);
+                    break;
+
+                // 2. CAST PARA DECIMAL (float)
+                case T_FLOAT:
+                    if (value instanceof Long) return ((Long) value).doubleValue();
+                    if (value instanceof Double) return value;
+                    if (value instanceof String) return Double.parseDouble((String) value);
+                    break;
+
+                // 3. CAST PARA TEXTO (string)
+                case T_STRING:
+                    return stringify(value); // Usa a tua super função que chama o toString()!
+
+                // 4. CAST DE OBJETOS POO (Upcasting / Verificação)
+                case IDENTIFIER:
+                    if (value instanceof XplInstance) {
+                        String targetClassName = expr.type.name.lexeme;
+                        XplInstance instance = (XplInstance) value;
+
+                        // O objeto herda ou é dessa classe?
+                        if (instance.klass.model.isSubclassOf(targetClassName)) {
+                            return value; // Cast seguro!
+                        }
+                    }
+                    break;
+            }
+        } catch (NumberFormatException e) {
+            throw new ControlFlow.RuntimeError(expr.operator, "Falha ao converter o valor '" + stringify(value) + "' para " + expr.type.name.lexeme + ".");
+        }
+
+        throw new ControlFlow.RuntimeError(expr.operator, "Tipo de Cast inválido. Não é possível converter para " + expr.type.name.lexeme + ".");
+    }
+
+    @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         return environment.get(expr.name.lexeme);
     }
