@@ -500,6 +500,43 @@ public class Parser {
         return new Expr.If(condition, thenBranch, elseBranch);
     }
 
+    // ⭐ O LEITOR DO SWITCH SEM BREAK ⭐
+    private Expr switchExpression() {
+        consume(TokenType.LPAREN, "Esperado '(' após 'switch'.");
+        Expr target = expression();
+        consume(TokenType.RPAREN, "Esperado ')' após o alvo do switch.");
+
+        consume(TokenType.LBRACE, "Esperado '{' antes dos casos do switch.");
+
+        java.util.List<Expr.SwitchCase> cases = new java.util.ArrayList<>();
+        Stmt defaultBranch = null;
+
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+            if (match(TokenType.CASE)) {
+                java.util.List<Expr> values = new java.util.ArrayList<>();
+                // 1. Lê todos os valores do 'case' separados por vírgula
+                do {
+                    values.add(expression());
+                } while (match(TokenType.COMMA));
+
+                consume(TokenType.COLON, "Esperado ':' após os valores do caso.");
+
+                // 2. Lê o corpo! Como reaproveitamos o statement(), ele aceita um comando solto ou um bloco {}
+                Stmt body = statement();
+                cases.add(new Expr.SwitchCase(values, body));
+
+            } else if (match(TokenType.DEFAULT)) {
+                consume(TokenType.COLON, "Esperado ':' após 'default'.");
+                defaultBranch = statement();
+            } else {
+                throw error(peek(), "Esperado 'case' ou 'default' dentro do switch.");
+            }
+        }
+
+        consume(TokenType.RBRACE, "Esperado '}' após o corpo do switch.");
+        return new Expr.Switch(target, cases, defaultBranch);
+    }
+
     private Stmt throwStatement() {
         Token keyword = previous();
         Expr value = expression(); // O que vamos lançar? Pode ser uma string, número ou objeto!
@@ -904,9 +941,6 @@ public class Parser {
 
 
 
-    //**********************************
-
-
 
     private Expr term() {
         Expr expr = factor();
@@ -1037,6 +1071,9 @@ public class Parser {
             // lê-os aqui antes de chamar o bloco, ou deixa o ifExpressionBlock ler!
             // (Vou assumir que o ifExpressionBlock resolve tudo segundo a tua lógica)
             return ifExpressionBlock();
+        }
+        if (match(TokenType.SWITCH)) {
+            return switchExpression();
         }
         if (match(TokenType.INT_LITERAL, TokenType.FLOAT_LITERAL, TokenType.STRING_LITERAL)) {
             return new Expr.Literal(previous().literal);

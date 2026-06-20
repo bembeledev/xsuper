@@ -28,6 +28,7 @@ public abstract class Expr {
         R visitTypeofExpr(Typeof typeof);
         R visitIfExpr(If expr);
         R visitLogicalExpr(Logical logical);
+        R visitSwitchExpr(Switch expr);
     }
 
 
@@ -536,6 +537,50 @@ public abstract class Expr {
                     "left=" + left +
                     ", operator=" + operator +
                     ", right=" + right +
+                    '}';
+        }
+    }
+
+    // ⭐ O AUXILIAR: Representa uma linha 'case 1, 2: bloco;' ⭐
+    public static class SwitchCase {
+        public final java.util.List<Expr> values; // Valores a testar (ex: 1, 2)
+        public final Stmt body;                   // O código a executar
+
+        public SwitchCase(java.util.List<Expr> values, Stmt body) {
+            this.values = values;
+            this.body = body;
+        }
+
+        @Override
+        public String toString() {
+            return "SwitchCase{" +
+                    "values=" + values +
+                    ", body=" + body +
+                    '}';
+        }
+    }
+
+    // ⭐ O NÓ PRINCIPAL: O Switch Orientado a Expressão ⭐
+    public static class Switch extends Expr {
+        public final Expr target;
+        public final java.util.List<SwitchCase> cases;
+        public final Stmt defaultBranch; // Pode ser null se não houver 'default:'
+
+        public Switch(Expr target, java.util.List<SwitchCase> cases, Stmt defaultBranch) {
+            this.target = target;
+            this.cases = cases;
+            this.defaultBranch = defaultBranch;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) { return visitor.visitSwitchExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Switch{" +
+                    "target=" + target +
+                    ", cases=" + cases +
+                    ", defaultBranch=" + defaultBranch +
                     '}';
         }
     }

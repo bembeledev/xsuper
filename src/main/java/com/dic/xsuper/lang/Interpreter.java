@@ -1313,6 +1313,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return evaluate(expr.right);
     }
 
+    @Override
+    public Object visitSwitchExpr(Expr.Switch expr) {
+        // 1. Avalia o Alvo principal (ex: a variável que está dentro do switch(x))
+        Object targetValue = evaluate(expr.target);
+
+        // 2. Percorre todos os casos à procura de um match perfeito
+        for (Expr.SwitchCase switchCase : expr.cases) {
+            for (Expr caseValueExpr : switchCase.values) {
+                Object caseValue = evaluate(caseValueExpr);
+
+                // Compara o alvo com o valor do caso usando o método seguro da linguagem
+                if (isEqualStrict(targetValue, caseValue)) {
+                    // ⭐ DEVOLVE IMEDIATO! (Simula o Break automático + Retorno)
+                    return evaluateBranchAsExpression(switchCase.body);
+                }
+            }
+        }
+
+        // 3. Se nenhum caso bateu certo, tenta a rota de fuga (default)
+        if (expr.defaultBranch != null) {
+            return evaluateBranchAsExpression(expr.defaultBranch);
+        }
+
+        // 4. Se não tem default e falhou tudo, não devolve nada.
+        return null;
+    }
+
     // ⭐ O MOTOR DA "ÚLTIMA LINHA" (Retorno Implícito) ⭐
     private Object evaluateBranchAsExpression(Stmt branch) {
         // 1. É um Bloco { ... }? Executa tudo e captura a última respiração!

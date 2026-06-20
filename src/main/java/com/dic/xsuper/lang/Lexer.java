@@ -67,6 +67,8 @@ public class Lexer {
         keywords.put("typeof", TokenType.TYPEOF);
         keywords.put("type", TokenType.TYPE);
         keywords.put("instance", TokenType.INSTANCE);
+        keywords.put("switch", TokenType.SWITCH);
+        keywords.put("case", TokenType.CASE);
     }
 
     public Lexer(String source) {
