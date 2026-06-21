@@ -170,12 +170,16 @@ public class Lexer {
                 }
                 break;
             }
+            case '?':
+                if (match('?')) addToken(TokenType.QUESTION_QUESTION);
+                else if (match('.')) addToken(TokenType.QUESTION_DOT);
+                else addToken(TokenType.QUESTION); // O question mark normal dos tipos (?string)
+                break;
             case '<':
                 if (match('<')) addToken(TokenType.SHIFT_LEFT);
                 else if (match('=')) addToken(TokenType.LESS_EQUAL);
                 else addToken(TokenType.LESS);
                 break;
-
             case '>':
                 if (match('>')) addToken(TokenType.SHIFT_RIGHT);
                 else if (match('=')) addToken(TokenType.GREATER_EQUAL);

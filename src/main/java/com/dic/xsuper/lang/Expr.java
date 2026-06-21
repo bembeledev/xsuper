@@ -30,6 +30,10 @@ public abstract class Expr {
         R visitLogicalExpr(Logical logical);
         R visitSwitchExpr(Switch expr);
         R visitMatchExpr(Match expr);
+        R visitUnwrapExpr(Unwrap unwrap);
+        R visitNullCoalesceExpr(NullCoalesce nullCoalesce);
+        R visitOptionalChainingExpr(OptionalChaining optionalChaining);
+        R visitOptionalCallExpr(OptionalCall optionalCall);
     }
 
 
@@ -632,6 +636,96 @@ public abstract class Expr {
                     "target=" + target +
                     ", arms=" + arms +
                     ", defaultBranch=" + defaultBranch +
+                    '}';
+        }
+    }
+
+
+    // ⭐ 1. COALESCÊNCIA NULA ( a ?? b )
+    public static class NullCoalesce extends Expr {
+        public final Expr left;
+        public final Token operator;
+        public final Expr right;
+
+        public NullCoalesce(Expr left, Token operator, Expr right) {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitNullCoalesceExpr(this); }
+
+        @Override
+        public String toString() {
+            return "NullCoalesce{" +
+                    "left=" + left +
+                    ", operator=" + operator +
+                    ", right=" + right +
+                    '}';
+        }
+    }
+
+    // ⭐ 2. ENCADEAMENTO OPCIONAL DE PROPRIEDADE ( obj?.nome )
+    public static class OptionalChaining extends Expr {
+        public final Expr object;
+        public final Token name;
+
+        public OptionalChaining(Expr object, Token name) {
+            this.object = object;
+            this.name = name;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitOptionalChainingExpr(this); }
+
+        @Override
+        public String toString() {
+            return "OptionalChaining{" +
+                    "object=" + object +
+                    ", name=" + name +
+                    '}';
+        }
+    }
+
+    // ⭐ 3. CHAMADA OPCIONAL DE MÉTODO ( obj?.limpar() )
+    public static class OptionalCall extends Expr {
+        public final Expr object;
+        public final Token methodName;
+        public final Token paren;
+        public final java.util.List<Expr> arguments;
+
+        public OptionalCall(Expr object, Token methodName, Token paren, java.util.List<Expr> arguments) {
+            this.object = object;
+            this.methodName = methodName;
+            this.paren = paren;
+            this.arguments = arguments;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitOptionalCallExpr(this); }
+
+        @Override
+        public String toString() {
+            return "OptionalCall{" +
+                    "object=" + object +
+                    ", methodName=" + methodName +
+                    ", paren=" + paren +
+                    ", arguments=" + arguments +
+                    '}';
+        }
+    }
+
+    // ⭐ 4. UNWRAP FORÇADO ( obj! )
+    public static class Unwrap extends Expr {
+        public final Expr expr;
+        public final Token operator;
+
+        public Unwrap(Expr expr, Token operator) {
+            this.expr = expr;
+            this.operator = operator;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitUnwrapExpr(this); }
+
+        @Override
+        public String toString() {
+            return "Unwrap{" +
+                    "expr=" + expr +
+                    ", operator=" + operator +
                     '}';
         }
     }

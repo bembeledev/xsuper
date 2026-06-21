@@ -31,6 +31,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
+
         this.registry = registry;
         this.currentDirectory = currentDirectory;
 
@@ -110,6 +111,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
             @Override public String toString() { return "<native class Map>"; }
         });
+
+        errorInject();
+    }
+
+    private void errorInject() {
+        // =========================================================================
+        // ⭐ O GÉNESIS DA CLASSE 'Error' NATÍVA (Com Modificador de Visibilidade) ⭐
+        // =========================================================================
+        XPLModel baseErrorModel = new XPLModel("Error", null);
+        baseErrorModel.hasBaseImplementation = true;
+
+        // ⭐ A ARMA DESARMADA: Fabricamos um Token de visibilidade 'pub' legítimo!
+        // (Nota: Se no teu TokenType o modificador público se chamar PUBLIC em vez de PUB, altera abaixo)
+        Token pubToken = new Token(TokenType.PUB, "pub", null, 0, 0);
+
+        Token msgToken = new Token(TokenType.IDENTIFIER, "message", null, 0, 0);
+
+        // Injetamos o 'pubToken' no 1º argumento em vez de 'null'!
+        baseErrorModel.addField(new Stmt.FieldDecl(
+                pubToken,
+                false, false, false,
+                msgToken,
+                new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0))
+        ));
+
+        this.registry_model.put("Error", baseErrorModel);
+        this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
     }
 
     public void interpret(List<Stmt> statements) {
@@ -328,6 +356,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
+
+
+
+
+
         String baseName = stmt.targetName.lexeme;
 
         // 1. Vai buscar o modelo base (Declare) ao teu NOVO map!
@@ -461,72 +494,69 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitTryStmt(Stmt.Try stmt) {
         try {
             execute(stmt.tryBlock);
+
         } catch (ControlFlow.ThrowException e) {
-            handleCatch(stmt, e.value, e); // Lida com o throw manual
+            handleCatch(stmt, e.value, e); // Rota A: Throw explícito do utilizador
+
         } catch (ControlFlow.RuntimeError e) {
-
-            Object errorValue = e.getMessage(); // Por padrão, os erros do motor são Strings
-
-            // 🚀 SUPER PODER: Injeção Nativa de POO 🚀
-            // Se o utilizador tiver feito 'declare Error', nós embrulhamos o erro nativo do motor XPL dentro dessa classe!
-            if (registry_model.containsKey("Error")) {
-                XPLModel errModel = registry_model.get("Error");
-                if (errModel.hasBaseImplementation) {
-                    XplClass errClass = new XplClass(errModel, globals);
-                    XplInstance errInst = new XplInstance(errClass);
-
-                    // Procura inteligentemente onde colocar a mensagem de erro (aceita 'mensage', 'mensagem', 'message')
-                    for (String field : errModel.fields.keySet()) {
-                        if (field.toLowerCase().contains("mensa") || field.toLowerCase().contains("messa")) {
-                            errInst.set(new Token(TokenType.IDENTIFIER, field, null, -1, -1), e.getMessage());
-                            break;
-                        }
-                    }
-                    errorValue = errInst; // Agora o erro nativo do motor é um objeto XPL legítimo!
-                }
-            }
-
+            // Rota B: O Hipervisor delega a fabricação do objeto para a linha de montagem
+            Object errorValue = resolveRuntimeErrorObject(e);
             handleCatch(stmt, errorValue, e);
 
         } finally {
-            if (stmt.finallyBlock != null) {
-                execute(stmt.finallyBlock);
-            }
+            if (stmt.finallyBlock != null) execute(stmt.finallyBlock);
         }
         return null;
     }
 
+    // ⭐ FÁBRICA DE TRANSMUTAÇÃO (Auxiliar privada do Roteador 2) ⭐
+    private Object resolveRuntimeErrorObject(ControlFlow.RuntimeError e) {
+        if (!registry_model.containsKey("Error")) return e.getMessage();
+
+        XPLModel errModel = registry_model.get("Error");
+        if (!errModel.hasBaseImplementation) return e.getMessage();
+
+        XplClass errClass = new XplClass(errModel, globals);
+        XplInstance errInst = new XplInstance(errClass);
+
+        // Heurística flexível de injeção de texto (messa / mensa)
+        for (String field : errModel.fields.keySet()) {
+            String fLower = field.toLowerCase();
+            if (fLower.contains("mensa") || fLower.contains("messa")) {
+                Token fieldToken = new Token(TokenType.IDENTIFIER, field, null, -1, -1);
+                errInst.set(fieldToken, e.getMessage());
+                break;
+            }
+        }
+        return errInst; // Transmutado em POO nativa com sucesso!
+    }
+
+
     // ⭐ 3. O ROTEADOR SEQUENCIAL ⭐
     private void handleCatch(Stmt.Try stmt, Object errorValue, RuntimeException originalException) {
-        boolean caught = false;
 
-        // Testa os blocos catch por ordem (Top-Down). O mais específico deve vir primeiro!
         for (Stmt.CatchClause clause : stmt.catchClauses) {
+
             if (isTypeMatch(errorValue, clause.type)) {
 
-                // Cria um escopo isolado só para a variável de erro
                 Environment catchEnv = new Environment(this.environment);
                 catchEnv.defineLet(clause.name.lexeme, errorValue);
 
                 Environment previous = this.environment;
                 try {
                     this.environment = catchEnv;
-                    execute(clause.body); // Executa apenas este catch!
+                    execute(clause.body);
+                    return; // ⭐ O erro foi capturado e tratado. Corta a função instantaneamente!
+
                 } finally {
                     this.environment = previous;
                 }
-
-                caught = true;
-                break; // O erro foi tratado, salta fora!
             }
         }
 
-        // Se o erro era um 'NumberError' e não havia nenhum catch compatível... ele explode!
-        if (!caught) {
-            throw originalException;
-        }
+        // Se o loop rodou até ao fim sem disparar o 'return', nenhum catch serviu. Explode!
+        throw originalException;
     }
-
     @Override
     public Void visitForCStyleStmt(Stmt.ForCStyle stmt) {
         // 1. Criamos uma "Jaula" (Escopo) só para o loop.
@@ -1376,30 +1406,141 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
+    // 1. COALESCÊNCIA NULA ( a ?? b )
+    // =========================================================================
+    @Override
+    public Object visitNullCoalesceExpr(Expr.NullCoalesce expr) {
+        Object left = evaluate(expr.left);
+
+        // Se a esquerda for estritamente nula, avalia e devolve a direita!
+        if (left == null) {
+            return evaluate(expr.right);
+        }
+        return left;
+    }
+
+    // =========================================================================
+    // 2. UNWRAP FORÇADO ( obj! )
+    // =========================================================================
+    @Override
+    public Object visitUnwrapExpr(Expr.Unwrap expr) {
+        Object valor = evaluate(expr.expr);
+
+        if (valor == null) {
+            // ⭐ A TUA MENSAGEM EXATA DO VOLUME 21:
+            throw new ControlFlow.RuntimeError(expr.operator,
+                    "UnwrapError: Tentativa de abrir um valor nulo!");
+        }
+        return valor;
+    }
+
+    // =========================================================================
+    // 3. ENCADEAMENTO DE PROPRIEDADE ( obj?.prop )
+    // =========================================================================
+    // =========================================================================
+    // 3. ENCADEAMENTO DE PROPRIEDADE ( obj?.prop ) - BILINGUE ⭐
+    // =========================================================================
+    @Override
+    public Object visitOptionalChainingExpr(Expr.OptionalChaining expr) {
+        Object leftObject = evaluate(expr.object);
+
+        // 1. Se o elo anterior é estritamente nulo, a corrente dissipa-se em null
+        if (leftObject == null) return null;
+
+        // ROTA A: É uma instância de um 'declare' do utilizador?
+        if (leftObject instanceof XplInstance) {
+            return ((XplInstance) leftObject).get(expr.name);
+        }
+
+        // ⭐ ROTA B: É um Mapa / Dicionário Literal? (A salvação da Linha 36!)
+        if (leftObject instanceof Map<?, ?> mapa) {
+            String chave = expr.name.lexeme;
+
+            // Em JS/TypeScript, fazer 'mapa?.chaveInexistente' devolve null em vez de dar erro.
+            return mapa.getOrDefault(chave, null);
+        }
+
+        throw new ControlFlow.RuntimeError(expr.name,
+                "Operação '?.' inválida: O alvo (do tipo " + leftObject.getClass().getSimpleName() + ") não possui propriedades acessíveis.");
+    }
+
+    // =========================================================================
+    // 4. CHAMADA OPCIONAL DE MÉTODO ( obj?.metodo() ) - BILINGUE ⭐
+    // =========================================================================
+    @Override
+    public Object visitOptionalCallExpr(Expr.OptionalCall expr) {
+        Object leftObject = evaluate(expr.object);
+
+        if (leftObject == null) return null;
+
+        Object metodoInvocavel = null;
+
+        // Rota A: Método de uma XplInstance
+        if (leftObject instanceof XplInstance) {
+            metodoInvocavel = ((XplInstance) leftObject).get(expr.methodName);
+        }
+        // Rota B: Uma função/lambda guardada dentro de uma chave de um Mapa Literal!
+        else if (leftObject instanceof java.util.Map) {
+            metodoInvocavel = ((java.util.Map<?, ?>) leftObject).get(expr.methodName.lexeme);
+        }
+
+        if (metodoInvocavel instanceof XplCallable callable) {
+
+            java.util.List<Object> evalArgs = new java.util.ArrayList<>();
+            for (Expr arg : expr.arguments) {
+                evalArgs.add(evaluate(arg));
+            }
+            return callable.call(this, evalArgs);
+        }
+
+        throw new ControlFlow.RuntimeError(expr.methodName,
+                "O método opcional '?." + expr.methodName.lexeme + "()' não existe ou não é invocável no objeto alvo.");
+    }
+
+
+    // =========================================================================
     // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
     // =========================================================================
     private boolean checkTypeMatch(Object obj, TypeNode typeNode) {
-        if (obj == null) return false; // null não herda nenhum tipo
 
-        String expectedName;
-        if (typeNode instanceof TypeNode.Simple) {
-            // Nota: Ajusta '.name.lexeme' para o nome exato da tua variável no TypeNode.Simple!
-            expectedName = ((TypeNode.Simple) typeNode).name.lexeme;
-        } else {
-            return false; // Ignoramos genéricos complexos no match por agora
+        // ⭐ A REGRA DE OURO DO VOLUME 21 ⭐
+        if (typeNode instanceof TypeNode.Optional) {
+            // 1. Se o objeto é nulo, e o tipo aceita nulo (?T), PASSOU NA ALFÂNDEGA!
+            if (obj == null) return true;
+
+            // 2. Se não é nulo, desempacota o '?' e testa o valor real contra o tipo interno:
+            return checkTypeMatch(obj, ((TypeNode.Optional) typeNode).innerType);
         }
 
-        return switch (expectedName) {
-            case "int" -> obj instanceof Long || obj instanceof Integer;
-            case "float" -> obj instanceof Double || obj instanceof Float;
-            case "String" -> obj instanceof String;
-            case "boolean" -> obj instanceof Boolean;
-            case "Array" -> obj instanceof List;
-            case "Object" -> obj instanceof Map;
-            default ->
-                // É o nome de uma classe XPL instanciada? Compara o nome da classe!
-                    obj.getClass().getSimpleName().equals(expectedName);
-        };
+        // Para todos os outros tipos normais (não-opcionais), o null é estritamente PROIBIDO!
+        if (obj == null) return false;
+
+        Token typeToken;
+        if (typeNode instanceof TypeNode.Simple) {
+            typeToken = ((TypeNode.Simple) typeNode).name;
+        } else {
+            return false;
+        }
+
+        switch (typeToken.type) {
+            case T_INT:     return obj instanceof Long || obj instanceof Integer;
+            case T_FLOAT:   return obj instanceof Double || obj instanceof Float;
+            case T_STRING:  return obj instanceof String;
+            case T_BOOL: return obj instanceof Boolean;
+            case T_ARRAY:   return obj instanceof java.util.List;
+            case T_OBJECT:  return obj instanceof java.util.Map;
+
+            case IDENTIFIER:
+                String customTypeName = typeToken.lexeme;
+                if (obj instanceof XplInstance) {
+                    XPLModel modelo = ((XplInstance) obj).klass.model;
+                    return modelo.isSubclassOf(customTypeName);
+                }
+                return obj.getClass().getSimpleName().equals(customTypeName);
+
+            default:
+                return false;
+        }
     }
 
     // ⭐ O MOTOR DA "ÚLTIMA LINHA" (Retorno Implícito) ⭐

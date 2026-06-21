@@ -166,14 +166,12 @@ public class Parser {
                 do {
                     Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
                     consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
-                    Token paramType = advance();
-                    if (paramType.type != TokenType.T_INT && paramType.type != TokenType.T_FLOAT &&
-                            paramType.type != TokenType.T_STRING && paramType.type != TokenType.T_ARRAY &&
-                            paramType.type != TokenType.T_OBJECT && paramType.type != TokenType.T_ENUM &&
-                            paramType.type != TokenType.IDENTIFIER) {
-                        throw error(paramType, "Tipo de parâmetro inválido.");
-                    }
-                    parameters.add(new Stmt.Param(paramName, paramType));
+
+                    // ⭐ ADEUS TRATOR CEGO. Entra a Árvore Sintática:
+                    TypeNode paramTypeNode = parseTypeAnnotation();
+
+                    parameters.add(new Stmt.Param(paramName, paramTypeNode));
+
                 } while (match(TokenType.COMMA));
             }
             consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
@@ -273,15 +271,10 @@ public class Parser {
                     Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
                     consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
 
-                    Token paramType = advance();
-                    if (paramType.type != TokenType.T_INT && paramType.type != TokenType.T_FLOAT &&
-                            paramType.type != TokenType.T_STRING && paramType.type != TokenType.T_ARRAY &&
-                            paramType.type != TokenType.T_OBJECT && paramType.type != TokenType.T_ENUM &&
-                            paramType.type != TokenType.IDENTIFIER) {
-                        throw error(paramType, "Tipo de parâmetro inválido na assinatura do método.");
-                    }
+                    // ⭐ A TRANSFORMAÇÃO: Adeus trator cego, olá leitor quântico!
+                    TypeNode paramTypeNode = parseTypeAnnotation();
 
-                    parameters.add(new Stmt.Param(paramName, paramType));
+                    parameters.add(new Stmt.Param(paramName, paramTypeNode));
 
                 } while (match(TokenType.COMMA));
             }
@@ -352,8 +345,11 @@ public class Parser {
             do {
                 Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
                 consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
-                Token paramType = advance(); // Captura o tipo (int, string, etc.)
-                parameters.add(new Stmt.Param(paramName, paramType));
+
+                // ⭐ A CORONOAÇÃO DO PARSER: Leitura fractal e padronizada de tipos!
+                TypeNode paramTypeNode = parseTypeAnnotation();
+
+                parameters.add(new Stmt.Param(paramName, paramTypeNode));
             } while (match(TokenType.COMMA));
         }
         consume(TokenType.RPAREN, "Esperado ')' após os parâmetros.");
@@ -421,6 +417,13 @@ public class Parser {
     }
 
     private TypeNode parseTypeAnnotation() {
+        // ⭐ 1. A INTERCEÇÃO DO OPCIONAL ('?') ⭐
+        // Se começar por '?', consome-o e chama a si próprio para ler o tipo que vem à frente!
+        if (match(TokenType.QUESTION)) {
+            TypeNode inner = parseTypeAnnotation();
+            return new TypeNode.Optional(inner);
+        }
+
         Token baseName;
 
         // 1. Lê a base do tipo (T_INT, T_STRING, IDENTIFIER, etc.)
@@ -855,7 +858,7 @@ public class Parser {
         }
 
         // ⭐ A PONTE DE ENGENHARIA: Em vez de equality(), chamamos o topo da hierarquia lógica!
-        Expr expr = logicalOr();
+        Expr expr = nullCoalesce();
 
         // 1. Atribuição Simples (=)
         if (match(TokenType.ASSIGN)) {
@@ -898,6 +901,16 @@ public class Parser {
         return expr;
     }
 
+    // ⭐ O NOVO DEGRAU DA COALESCÊNCIA ⭐
+    private Expr nullCoalesce() {
+        Expr expr = logicalOr(); // Desce para o OR normal
+        while (match(TokenType.QUESTION_QUESTION)) { // Token '??'
+            Token operator = previous();
+            Expr right = logicalOr();
+            expr = new Expr.NullCoalesce(expr, operator, right);
+        }
+        return expr;
+    }
 
     // =========================================================================
     // A ESCADA DE PRECEDÊNCIA (Cola isto imediatamente abaixo do assignment)
@@ -1059,7 +1072,17 @@ public class Parser {
             Expr right = unary();
             return new Expr.Unary(operator, right);
         }
-        return callExpression();
+        return postfix(); // ⭐ Antes chamava callExpression(), agora passa pelo postfixo!
+    }
+
+    // ⭐ O DEGRAU DO UNWRAP FORÇADO ( obj! )
+    private Expr postfix() {
+        Expr expr = callExpression();
+        while (match(TokenType.BANG)) { // Se vir um '!' logo a seguir a um identificador/expressão:
+            Token bang = previous();
+            expr = new Expr.Unwrap(expr, bang);
+        }
+        return expr;
     }
 
     /**
@@ -1081,7 +1104,11 @@ public class Parser {
                 Token name = consume(TokenType.IDENTIFIER, "Esperado nome do método após '.'.");
                 expr = new Expr.Get(expr, name);
             }
-            else {
+            // ⭐ NOVO: O Encadeamento Opcional (?.)
+            else if (match(TokenType.QUESTION_DOT)) {
+                Token name = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade após '?.'");
+                expr = new Expr.OptionalChaining(expr, name);
+            } else {
                 break;
             }
         }
@@ -1104,6 +1131,12 @@ public class Parser {
         }
 
         Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos da função.");
+        // Se o alvo a ser invocado era um 'obj?.metodo', convertemo-lo instantaneamente num OptionalCall!
+        if (callee instanceof Expr.OptionalChaining) {
+            Expr.OptionalChaining opt = (Expr.OptionalChaining) callee;
+            return new Expr.OptionalCall(opt.object, opt.name, paren, arguments);
+        }
+
         return new Expr.Call(callee, paren, arguments);
     }
 

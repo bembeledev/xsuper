@@ -42,4 +42,22 @@ public abstract class TypeNode {
             return sb.toString();
         }
     }
+
+    // ⭐ NOVO: Representa um tipo embrulhado em '?' (Ex: ?string)
+    public static class Optional extends TypeNode {
+        public final TypeNode innerType;
+
+        public Optional(TypeNode innerType) {
+            // ⭐ A SACADA DE MESTRE: Alimentamos o Pai com o Token do recheio!
+            // Se o innerType for 'string', o Optional herda o nome 'string' na base.
+            super(innerType.name);
+
+            this.innerType = innerType;
+        }
+
+        @Override
+        public String toString() {
+            return "?" + innerType.toString();
+        }
+    }
 }

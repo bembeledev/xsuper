@@ -429,13 +429,14 @@ public abstract class Stmt {
     }
 
     // Representa um parâmetro fortemente tipado: nome: tipo
+    // ⭐ A EVOLUÇÃO PARA O PRESENTE:
     public static class Param {
         public final Token name;
-        public final Token type;
+        public final TypeNode typeNode; // Promovido!
 
-        public Param(Token name, Token type) {
+        public Param(Token name, TypeNode typeNode) {
             this.name = name;
-            this.type = type;
+            this.typeNode = typeNode;
         }
     }
 
