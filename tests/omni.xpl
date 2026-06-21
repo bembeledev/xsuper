@@ -8,12 +8,12 @@ println("\n[1/6] Instanciando Declares e testando Implement...");
 declare Entidade {
     pub nome: String;
     pub nivel: int;
-    pub vivo: boolean;
+    pub vivo: bool;
 }
 
 implement Entidade {
     // ⭐ O CONSTRUTOR EXPLÍCITO ⭐
-    pub fun init(nome: String, nivel: int, vivo: boolean) {
+    pub fun init(nome: String, nivel: int, vivo: bool) {
         this.nome = nome;
         this.nivel = nivel;
         this.vivo = vivo;
@@ -82,11 +82,6 @@ println("  -> Nivel do Mob[0] mutado via Arrow: " + esquadrao[0].nivel);
 
 // --- 5. O SISTEMA DE ESCUDO (Try / Catch / Throw) ---
 println("\n[5/6] Testando o Escudo de Excecoes...");
-
-declare Error {
-    pub message: string;
-}
-implement Error { default { message: "Erro Desconhecido" } }
 
 var logExcecao = "Vazio";
 try {

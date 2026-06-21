@@ -28,7 +28,7 @@ for i in (inicio * 2, 50 / 2) {
 }
 
 // Função que processa dados e retorna o resultado
-fun ProcessarFicheiros(extensao:string) {
+fun ProcessarFicheiros(extensao:string):string {
     println("A procurar ficheiros com a extensão: " + extensao, "#00FF00");
 
     // Executa comando nativo do teu terminal Xplorer!

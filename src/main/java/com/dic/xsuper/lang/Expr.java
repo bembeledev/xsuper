@@ -143,12 +143,31 @@ public abstract class Expr {
         }
     }
 
+    // ⭐ ARGUMENTO BIVALENTE DE CHAMADA (Pode ser posicional ou nomeado)
+    public static class CallArg {
+        public final Token name; // null se for posicional (ex: "82570"), preenchido se for nomeado (ex: nome: "Nelson")
+        public final Expr expression;
+
+        public CallArg(Token name, Expr expression) {
+            this.name = name;
+            this.expression = expression;
+        }
+
+        @Override
+        public String toString() {
+            return "CallArg{" +
+                    "name=" + name +
+                    ", expression=" + expression +
+                    '}';
+        }
+    }
+
     public static class Call extends Expr {
         public final Expr callee; // O nome da função
         public final Token paren; // O parêntesis de fecho (para indicar a linha em caso de erro)
-        public final List<Expr> arguments;
+        public final java.util.List<CallArg> arguments;
 
-        public Call(Expr callee, Token paren, List<Expr> arguments) {
+        public Call(Expr callee, Token paren, List<CallArg> arguments) {
             this.callee = callee;
             this.paren = paren;
             this.arguments = arguments;
@@ -354,26 +373,24 @@ public abstract class Expr {
     public static class New extends Expr {
         public final Token keyword;
         public final Token className;
-        public final List<Expr> arguments;
         public final String typeArguments;
+        public final List<CallArg> arguments; // ⭐ PROMOVIDO de List<Expr> para List<CallArg>!
 
-        public New(Token keyword, Token className, String typeArguments, List<Expr> arguments) {
+        public New(Token keyword, Token className, String typeArguments, List<CallArg> arguments) {
             this.keyword = keyword;
             this.className = className;
             this.arguments = arguments;
             this.typeArguments = typeArguments;
         }
-
-        @Override
-        public <R> R accept(Visitor<R> visitor) { return visitor.visitNewExpr(this); }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitNewExpr(this); }
 
         @Override
         public String toString() {
             return "New{" +
                     "keyword=" + keyword +
                     ", className=" + className +
-                    ", arguments=" + arguments +
                     ", typeArguments='" + typeArguments + '\'' +
+                    ", arguments=" + arguments +
                     '}';
         }
     }
@@ -689,9 +706,9 @@ public abstract class Expr {
         public final Expr object;
         public final Token methodName;
         public final Token paren;
-        public final java.util.List<Expr> arguments;
+        public final List<CallArg> arguments; // ⭐ PROMOVIDO de List<Expr> para List<CallArg>!
 
-        public OptionalCall(Expr object, Token methodName, Token paren, java.util.List<Expr> arguments) {
+        public OptionalCall(Expr object, Token methodName, Token paren, List<CallArg> arguments) {
             this.object = object;
             this.methodName = methodName;
             this.paren = paren;
@@ -729,4 +746,6 @@ public abstract class Expr {
                     '}';
         }
     }
+
+
 }

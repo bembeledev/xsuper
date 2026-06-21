@@ -10,7 +10,6 @@ public abstract class Stmt {
         R visitExpressionStmt(ExpressionStmt stmt);
         R visitVarDeclStmt(VarDecl stmt);
         R visitBlockStmt(Block stmt);
-
         R visitForCStyleStmt(ForCStyle stmt);
         R visitFunctionStmt(Function stmt);
         R visitBreakStmt(Break stmt);
@@ -434,10 +433,21 @@ public abstract class Stmt {
     public static class Param {
         public final Token name;
         public final TypeNode typeNode; // Promovido!
+        public final Expr defaultValue;
 
-        public Param(Token name, TypeNode typeNode) {
+        public Param(Token name, TypeNode typeNode, Expr defaultValue) {
             this.name = name;
             this.typeNode = typeNode;
+            this.defaultValue = defaultValue;
+        }
+
+        @Override
+        public String toString() {
+            return "Param{" +
+                    "name=" + name +
+                    ", typeNode=" + typeNode +
+                    ", defaultValue=" + defaultValue +
+                    '}';
         }
     }
 

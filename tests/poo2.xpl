@@ -27,6 +27,7 @@ abstract implement Animal {
        this.nome = nome;
        this.id = id;
      }
+
     // Método concreto herdado por todos os filhos
     pub fun verIdade(): int {
         println("Tenho " + this.id + " anos");
@@ -102,7 +103,7 @@ println("--- TESTE DE EXECUÇÃO ---", "#FFFF00");
 //var erro = new Fish(); // A GUILHOTINA IA CORTAR ISTO! (Base abstrata)
 //println(erro);
 
-var leao = new Mam1(1,"1w");
+var leao = new Mam1("",12);
 leao.id = 5;
 leao.localizacao = "Savana Africana";
 

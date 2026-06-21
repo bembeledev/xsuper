@@ -1,16 +1,17 @@
 package com.dic.xsuper.lang.poo;
 
 import com.dic.xsuper.lang.Environment;
+import com.dic.xsuper.lang.Expr;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.XplCallable;
-import com.dic.xsuper.lang.XplFunction; // Garante esta importação
-import com.dic.xsuper.lang.Stmt;        // Garante esta importação
+import com.dic.xsuper.lang.XplFunction;
+import com.dic.xsuper.lang.Stmt;
 
 import java.util.List;
 
 public class XplClass implements XplCallable {
     public final XPLModel model;
-    public final Environment closure; // O ambiente onde a classe foi registada
+    public final Environment closure;
 
     public XplClass(XPLModel model, Environment closure) {
         this.model = model;
@@ -19,42 +20,26 @@ public class XplClass implements XplCallable {
 
     @Override
     public int arity() {
-        // ⭐ 1. A FILTRAGEM DE ARIDADE DINÂMICA ⭐
-        // Usamos o 'findMethod' que criámos para ver se existe um construtor 'init'
         Stmt.Function initializer = model.findMethod("init");
-
-        // Se não houver construtor, o 'new' aceita 0 argumentos.
-        if (initializer == null) return 0;
-
-        // Se houver, a classe herda o número de parâmetros exigidos pelo 'init'!
-        return initializer.params.size();
+        return initializer == null ? 0 : initializer.params.size();
     }
 
+    // ⭐ A TUA ASSINATURA SOBERANA:
     @Override
-    public Object call(Interpreter interpreter, List<Object> arguments) {
-        // 1. Cria o bloco de memória limpo (Instância)
+    public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
         XplInstance instance = new XplInstance(this);
-
-        // ⭐ 2. O DESPERTAR DO CONSTRUTOR ⭐
-        // Procura se o modelo (ou os seus pais) definiram um método 'init'
         Stmt.Function initializer = model.findMethod("init");
 
         if (initializer != null) {
             XPLModel owner = model.getOwnerOfMethod("init");
-            // Transforma a AST da função num comportamento invocável
-            XplFunction constructor = new XplFunction(initializer, closure,owner);
+            XplFunction constructor = new XplFunction(initializer, closure, owner);
 
-            // Amarramos o context 'this' à nova instância e executamos imediatamente
-            // passando os argumentos que vieram do 'new Modelo(args...)'
+            // Passagem direta: Entregamos os CallArgs crus na mão da função init!
             constructor.bind(instance).call(interpreter, arguments);
         }
 
-        // 3. Devolve o objeto vivo e totalmente preenchido
         return instance;
     }
 
-    @Override
-    public String toString() {
-        return "<class " + model.name + ">";
-    }
+    @Override public String toString() { return "<class " + model.name + ">"; }
 }

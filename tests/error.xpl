@@ -1,9 +1,5 @@
 println(">>> TESTE DE TRATAMENTO DE ERROS <<<", "#00FFFF");
 
-declare Error {
-    pub message: string;
-}
-implement Error { default { message: "Erro Desconhecido" } }
 
 declare NumberError extends Error {
     pub valorTentado: int;

@@ -1,4 +1,4 @@
-declare IOError {
+declare IOError extends Error {
     pub message: string;
 }
 implement IOError { default { message: "Erro Desconhecido" } }

@@ -25,6 +25,6 @@ println(c.saldo);   // OK! É readonly, o público pode ler!
 // println(c.password); // ERRO FATAL: É privada!
 
 // 2. ESCREVER:
-c.depositar(500);   // OK!
+c.depositar(500.0);   // OK!
 //c.saldo = 50000; // ERRO FATAL: Tentativa de escrita externa em readonly!
 c.MOEDA = "USD"; // ERRO FATAL: Propriedade é Final!

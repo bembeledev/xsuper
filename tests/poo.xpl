@@ -66,6 +66,6 @@ println("Nome: "+ m.nome);
 println("Local: "+ m.localizacao);
 m2.id = 21;
 println(m.getId()*m2.getId());
-m.add(12);
+m.add("12");
 m.delete(100);
 // O visitGetExpr também vai encontrar o método add(), mas a Invocação... falaremos a seguir!

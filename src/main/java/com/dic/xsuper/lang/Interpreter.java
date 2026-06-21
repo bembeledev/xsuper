@@ -39,22 +39,34 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.registry = registry;
         this.currentDirectory = currentDirectory;
 
+        // =========================================================================
+        // ⭐ A VACINA DOS NATIVOS (No construtor do Interpreter.java) ⭐
+        // =========================================================================
+
         // Função Nativa: println
         globals.defineConst("println", new XplCallable() {
-            @Override
-            public int arity() {
-                return -1;
-            }
+            @Override public int arity() { return -1; }
 
             @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                if (arguments.isEmpty() || arguments.size() > 2)
+            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+
+                // ⭐ 1. O FOGÃO: Cozinhamos os nós da AST transformando-os em matéria real!
+                java.util.List<Object> argsCozinhados = new java.util.ArrayList<>();
+                for (Expr.CallArg arg : arguments) {
+                    // É ESTA INVOCACÃO QUE FAZ A SOMA DO "Nome: " + m.nome ACONTECER:
+                    argsCozinhados.add(interpreter.evaluate(arg.expression));
+                }
+
+                if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
                     throw new RuntimeException("println espera 1 ou 2 argumentos.");
-                String text = stringify(arguments.get(0));
-                if (arguments.size() == 2) {
-                    System.out.println(hexToAnsi(stringify(arguments.get(1))) + text + ConsoleTheme.RESET);
+                }
+
+                String texto = interpreter.stringify(argsCozinhados.get(0));
+
+                if (argsCozinhados.size() == 2) {
+                    System.out.println(hexToAnsi(interpreter.stringify(argsCozinhados.get(1))) + texto + ConsoleTheme.RESET);
                 } else {
-                    System.out.println(ConsoleTheme.TEXT + text + ConsoleTheme.RESET);
+                    System.out.println(ConsoleTheme.TEXT + texto + ConsoleTheme.RESET);
                 }
                 return null;
             }
@@ -62,21 +74,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // Função Nativa: print
         globals.defineConst("print", new XplCallable() {
-            @Override
-            public int arity() {
-                return -1;
-            }
+            @Override public int arity() { return -1; }
 
             @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                if (arguments.isEmpty() || arguments.size() > 2)
-                    throw new RuntimeException("print espera 1 ou 2 argumentos.");
-                String text = stringify(arguments.get(0));
-                if (arguments.size() == 2) {
-                    System.out.print(hexToAnsi(stringify(arguments.get(1))) + text + ConsoleTheme.RESET);
-                } else {
-                    System.out.print(ConsoleTheme.TEXT + text + ConsoleTheme.RESET);
+            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+
+                java.util.List<Object> argsCozinhados = new java.util.ArrayList<>();
+                for (Expr.CallArg arg : arguments) {
+                    argsCozinhados.add(interpreter.evaluate(arg.expression));
                 }
+
+                if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
+                    throw new RuntimeException("print espera 1 ou 2 argumentos.");
+                }
+
+                String texto = interpreter.stringify(argsCozinhados.get(0));
+                System.out.print(texto);
                 System.out.flush();
                 return null;
             }
@@ -85,13 +98,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Função Nativa: shell
         globals.defineConst("shell", new XplCallable() {
             @Override
-            public int arity() {
-                return 1;
-            }
+            public int arity() { return 1; }
 
             @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                String commandStr = stringify(arguments.getFirst());
+            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+                // ⭐ A VACINA: Cozinha o CallArg transformando-o na string real ("ps", "ls", etc.)
+                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter, arguments);
+                String commandStr = interpreter.stringify(argsCozinhados.getFirst());
+
                 PrintStream originalOut = System.out;
                 ByteArrayOutputStream memoryStream = new ByteArrayOutputStream();
                 try (PrintStream captureOut = new PrintStream(memoryStream, true, StandardCharsets.UTF_8)) {
@@ -109,7 +123,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Define o construtor nativo do 'Map' no escopo global!
         globals.defineConst("Map", new XplCallable() {
             @Override public int arity() { return 0; } // Construtor vazio new Map()
-            @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
                 // Devolve um HashMap novo e vazio!
                 return new java.util.LinkedHashMap<String, Object>();
             }
@@ -117,6 +131,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         });
 
         errorInject();
+    }
+
+    public static java.util.List<Object> unpackNativeArgs(Interpreter interpreter, java.util.List<Expr.CallArg> rawArgs) {
+        java.util.List<Object> evaluated = new java.util.ArrayList<>();
+        for (Expr.CallArg arg : rawArgs) {
+            // As funções nativas do Prelude não usam nomes, engolem tudo posicionalmente:
+            evaluated.add(interpreter.evaluate(arg.expression));
+        }
+        return evaluated;
     }
 
     private void errorInject() {
@@ -158,7 +181,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         stmt.accept(this);
     }
 
-    private Object evaluate(Expr expr) {
+    public Object evaluate(Expr expr) {
         return expr.accept(this);
     }
 
@@ -515,6 +538,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         if (expectedType == TokenType.T_STRING && value instanceof String) return true;
         if (expectedType == TokenType.T_INT && value instanceof Long) return true;
+        if (expectedType == TokenType.T_BOOL && value instanceof Boolean) return true;
         if (expectedType == TokenType.T_FLOAT && (value instanceof Double || value instanceof Long)) return true;
         if (expectedType == TokenType.T_ARRAY && value instanceof List) return true;
         if (expectedType == TokenType.T_OBJECT && value instanceof Map) return true;
@@ -1000,7 +1024,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     public int arity() { return 0; }
 
                     @Override
-                    public Object call(Interpreter interpreter, java.util.List<Object> args) {
+                    public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
                         // Copia todas as propriedades vivas e CONGELA-AS num mapa imutável!
                         java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
                         return java.util.Collections.unmodifiableMap(snapshot);
@@ -1063,40 +1087,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Guarda o ambiente atual para que a Arrow Function se lembre das variáveis de fora (Closure!)
         Environment closure = this.environment;
 
-        // Criamos uma função anónima na hora
         return new XplCallable() {
             @Override
-            public int arity() {
-                return 1; // Recebe exatamente 1 parâmetro (ex: o 'e')
-            }
+            public int arity() { return 1; }
 
             @Override
-            public Object call(Interpreter interpreter, List<Object> arguments) {
-                // 1. Cria um mini-escopo para a função
+            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
                 Environment arrowEnv = new Environment(closure);
 
-                // 2. Injeta o valor do parâmetro lá para dentro
-                arrowEnv.defineLet(expr.parameter.lexeme, arguments.getFirst());
+                // ⭐ O DESEMPACOTADOR QUÂNTICO DA ARROW FUNCTION ⭐
+                // Cozinhamos a AST crua transformando o CallArg no valor real (1L, "Texto", etc.)
+                Object valorAvaliado = arguments.isEmpty() ? null : interpreter.evaluate(arguments.getFirst().expression);
 
-                // 3. Executa o corpo da função e devolve o resultado!
-                Environment previous = interpreter.environment; // Acede através da instância atual
+                arrowEnv.defineLet(expr.parameter.lexeme, valorAvaliado);
+
+                Environment previous = interpreter.environment;
                 try {
-                    // Forçamos o interpretador a usar o mini-escopo
-                    // Usamos uma abordagem reflexiva ou alteramos temporariamente o escopo do interpretador
-                    interpreter.executeBlock(new ArrayList<>(), arrowEnv); // Truque para mudar de escopo
-
-                    // IMPORTANTE: Como é uma Expressão (Expr) e não um Bloco de Stmt,
-                    // avaliamos a expressão diretamente com o escopo trocado temporariamente!
                     interpreter.environment = arrowEnv;
                     return interpreter.evaluate(expr.body);
-
                 } finally {
-                    interpreter.environment = previous; // Restaura sempre!
+                    interpreter.environment = previous;
                 }
             }
 
-            @Override
-            public String toString() { return "<arrow fn>"; }
+            @Override public String toString() { return "<arrow fn>"; }
         };
     }
 
@@ -1126,7 +1140,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     "Erro: O modelo '" + modelName + "' não foi declarado.");
         }
 
-        // 2. Só agora verificamos as regras de negócio (as "Guilhotinas")
+        // 2. Verificamos as travas estruturais de base
         if (!model.hasBaseImplementation) {
             throw new ControlFlow.RuntimeError(expr.className,
                     "ERRO FATAL: O modelo '" + modelName + "' não possui uma implementação base.");
@@ -1137,24 +1151,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     "ERRO FATAL: Operação Ilegal. O modelo '" + modelName + "' possui uma implementação abstrata e não pode ser instanciado diretamente.");
         }
 
-        // ⭐ 3. A CORREÇÃO: Avaliar os argumentos como fazemos no call()! ⭐
-        List<Object> arguments = new ArrayList<>();
-        for (Expr argument : expr.arguments) {
-            arguments.add(evaluate(argument)); // Transforma Expr no valor real (String, Long, etc)
-        }
-
-        // Se passou pelas validações, instancia!
         XplClass klass = new XplClass(model, environment);
 
-        // ⭐ 4. SUPER-BÓNUS: A Guilhotina do Construtor! ⭐
-        // Aproveitamos e protegemos para que não deixem faltar argumentos no 'new'
-        if (klass.arity() != -1 && arguments.size() != klass.arity()) {
-            throw new ControlFlow.RuntimeError(expr.className,
-                    "O construtor do modelo '" + modelName + "' espera " + klass.arity() + " argumentos, mas obteve " + arguments.size() + ".");
-        }
-
-        // Passamos a lista de argumentos perfeitamente processada!
-        return klass.call(this, arguments);
+        // ⭐ PASSE DIRETO PURO: Entregamos a fila de Expr.CallArg crua à XplClass!
+        // O algoritmo de 3 fases do método init() fará o alinhamento de nomes e auditoria de omissões.
+        return klass.call(this, expr.arguments);
     }
 
     @Override
@@ -1504,7 +1505,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
-    // 4. CHAMADA OPCIONAL DE MÉTODO ( obj?.metodo() ) - BILINGUE ⭐
+    // 4. CHAMADA OPCIONAL DE MÉTODO ( obj?.metodo() ) - LAZY BINDING ⭐
     // =========================================================================
     @Override
     public Object visitOptionalCallExpr(Expr.OptionalCall expr) {
@@ -1514,22 +1515,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         Object metodoInvocavel = null;
 
-        // Rota A: Método de uma XplInstance
-        if (leftObject instanceof XplInstance) {
-            metodoInvocavel = ((XplInstance) leftObject).get(expr.methodName);
+        if (leftObject instanceof XplInstance instance) {
+            metodoInvocavel = instance.get(expr.methodName);
         }
-        // Rota B: Uma função/lambda guardada dentro de uma chave de um Mapa Literal!
-        else if (leftObject instanceof java.util.Map) {
-            metodoInvocavel = ((java.util.Map<?, ?>) leftObject).get(expr.methodName.lexeme);
+        else if (leftObject instanceof java.util.Map<?, ?> mapa) {
+            metodoInvocavel = mapa.get(expr.methodName.lexeme);
         }
 
         if (metodoInvocavel instanceof XplCallable callable) {
-
-            java.util.List<Object> evalArgs = new java.util.ArrayList<>();
-            for (Expr arg : expr.arguments) {
-                evalArgs.add(evaluate(arg));
-            }
-            return callable.call(this, evalArgs);
+            // ⭐ PASSE DIRETO PURO: Entregamos a fila de CallArgs crua ao callee!
+            return callable.call(this, expr.arguments);
         }
 
         throw new ControlFlow.RuntimeError(expr.methodName,
@@ -1540,7 +1535,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // =========================================================================
     // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
     // =========================================================================
-    private boolean checkTypeMatch(Object obj, TypeNode typeNode) {
+    boolean checkTypeMatch(Object obj, TypeNode typeNode) {
 
         // ⭐ 0. O PRISMA DO VOLUME 20: Dissolve qualquer Alias no seu tipo concreto! ⭐
         typeNode = resolveConcreteType(typeNode);
@@ -1559,7 +1554,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         Token typeToken;
         if (typeNode instanceof TypeNode.Simple) {
-            typeToken = ((TypeNode.Simple) typeNode).name;
+            typeToken = typeNode.name;
         } else {
             return false;
         }
@@ -1760,31 +1755,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitCallExpr(Expr.Call expr) {
-        // 1. Avalia o nome da função (ex: procura 'println' ou 'shell' na memória)
+        // 1. Avalia o nome da função ou método (ex: 'println', 'dados', 'eu.falar')
         Object callee = evaluate(expr.callee);
 
-        // 2. Avalia os argumentos que passaste dentro dos parênteses
-        List<Object> arguments = new ArrayList<>();
-        for (Expr argument : expr.arguments) {
-            arguments.add(evaluate(argument));
-        }
-
-        // 3. Verifica se o que tentaste chamar é realmente uma função
+        // 2. Verifica se o alvo implementa o contrato de invocação
         if (!(callee instanceof XplCallable function)) {
-            throw new ControlFlow.RuntimeError(expr.paren, "Isto não é uma função e não pode ser chamado.");
+            throw new ControlFlow.RuntimeError(expr.paren, "Isto não é uma função ou classe instanciável e não pode ser chamado.");
         }
 
-        // 4. Valida a quantidade de parâmetros
-        if (function.arity() != -1 && arguments.size() != function.arity()) {
-            throw new ControlFlow.RuntimeError(expr.paren,
-                    "Esperado " + function.arity() + " argumentos, mas obteve " + arguments.size() + ".");
-        }
-
-        // 5. Executa a função de verdade!
+        // ⭐ PASSE DIRETO PURO (TRUE LAZY BINDING) ⭐
+        // Entregamos a fila de Expr.CallArg crua diretamente à função ou classe!
+        // Toda a complexidade de aridade, omissões e alinhamento de chaves é resolvida no XplFunction.call().
         try {
-            return function.call(this, arguments);
-        } catch (RuntimeException e) {
-            throw new ControlFlow.RuntimeError(expr.paren, e.getMessage());
+            return function.call(this, expr.arguments);
+        } catch (ControlFlow.RuntimeError erroNativo) {
+            // Preserva a coordenada exata (linha/coluna) do erro disparado pelo Binder!
+            throw erroNativo;
+        } catch (RuntimeException erroJava) {
+            throw new ControlFlow.RuntimeError(expr.paren, erroJava.getMessage());
         }
     }
 
@@ -1851,6 +1839,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case T_STRING:
                 if (!(value instanceof String))
                     throw new ControlFlow.RuntimeError(typeAnnotation, "O valor atribuído não é do tipo 'string'.");
+                break;
+            case T_BOOL:
+                if (!(value instanceof Boolean))
+                    throw new ControlFlow.RuntimeError(typeAnnotation, "O valor atribuído não é do tipo 'bool'.");
                 break;
             case T_ARRAY:
                 if (!(value instanceof List))

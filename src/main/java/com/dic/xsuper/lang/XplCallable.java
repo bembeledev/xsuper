@@ -7,5 +7,5 @@ public interface XplCallable {
     int arity();
 
     // O que acontece quando a função é chamada
-    Object call(Interpreter interpreter, List<Object> arguments);
+    Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments);
 }

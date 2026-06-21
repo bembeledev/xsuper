@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.helpers;
 
+import com.dic.xsuper.lang.Expr;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.XplCallable;
 
@@ -16,32 +17,23 @@ public class ObjectMethods {
     // 1. PROPRIEDADES (acesso direto)
     // ==========================================
 
-    /**
-     * Retorna o valor de uma propriedade do objeto (ex: length, size, isEmpty).
-     */
     public static Object getProperty(Map<String, Object> map, String property) {
-        switch (property) {
-            case "length":
-            case "size":
-                return (long) map.size();
-            case "isEmpty":
-                return map.isEmpty();
-            default:
+        return switch (property) {
+            case "length", "size" -> (long) map.size();
+            case "isEmpty" -> map.isEmpty();
+            default -> {
                 if (map.containsKey(property)) {
-                    return map.get(property);
+                    yield map.get(property);
                 }
                 throw new RuntimeException("Propriedade '" + property + "' não encontrada no objeto.");
-        }
+            }
+        };
     }
 
     // ==========================================
     // 2. MÉTODOS DE INSTÂNCIA (retornam XplCallable)
     // ==========================================
 
-    /**
-     * Retorna um XplCallable para o método solicitado, operando sobre o mapa fornecido.
-     * O callable recebe os argumentos como List<Object> e pode ter aridade variável (-1).
-     */
     public static XplCallable getMethod(Map<String, Object> map, String methodName) {
         switch (methodName) {
 
@@ -50,16 +42,15 @@ public class ObjectMethods {
             case "length":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return (long) map.size();
                     }
                 };
-
             case "isEmpty":
             case "is_empty":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return map.isEmpty();
                     }
                 };
@@ -67,8 +58,7 @@ public class ObjectMethods {
             case "keys":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        // Filtra chaves internas (que começam com "__") se desejar, igual ao Rust
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return map.keySet().stream()
                                 .filter(k -> !k.startsWith("__"))
                                 .collect(Collectors.toList());
@@ -78,7 +68,7 @@ public class ObjectMethods {
             case "values":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return new ArrayList<>(map.values());
                     }
                 };
@@ -86,7 +76,7 @@ public class ObjectMethods {
             case "entries":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         List<Object> entries = new ArrayList<>();
                         for (Map.Entry<String, Object> e : map.entrySet()) {
                             if (e.getKey().startsWith("__")) continue;
@@ -104,11 +94,10 @@ public class ObjectMethods {
             case "containsKey":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("has(key) precisa de um argumento.");
-                        }
-                        String key = arguments.get(0).toString();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        String key = args.get(0).toString();
                         return map.containsKey(key);
                     }
                 };
@@ -116,11 +105,10 @@ public class ObjectMethods {
             case "get":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("get(key) precisa de um argumento.");
-                        }
-                        String key = arguments.get(0).toString();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        String key = args.get(0).toString();
                         return map.getOrDefault(key, null);
                     }
                 };
@@ -129,12 +117,11 @@ public class ObjectMethods {
             case "set":
                 return new XplCallable() {
                     @Override public int arity() { return 2; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.size() < 2) {
-                            throw new RuntimeException("set(key, value) precisa de dois argumentos.");
-                        }
-                        String key = arguments.get(0).toString();
-                        Object value = arguments.get(1);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 2, methodName);
+                        String key = args.get(0).toString();
+                        Object value = args.get(1);
                         map.put(key, value);
                         return map; // chaining
                     }
@@ -144,28 +131,27 @@ public class ObjectMethods {
             case "delete":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("remove(key) precisa de um argumento.");
-                        }
-                        String key = arguments.get(0).toString();
-                        return map.remove(key); // retorna o valor removido ou null
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        String key = args.get(0).toString();
+                        return map.remove(key);
                     }
                 };
 
             case "clear":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         map.clear();
-                        return null; // void
+                        return null;
                     }
                 };
 
             case "clone":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return new HashMap<>(map);
                     }
                 };
@@ -174,11 +160,10 @@ public class ObjectMethods {
             case "search":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("search(keyOrValue) precisa de um argumento.");
-                        }
-                        Object arg = arguments.get(0);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        Object arg = args.get(0);
                         return search(map, arg);
                     }
                 };
@@ -187,11 +172,10 @@ public class ObjectMethods {
             case "search_by_key":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("searchByKey(key) precisa de um argumento string.");
-                        }
-                        String key = arguments.get(0).toString();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        String key = args.get(0).toString();
                         return searchByKey(map, key);
                     }
                 };
@@ -200,11 +184,10 @@ public class ObjectMethods {
             case "search_by_value":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("searchByValue(value) precisa de um argumento.");
-                        }
-                        Object value = arguments.get(0);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        Object value = args.get(0);
                         return searchByValue(map, value);
                     }
                 };
@@ -213,11 +196,10 @@ public class ObjectMethods {
             case "find_paths":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("findPaths(keyOrValue) precisa de um argumento.");
-                        }
-                        Object arg = arguments.get(0);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        Object arg = args.get(0);
                         return findPaths(map, arg);
                     }
                 };
@@ -226,7 +208,7 @@ public class ObjectMethods {
             case "flatten":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return flatten(map);
                     }
                 };
@@ -234,15 +216,18 @@ public class ObjectMethods {
             case "pick":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("pick requer pelo menos uma chave ou uma lista de chaves.");
+                        }
                         List<String> keys = new ArrayList<>();
-                        if (arguments.size() == 1 && arguments.get(0) instanceof List) {
-                            // Se for uma lista de chaves
-                            for (Object o : (List<?>) arguments.get(0)) {
+                        if (args.size() == 1 && args.get(0) instanceof List) {
+                            for (Object o : (List<?>) args.get(0)) {
                                 keys.add(o.toString());
                             }
                         } else {
-                            for (Object o : arguments) {
+                            for (Object o : args) {
                                 keys.add(o.toString());
                             }
                         }
@@ -253,9 +238,10 @@ public class ObjectMethods {
             case "omit":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
                         List<String> keys = new ArrayList<>();
-                        for (Object o : arguments) {
+                        for (Object o : args) {
                             keys.add(o.toString());
                         }
                         return omit(map, keys);
@@ -265,9 +251,10 @@ public class ObjectMethods {
             case "merge":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
                         List<Map<String, Object>> others = new ArrayList<>();
-                        for (Object arg : arguments) {
+                        for (Object arg : args) {
                             if (arg instanceof Map) {
                                 others.add((Map<String, Object>) arg);
                             } else {
@@ -282,11 +269,10 @@ public class ObjectMethods {
             case "has_path":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        if (arguments.isEmpty()) {
-                            throw new RuntimeException("has_path(path) precisa de um argumento string.");
-                        }
-                        String path = arguments.get(0).toString();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, methodName);
+                        String path = args.get(0).toString();
                         return hasPath(map, path);
                     }
                 };
@@ -297,14 +283,11 @@ public class ObjectMethods {
     }
 
     // ==========================================
-    // 3. IMPLEMENTAÇÃO DOS MÉTODOS PÚBLICOS (chamados pelos callables)
+    // 3. IMPLEMENTAÇÃO DOS MÉTODOS PÚBLICOS
     // ==========================================
 
     // ---------- Pesquisa recursiva ----------
 
-    /**
-     * Pesquisa por chave OU valor (ambiguidade: se o argumento for String, pesquisa por chave e valor).
-     */
     public static List<Map<String, Object>> search(Map<String, Object> obj, Object arg) {
         List<Map<String, Object>> results = new ArrayList<>();
         int[] counter = new int[]{0};
@@ -378,7 +361,6 @@ public class ObjectMethods {
                 searchRecursive(item, targetKey, targetValue, idxPath, depth + 1, results, counter);
             }
         }
-        // outros tipos (primitivos) não são percorridos
     }
 
     private static Map<String, Object> makeResult(String key, Object value, int depth, int pos, String path) {
@@ -454,7 +436,6 @@ public class ObjectMethods {
             boolean isIndex = false;
             int bracketPos = -1;
 
-            // Percorre até encontrar '.' ou '[' ou fim
             while (end < path.length()) {
                 char c = path.charAt(end);
                 if (c == '.') {
@@ -462,13 +443,12 @@ public class ObjectMethods {
                 } else if (c == '[') {
                     isIndex = true;
                     bracketPos = end;
-                    // encontra o ']' correspondente
                     int bracketEnd = end + 1;
                     while (bracketEnd < path.length() && path.charAt(bracketEnd) != ']') {
                         bracketEnd++;
                     }
                     if (bracketEnd == path.length()) {
-                        return false; // colchete não fechado
+                        return false;
                     }
                     end = bracketEnd + 1;
                     break;
@@ -512,7 +492,6 @@ public class ObjectMethods {
                     return false;
                 }
             } else {
-                // chave simples
                 if (current instanceof Map) {
                     Map<String, Object> map = (Map<String, Object>) current;
                     if (map.containsKey(part)) {
@@ -531,30 +510,13 @@ public class ObjectMethods {
     }
 
     // ==========================================
-    // 4. FUNÇÕES AUXILIARES (para compatibilidade com outros métodos)
+    // 4. FUNÇÕES AUXILIARES
     // ==========================================
 
-    /**
-     * Resolve índices negativos (ex: -1 é o último elemento). Útil para arrays,
-     * mas mantido aqui para consistência.
-     */
-    private static int resolveIndex(long idx, int len) {
-        if (idx < 0) {
-            return (int) Math.max(0, len + idx);
-        } else {
-            return (int) Math.min(idx, len);
+    private static void checkArgCount(List<Object> args, int expected, String methodName) {
+        if (args.size() < expected) {
+            throw new RuntimeException("Método '" + methodName + "' requer " + expected +
+                    " argumento(s), mas recebeu " + args.size());
         }
-    }
-
-    /**
-     * Extrai um argumento inteiro em segurança, com valor padrão.
-     */
-    private static long getIntArg(List<Object> args, int index, long defaultValue) {
-        if (index >= args.size()) return defaultValue;
-        Object val = args.get(index);
-        if (val instanceof Number) {
-            return ((Number) val).longValue();
-        }
-        return defaultValue;
     }
 }

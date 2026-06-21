@@ -1,7 +1,7 @@
 println(">>> TESTE DE MAPAS FORTEMENTE TIPADOS <<<", "#00FFFF");
 
 // A sintaxe gloriosa do Arquiteto:
-let registos = new Map();
+let registos= new Map<String, Integer> ();
 
 // Como devolve um Map nativo, os teus ObjectMethods assumem o controlo automaticamente!
 registos.set("users", 150);

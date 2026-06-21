@@ -181,10 +181,14 @@ public class Parser {
                     Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
                     consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
 
-                    // ⭐ ADEUS TRATOR CEGO. Entra a Árvore Sintática:
-                    TypeNode paramTypeNode = parseTypeAnnotation();
+                    TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
-                    parameters.add(new Stmt.Param(paramName, paramTypeNode));
+                    Expr defaultValue = null;
+                    if (match(TokenType.ASSIGN)) { // Se o programador escreveu '= "825702255"'
+                        defaultValue = expression();
+                    }
+
+                    parameters.add(new Stmt.Param(paramName, type, defaultValue));
 
                 } while (match(TokenType.COMMA));
             }
@@ -193,7 +197,7 @@ public class Parser {
             // ⭐ 3. Embrulhar o Retorno no novo TypeNode!
             TypeNode returnTypeNode = null;
             if (match(TokenType.COLON)) {
-                if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+                if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_BOOL, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
                     returnTypeNode = new TypeNode.Simple(previous()); // Cria o TypeNode.Simple!
                 } else {
                     throw error(peek(), "Esperado tipo de retorno válido após ':'.");
@@ -283,12 +287,16 @@ public class Parser {
                     }
 
                     Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
 
-                    // ⭐ A TRANSFORMAÇÃO: Adeus trator cego, olá leitor quântico!
-                    TypeNode paramTypeNode = parseTypeAnnotation();
+                    TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
-                    parameters.add(new Stmt.Param(paramName, paramTypeNode));
+                    Expr defaultValue = null;
+                    if (match(TokenType.ASSIGN)) { // Se o programador escreveu '= "825702255"'
+                        defaultValue = expression();
+                    }
+
+                    parameters.add(new Stmt.Param(paramName, type, defaultValue));
 
                 } while (match(TokenType.COMMA));
             }
@@ -297,7 +305,7 @@ public class Parser {
             // ⭐ 6. Tipo de Retorno (Ex: : int)
             TypeNode returnType = null; // Mudámos de Token para TypeNode!
             if (match(TokenType.COLON)) {
-                if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+                if (match(TokenType.IDENTIFIER, TokenType.T_INT,TokenType.T_BOOL, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
 
                     // Envolvemos o token lido dentro de um TypeNode para satisfazer a AST!
                     returnType = new TypeNode.Simple(previous());
@@ -358,12 +366,16 @@ public class Parser {
         if (!check(TokenType.RPAREN)) {
             do {
                 Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
-                consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro para definir o tipo.");
+                consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
 
-                // ⭐ A CORONOAÇÃO DO PARSER: Leitura fractal e padronizada de tipos!
-                TypeNode paramTypeNode = parseTypeAnnotation();
+                TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
-                parameters.add(new Stmt.Param(paramName, paramTypeNode));
+                Expr defaultValue = null;
+                if (match(TokenType.ASSIGN)) { // Se o programador escreveu '= "825702255"'
+                    defaultValue = expression();
+                }
+
+                parameters.add(new Stmt.Param(paramName, type, defaultValue));
             } while (match(TokenType.COMMA));
         }
         consume(TokenType.RPAREN, "Esperado ')' após os parâmetros.");
@@ -441,7 +453,7 @@ public class Parser {
         Token baseName;
 
         // 1. Lê a base do tipo (T_INT, T_STRING, IDENTIFIER, etc.)
-        if (match(TokenType.IDENTIFIER, TokenType.T_INT, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
+        if (match(TokenType.IDENTIFIER, TokenType.T_INT,TokenType.T_BOOL, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
             baseName = previous();
         } else {
             throw error(peek(), "Esperado nome do tipo (ex: int, String, Map).");
@@ -1120,13 +1132,40 @@ public class Parser {
             }
             // ⭐ NOVO: O Encadeamento Opcional (?.)
             else if (match(TokenType.QUESTION_DOT)) {
-                Token name = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade após '?.'");
-                expr = new Expr.OptionalChaining(expr, name);
+                Token name = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade ou método após '?.'");
+
+                // ⭐ LOOKAHEAD QUÂNTICO: O token seguinte é um '(' ?
+                if (match(TokenType.LPAREN)) {
+                    // É uma CHAMADA OPCIONAL DE MÉTODO! ( obj?.metodo(...) )
+                    expr = finishOptionalCall(expr, name);
+                } else {
+                    // É um ACESSO OPCIONAL DE PROPRIEDADE! ( obj?.propriedade )
+                    expr = new Expr.OptionalChaining(expr, name);
+                }
             } else {
                 break;
             }
         }
         return expr;
+    }
+
+    // O montador de pacotes para chamadas opcionais:
+    private Expr finishOptionalCall(Expr calleeObject, Token methodName) {
+        java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
+
+        if (!check(TokenType.RPAREN)) {
+            do {
+                Token argName = null;
+                if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
+                    argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                }
+                arguments.add(new Expr.CallArg(argName, expression()));
+            } while (match(TokenType.COMMA));
+        }
+
+        Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos da chamada opcional.");
+        return new Expr.OptionalCall(calleeObject, methodName, paren, arguments);
     }
 
     // NOVO MÉTODO AUXILIAR
@@ -1137,20 +1176,25 @@ public class Parser {
     }
 
     private Expr finishCall(Expr callee) {
-        List<Expr> arguments = new ArrayList<>();
+        java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
+
         if (!check(TokenType.RPAREN)) {
             do {
-                arguments.add(expression());
+                Token argName = null;
+
+                // ⭐ LOOKAHEAD: Se o token atual é uma palavra e o SEGUINTE é um dois-pontos, é nomeado!
+                if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
+                    argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
+                    consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                }
+
+                Expr expr = expression();
+                arguments.add(new Expr.CallArg(argName, expr));
+
             } while (match(TokenType.COMMA));
         }
 
-        Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos da função.");
-        // Se o alvo a ser invocado era um 'obj?.metodo', convertemo-lo instantaneamente num OptionalCall!
-        if (callee instanceof Expr.OptionalChaining) {
-            Expr.OptionalChaining opt = (Expr.OptionalChaining) callee;
-            return new Expr.OptionalCall(opt.object, opt.name, paren, arguments);
-        }
-
+        Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos.");
         return new Expr.Call(callee, paren, arguments);
     }
 
@@ -1224,16 +1268,16 @@ public class Parser {
 
         // ⭐ NOVO: Instanciação de classes
         // Instanciação de classes (ex: new Map() ou new Map<String, Integer>())
+        // ⭐ NOVO: Instanciação de classes (Com suporte a Argumentos Nomeados!)
         if (match(TokenType.NEW)) {
             Token keyword = previous();
             Token className = consume(TokenType.IDENTIFIER, "Esperado nome da classe após 'new'.");
 
-            // ⭐ NOVO: Lê os tipos genéricos, se existirem! ⭐
+            // Lê os tipos genéricos, se existirem!
             StringBuilder typeArgs = new StringBuilder();
-            if (match(TokenType.LESS)) { // Se encontrou o '<'
+            if (match(TokenType.LESS)) {
                 typeArgs.append("<");
                 do {
-                    // Reutilizamos a tua função que lê os tipos!
                     typeArgs.append(parseTypeAnnotation());
                 } while (match(TokenType.COMMA));
 
@@ -1242,15 +1286,28 @@ public class Parser {
             }
 
             consume(TokenType.LPAREN, "Esperado '(' após o nome da classe.");
-            List<Expr> arguments = new ArrayList<>();
+
+            // =================================================================
+            // ⭐ A ATUALIZAÇÃO: Captura bivalente de CallArgs (Nomeados/Posicionais)
+            // =================================================================
+            java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
             if (!check(TokenType.RPAREN)) {
                 do {
-                    arguments.add(expression());
+                    Token argName = null;
+
+                    // LOOKAHEAD: Se o token atual é um nome e o SEGUINTE é um ':', é nomeado!
+                    if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
+                        argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
+                        consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                    }
+
+                    arguments.add(new Expr.CallArg(argName, expression()));
+
                 } while (match(TokenType.COMMA));
             }
             consume(TokenType.RPAREN, "Esperado ')' após os argumentos.");
 
-            // Passamos o typeArgs.toString() para a árvore
+            // Passamos a lista de CallArgs perfeitamente compatível com a AST!
             return new Expr.New(keyword, className, typeArgs.toString(), arguments);
         }
         throw error(peek(), "Expressão inesperada.");
@@ -1291,6 +1348,10 @@ public class Parser {
 
     private Token peek() {
         return tokens.get(current);
+    }
+
+    private Token peekNext() {
+        return tokens.get(current + 1);
     }
 
     private Token previous() {

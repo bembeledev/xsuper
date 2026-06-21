@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.helpers;
 
+import com.dic.xsuper.lang.Expr;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.XplCallable;
 
@@ -17,9 +18,6 @@ public class ArrayMethods {
     // PROPRIEDADES (acesso direto)
     // ==========================================
 
-    /**
-     * Retorna o valor de uma propriedade da lista (ex: length, isEmpty, first, last).
-     */
     public static Object getProperty(List<Object> list, String propertyName) {
         return switch (propertyName) {
             case "length" -> (long) list.size();
@@ -35,10 +33,6 @@ public class ArrayMethods {
     // MÉTODOS (retornam XplCallable)
     // ==========================================
 
-    /**
-     * Retorna um XplCallable para o método solicitado, operando sobre a lista fornecida.
-     * O callable recebe os argumentos como List<Object> e pode ter aridade variável (-1).
-     */
     public static XplCallable getMethod(List<Object> list, String methodName) {
         switch (methodName) {
 
@@ -46,17 +40,18 @@ public class ArrayMethods {
 
             case "push":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // variádico
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        list.addAll(arguments);
-                        return (long) list.size(); // retorna novo tamanho
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        list.addAll(args);
+                        return (long) list.size();
                     }
                 };
 
             case "pop":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return list.isEmpty() ? null : list.removeLast();
                     }
                 };
@@ -64,10 +59,10 @@ public class ArrayMethods {
             case "unshift":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        // Insere no início na ordem inversa para manter a ordem original
-                        for (int i = arguments.size() - 1; i >= 0; i--) {
-                            list.addFirst(arguments.get(i));
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        for (int i = args.size() - 1; i >= 0; i--) {
+                            list.addFirst(args.get(i));
                         }
                         return (long) list.size();
                     }
@@ -76,7 +71,7 @@ public class ArrayMethods {
             case "shift":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return list.isEmpty() ? null : list.removeFirst();
                     }
                 };
@@ -84,8 +79,9 @@ public class ArrayMethods {
             case "remove":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        int idx = (int) getIntArg(arguments, 0, 0);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        int idx = (int) getIntArg(args, 0, 0);
                         if (idx < 0 || idx >= list.size()) {
                             throw new RuntimeException("Índice " + idx + " fora dos limites.");
                         }
@@ -96,34 +92,33 @@ public class ArrayMethods {
             case "splice":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        int start = resolveIndex(getIntArg(arguments, 0, 0), list.size());
-                        int deleteCount = (int) getIntArg(arguments, 1, list.size() - start);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        int start = resolveIndex(getIntArg(args, 0, 0), list.size());
+                        int deleteCount = (int) getIntArg(args, 1, list.size() - start);
                         if (deleteCount < 0) deleteCount = 0;
                         int actualDelete = Math.min(deleteCount, list.size() - start);
 
-                        // Itens removidos
                         List<Object> removed = new ArrayList<>(list.subList(start, start + actualDelete));
-                        // Remove
                         for (int i = 0; i < actualDelete; i++) {
                             list.remove(start);
                         }
 
-                        // Insere novos itens (a partir do argumento 2)
                         int insertIdx = start;
-                        for (int i = 2; i < arguments.size(); i++) {
-                            list.add(insertIdx++, arguments.get(i));
+                        for (int i = 2; i < args.size(); i++) {
+                            list.add(insertIdx++, args.get(i));
                         }
-                        return removed; // retorna lista dos removidos
+                        return removed;
                     }
                 };
 
             case "concat":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
                         List<Object> newList = new ArrayList<>(list);
-                        for (Object arg : arguments) {
+                        for (Object arg : args) {
                             if (arg instanceof List) {
                                 newList.addAll((List<?>) arg);
                             } else {
@@ -136,29 +131,30 @@ public class ArrayMethods {
 
             case "fill":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 1 a 3 args
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object value = arguments.isEmpty() ? null : arguments.getFirst();
-                        int start = resolveIndex(getIntArg(arguments, 1, 0), list.size());
-                        int end = resolveIndex(getIntArg(arguments, 2, list.size()), list.size());
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        Object value = args.isEmpty() ? null : args.getFirst();
+                        int start = resolveIndex(getIntArg(args, 1, 0), list.size());
+                        int end = resolveIndex(getIntArg(args, 2, list.size()), list.size());
                         for (int i = start; i < end && i < list.size(); i++) {
                             list.set(i, value);
                         }
-                        return list; // chaining
+                        return list;
                     }
                 };
 
             case "copyWithin":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 1 a 3 args
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        int target = resolveIndex(getIntArg(arguments, 0, 0), list.size());
-                        int start = resolveIndex(getIntArg(arguments, 1, 0), list.size());
-                        int end = resolveIndex(getIntArg(arguments, 2, list.size()), list.size());
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        int target = resolveIndex(getIntArg(args, 0, 0), list.size());
+                        int start = resolveIndex(getIntArg(args, 1, 0), list.size());
+                        int end = resolveIndex(getIntArg(args, 2, list.size()), list.size());
 
                         if (start < end && target < list.size()) {
                             int count = Math.min(end - start, list.size() - target);
-                            // Cópia temporária
                             List<Object> temp = new ArrayList<>(list.subList(start, start + count));
                             for (int i = 0; i < count; i++) {
                                 list.set(target + i, temp.get(i));
@@ -172,10 +168,11 @@ public class ArrayMethods {
 
             case "indexOf":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 1 ou 2 args
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
-                        int start = resolveIndex(getIntArg(arguments, 1, 0), list.size());
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        Object target = args.isEmpty() ? null : args.getFirst();
+                        int start = resolveIndex(getIntArg(args, 1, 0), list.size());
                         for (int i = start; i < list.size(); i++) {
                             if (Objects.equals(list.get(i), target)) {
                                 return (long) i;
@@ -188,9 +185,10 @@ public class ArrayMethods {
             case "lastIndexOf":
                 return new XplCallable() {
                     @Override public int arity() { return -1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
-                        int start = resolveIndex(getIntArg(arguments, 1, list.size() - 1), list.size());
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        Object target = args.isEmpty() ? null : args.getFirst();
+                        int start = resolveIndex(getIntArg(args, 1, list.size() - 1), list.size());
                         for (int i = Math.min(start, list.size() - 1); i >= 0; i--) {
                             if (Objects.equals(list.get(i), target)) {
                                 return (long) i;
@@ -203,8 +201,9 @@ public class ArrayMethods {
             case "includes":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object target = arguments.isEmpty() ? null : arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        Object target = args.isEmpty() ? null : args.getFirst();
                         return list.contains(target);
                     }
                 };
@@ -212,8 +211,9 @@ public class ArrayMethods {
             case "at":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        int idx = resolveIndex(getIntArg(arguments, 0, 0), list.size());
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        int idx = resolveIndex(getIntArg(args, 0, 0), list.size());
                         return (idx >= 0 && idx < list.size()) ? list.get(idx) : null;
                     }
                 };
@@ -223,7 +223,7 @@ public class ArrayMethods {
             case "reverse":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         int n = list.size();
                         for (int i = 0; i < n / 2; i++) {
                             Object tmp = list.get(i);
@@ -237,7 +237,7 @@ public class ArrayMethods {
             case "toReversed":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         List<Object> copy = new ArrayList<>(list);
                         int n = copy.size();
                         for (int i = 0; i < n / 2; i++) {
@@ -253,10 +253,11 @@ public class ArrayMethods {
 
             case "slice":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 0 a 2 args
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        int start = resolveIndex(getIntArg(arguments, 0, 0), list.size());
-                        int end = resolveIndex(getIntArg(arguments, 1, list.size()), list.size());
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        int start = resolveIndex(getIntArg(args, 0, 0), list.size());
+                        int end = resolveIndex(getIntArg(args, 1, list.size()), list.size());
                         if (start > end) return new ArrayList<>();
                         return new ArrayList<>(list.subList(start, Math.min(end, list.size())));
                     }
@@ -264,18 +265,20 @@ public class ArrayMethods {
 
             case "flat":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 0 ou 1 (depth)
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        long depth = getIntArg(arguments, 0, 1);
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        long depth = getIntArg(args, 0, 1);
                         return flattenArray(list, depth);
                     }
                 };
 
             case "join":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 0 ou 1 (separator)
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        String sep = arguments.isEmpty() ? "," : arguments.getFirst().toString();
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        String sep = args.isEmpty() ? "," : args.getFirst().toString();
                         StringBuilder sb = new StringBuilder();
                         for (int i = 0; i < list.size(); i++) {
                             if (i > 0) sb.append(sep);
@@ -288,7 +291,7 @@ public class ArrayMethods {
             case "toString":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         StringBuilder sb = new StringBuilder();
                         for (int i = 0; i < list.size(); i++) {
                             if (i > 0) sb.append(",");
@@ -301,7 +304,7 @@ public class ArrayMethods {
             case "keys":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         List<Object> keys = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
                             keys.add((long) i);
@@ -313,7 +316,7 @@ public class ArrayMethods {
             case "values":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return new ArrayList<>(list);
                     }
                 };
@@ -321,7 +324,7 @@ public class ArrayMethods {
             case "entries":
                 return new XplCallable() {
                     @Override public int arity() { return 0; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         List<Object> entries = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> pair = new ArrayList<>();
@@ -338,37 +341,47 @@ public class ArrayMethods {
             case "forEach":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("forEach exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("forEach exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            // Converte os argumentos avaliados para CallArg com literais
+                            fn.call(interpreter, packArgs(callArgs));
                         }
-                        return null; // void
+                        return null;
                     }
                 };
 
             case "map":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("map exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("map exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            result.add(fn.call(interpreter, args));
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object mapped = fn.call(interpreter, packArgs(callArgs));
+                            result.add(mapped);
                         }
                         return result;
                     }
@@ -377,18 +390,22 @@ public class ArrayMethods {
             case "filter":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("filter exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("filter exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 result.add(list.get(i));
                             }
@@ -400,9 +417,13 @@ public class ArrayMethods {
             case "reduce":
             case "reduceRight":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 1 ou 2 args
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException(methodName + " exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException(methodName + " exige uma função callback.");
                         }
@@ -413,8 +434,8 @@ public class ArrayMethods {
                         int startIdx;
                         int endIdx;
 
-                        if (arguments.size() > 1) {
-                            accumulator = arguments.get(1);
+                        if (args.size() > 1) {
+                            accumulator = args.get(1);
                             startIdx = isRight ? list.size() - 1 : 0;
                             endIdx = isRight ? -1 : list.size();
                         } else {
@@ -434,11 +455,11 @@ public class ArrayMethods {
 
                         int step = isRight ? -1 : 1;
                         for (int i = startIdx; (isRight ? i > endIdx : i < endIdx); i += step) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(accumulator);
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            accumulator = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(accumulator);
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            accumulator = fn.call(interpreter, packArgs(callArgs));
                         }
                         return accumulator;
                     }
@@ -447,18 +468,22 @@ public class ArrayMethods {
             case "flatMap":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("flatMap exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("flatMap exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object mapped = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object mapped = fn.call(interpreter, packArgs(callArgs));
                             if (mapped instanceof List) {
                                 result.addAll((List<?>) mapped);
                             } else {
@@ -472,17 +497,21 @@ public class ArrayMethods {
             case "find":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.get(0);
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("find exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("find exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 return list.get(i);
                             }
@@ -494,17 +523,21 @@ public class ArrayMethods {
             case "findIndex":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("findIndex exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findIndex exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 return (long) i;
                             }
@@ -516,17 +549,21 @@ public class ArrayMethods {
             case "findLast":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("findLast exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findLast exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = list.size() - 1; i >= 0; i--) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 return list.get(i);
                             }
@@ -538,17 +575,21 @@ public class ArrayMethods {
             case "findLastIndex":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("findLastIndex exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("findLastIndex exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = list.size() - 1; i >= 0; i--) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 return (long) i;
                             }
@@ -560,17 +601,21 @@ public class ArrayMethods {
             case "some":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("some exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("some exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (keep instanceof Boolean && (Boolean) keep) {
                                 return true;
                             }
@@ -582,17 +627,21 @@ public class ArrayMethods {
             case "every":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
-                        Object callback = arguments.getFirst();
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        if (args.isEmpty()) {
+                            throw new RuntimeException("every exige uma função callback.");
+                        }
+                        Object callback = args.get(0);
                         if (!(callback instanceof XplCallable)) {
                             throw new RuntimeException("every exige uma função callback.");
                         }
                         XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
-                            List<Object> args = new ArrayList<>();
-                            args.add(list.get(i));
-                            args.add((long) i);
-                            Object keep = fn.call(interpreter, args);
+                            List<Object> callArgs = new ArrayList<>();
+                            callArgs.add(list.get(i));
+                            callArgs.add((long) i);
+                            Object keep = fn.call(interpreter, packArgs(callArgs));
                             if (!(keep instanceof Boolean) || !(Boolean) keep) {
                                 return false;
                             }
@@ -604,21 +653,21 @@ public class ArrayMethods {
             case "sort":
             case "toSorted":
                 return new XplCallable() {
-                    @Override public int arity() { return -1; } // 0 ou 1 (callback)
-                    @Override public Object call(Interpreter interpreter, List<Object> arguments) {
+                    @Override public int arity() { return -1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
                         boolean inPlace = methodName.equals("sort");
                         List<Object> target = inPlace ? list : new ArrayList<>(list);
 
-                        if (!arguments.isEmpty() && arguments.getFirst() instanceof XplCallable) {
-                            XplCallable comparator = (XplCallable) arguments.getFirst();
-                            // Ordenação com insertion sort (falível) para respeitar callback
+                        if (!args.isEmpty() && args.get(0) instanceof XplCallable) {
+                            XplCallable comparator = (XplCallable) args.get(0);
                             for (int i = 1; i < target.size(); i++) {
                                 int j = i;
                                 while (j > 0) {
                                     List<Object> cmpArgs = new ArrayList<>();
                                     cmpArgs.add(target.get(j));
                                     cmpArgs.add(target.get(j - 1));
-                                    Object result = comparator.call(interpreter, cmpArgs);
+                                    Object result = comparator.call(interpreter, packArgs(cmpArgs));
                                     boolean swap = false;
                                     if (result instanceof Long) {
                                         swap = (Long) result < 0;
@@ -638,7 +687,6 @@ public class ArrayMethods {
                                 }
                             }
                         } else {
-                            // Ordenação natural: números primeiro, depois strings, etc.
                             target.sort((a, b) -> {
                                 if (a == null && b == null) return 0;
                                 if (a == null) return -1;
@@ -652,12 +700,7 @@ public class ArrayMethods {
                             });
                         }
 
-                        if (inPlace) {
-                            // Se in-place, a lista original já foi alterada (target é a mesma referência)
-                            return list;
-                        } else {
-                            return target;
-                        }
+                        return inPlace ? list : target;
                     }
                 };
 
@@ -671,9 +714,6 @@ public class ArrayMethods {
     // FUNÇÕES AUXILIARES INTERNAS
     // ==========================================
 
-    /**
-     * Resolve índices negativos (ex: -1 é o último elemento).
-     */
     private static int resolveIndex(long idx, int len) {
         if (idx < 0) {
             return (int) Math.max(0, len + idx);
@@ -682,9 +722,6 @@ public class ArrayMethods {
         }
     }
 
-    /**
-     * Extrai um argumento inteiro em segurança, com valor padrão.
-     */
     private static long getIntArg(List<Object> args, int index, long defaultValue) {
         if (index >= args.size()) return defaultValue;
         Object val = args.get(index);
@@ -694,9 +731,6 @@ public class ArrayMethods {
         return defaultValue;
     }
 
-    /**
-     * Achata arrays recursivamente para o método flat().
-     */
     private static List<Object> flattenArray(List<Object> items, long depth) {
         if (depth <= 0) {
             return new ArrayList<>(items);
@@ -710,5 +744,18 @@ public class ArrayMethods {
             }
         }
         return result;
+    }
+
+    /**
+     * Converte uma lista de valores avaliados em uma lista de CallArg com expressões literais.
+     * Necessário para invocar callbacks que esperam List<Expr.CallArg>.
+     */
+    private static List<Expr.CallArg> packArgs(List<Object> values) {
+        List<Expr.CallArg> callArgs = new ArrayList<>();
+        for (Object value : values) {
+            // Assumindo que Expr.Literal existe e aceita um Object
+            callArgs.add(new Expr.CallArg(null, new Expr.Literal(value)));
+        }
+        return callArgs;
     }
 }

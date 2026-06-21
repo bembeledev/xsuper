@@ -4,12 +4,28 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)">
-      <change afterPath="$PROJECT_DIR$/tests/alias.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)">
+      <change afterPath="$PROJECT_DIR$/tests/decorator.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/fun.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplCallable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplCallable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ArrayMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ArrayMethods.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ObjectMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/ObjectMethods.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/StringMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/StringMethods.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplClass.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/error.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/error.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/map.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/map.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/omni.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/omni.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/seguranca.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/seguranca.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/throws.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -265,7 +281,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782059032174</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)">
+      <option name="closed" value="true" />
+      <created>1782060443667</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1782060443667</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -300,6 +324,7 @@
     <MESSAGE value="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição." />
     <MESSAGE value="feat(core): implementar expressão de pattern matching ('match') com guardas lógicas&#10;&#10;- Adiciona as estruturas `Expr.Match` e `MatchArm` à AST para desconstrução avançada de dados.&#10;- Habilita 5 frentes de inspeção no Parser: verificação de tipo (`type T`), literais exatos, guardas compostas (`if cond`), guardas puras e fallback semântico (`none:` / `default:`).&#10;- Padroniza o fechamento de cada braço com ponto e vírgula (`;`) para garantir estabilidade máxima na fiação sintática.&#10;- Implementa o motor de metadados em tempo de execução (`checkTypeMatch`) capaz de resolver coerção entre tipos primitivos da JVM e instâncias de classes XPL.&#10;- Acopla a estrutura ao mecanismo de Implicit Yielding para ejeção limpa do valor calculado no braço vencedor." />
     <MESSAGE value="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)" />
+    <MESSAGE value="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)" />
   </component>
 </project>
