@@ -24,6 +24,7 @@ public abstract class Stmt {
         R visitImplementDeclStmt(ImplementDecl stmt);
         R visitTryStmt(Try stmt);
         R visitThrowStmt(Throw stmt);
+        R visitTypeAliasDecl(TypeAliasDecl typeAliasDecl);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -503,6 +504,32 @@ public abstract class Stmt {
                     "tryBlock=" + tryBlock +
                     ", catchClauses=" + catchClauses +
                     ", finallyBlock=" + finallyBlock +
+                    '}';
+        }
+    }
+
+    // =========================================================================
+    // ⭐ DECLARAÇÃO DE SINÓNIMO DE TIPO ( type Apelido = Alvo; )
+    // =========================================================================
+    public static class TypeAliasDecl extends Stmt {
+        public final Token name;
+        public final TypeNode targetType;
+
+        public TypeAliasDecl(Token name, TypeNode targetType) {
+            this.name = name;
+            this.targetType = targetType;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTypeAliasDecl(this);
+        }
+
+        @Override
+        public String toString() {
+            return "TypeAliasDecl{" +
+                    "name=" + name +
+                    ", targetType=" + targetType +
                     '}';
         }
     }

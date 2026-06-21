@@ -67,6 +67,7 @@ public class Parser {
 
     private Stmt declaration() {
         // Se for uma declaração, consome-a. Se falhar, sincroniza.
+        if (match(TokenType.TYPE)) return typeAliasDeclaration();
         if (check(TokenType.FUN)) return functionDeclaration();
         if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration();
         if (match(TokenType.INTERFACE)) return interfaceDeclaration();
@@ -86,6 +87,19 @@ public class Parser {
 
         // Se NÃO é uma declaração, é um statement (comando)
         return statement();
+    }
+
+    // ⭐ O CONSTRUTOR SINTÁTICO DO ALIAS ⭐
+    private Stmt typeAliasDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Esperado identificador para o nome do Alias.");
+        consume(TokenType.ASSIGN, "Esperado '=' após o nome do Alias.");
+
+        // Reutilizamos a nossa coroa de ouro: a leitura fractal de tipos!
+        TypeNode target = parseTypeAnnotation();
+
+        consume(TokenType.SEMICOLON, "Esperado ';' após a definição do sinónimo de tipo.");
+
+        return new Stmt.TypeAliasDecl(name, target);
     }
 
     private Stmt declareDeclaration() {

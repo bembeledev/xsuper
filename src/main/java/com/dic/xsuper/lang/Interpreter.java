@@ -30,6 +30,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
+    // O Armazém Global de prismas semânticos (NomeDoAlias -> TipoReal):
+    private final java.util.Map<String, TypeNode> typeAliases = new java.util.HashMap<>();
+
+
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
 
         this.registry = registry;
@@ -468,6 +472,41 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = evaluate(stmt.value);
         // Dispara a exceção invisível no motor Java!
         throw new ControlFlow.ThrowException(value);
+    }
+
+    @Override
+    public Void visitTypeAliasDecl(Stmt.TypeAliasDecl stmt) {
+        String aliasName = stmt.name.lexeme;
+
+        // Regra 1: Não pode ter o mesmo nome de um tipo ou alias já existente.
+        if (typeAliases.containsKey(aliasName) || registry_model.containsKey(aliasName)) {
+            throw new ControlFlow.RuntimeError(stmt.name,
+                    "Erro de Semântica: O identificador '" + aliasName + "' já designa um tipo existente.");
+        }
+
+        // Regra 2: Proibição estrita de referências circulares (ex: type A = B; type B = A;).
+        if (detectCircularAlias(aliasName, stmt.targetType)) {
+            throw new ControlFlow.RuntimeError(stmt.name,
+                    "Referência Circular Proibida: O alias '" + aliasName + "' aponta para si mesmo num ciclo infinito.");
+        }
+
+        typeAliases.put(aliasName, stmt.targetType);
+        return null;
+    }
+
+    // Detetor proativo de buracos negros (Ciclos infinitos):
+    private boolean detectCircularAlias(String originName, TypeNode target) {
+        if (target instanceof TypeNode.Simple) {
+            String targetName = ((TypeNode.Simple) target).name.lexeme;
+            if (targetName.equals(originName)) return true;
+
+            if (typeAliases.containsKey(targetName)) {
+                return detectCircularAlias(originName, typeAliases.get(targetName));
+            }
+        } else if (target instanceof TypeNode.Optional) {
+            return detectCircularAlias(originName, ((TypeNode.Optional) target).innerType);
+        }
+        return false;
     }
 
     // ⭐ 1. VALIDADOR DE TIPOS DO CATCH ⭐
@@ -1503,12 +1542,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // =========================================================================
     private boolean checkTypeMatch(Object obj, TypeNode typeNode) {
 
-        // ⭐ A REGRA DE OURO DO VOLUME 21 ⭐
+        // ⭐ 0. O PRISMA DO VOLUME 20: Dissolve qualquer Alias no seu tipo concreto! ⭐
+        typeNode = resolveConcreteType(typeNode);
+
+        // ⭐ 1. A REGRA DE OURO DO VOLUME 21 ⭐
         if (typeNode instanceof TypeNode.Optional) {
-            // 1. Se o objeto é nulo, e o tipo aceita nulo (?T), PASSOU NA ALFÂNDEGA!
+            // Se o objeto é nulo, e o tipo aceita nulo (?T), PASSOU NA ALFÂNDEGA!
             if (obj == null) return true;
 
-            // 2. Se não é nulo, desempacota o '?' e testa o valor real contra o tipo interno:
+            // Se não é nulo, desempacota o '?' e testa o valor real contra o tipo interno:
             return checkTypeMatch(obj, ((TypeNode.Optional) typeNode).innerType);
         }
 
@@ -1526,7 +1568,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case T_INT:     return obj instanceof Long || obj instanceof Integer;
             case T_FLOAT:   return obj instanceof Double || obj instanceof Float;
             case T_STRING:  return obj instanceof String;
-            case T_BOOL: return obj instanceof Boolean;
+            case T_BOOL:    return obj instanceof Boolean;
             case T_ARRAY:   return obj instanceof java.util.List;
             case T_OBJECT:  return obj instanceof java.util.Map;
 
@@ -1541,6 +1583,31 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             default:
                 return false;
         }
+    }
+
+
+    // =========================================================================
+    // O PRISMA DE DISSOLUÇÃO (Auxiliar do Volume 20)
+    // =========================================================================
+    private TypeNode resolveConcreteType(TypeNode node) {
+        if (node instanceof TypeNode.Simple) {
+            String typeName = ((TypeNode.Simple) node).name.lexeme;
+
+            // Se este identificador é um Alias conhecido, mergulha recursivamente!
+            if (this.typeAliases.containsKey(typeName)) {
+                return resolveConcreteType(this.typeAliases.get(typeName));
+            }
+        }
+        else if (node instanceof TypeNode.Optional) {
+            TypeNode resolvedInner = resolveConcreteType(((TypeNode.Optional) node).innerType);
+
+            // ⭐ Otimização de Garbage Collector: Se o miolo não era um alias, devolve a casca intacta!
+            if (resolvedInner == ((TypeNode.Optional) node).innerType) {
+                return node;
+            }
+            return new TypeNode.Optional(resolvedInner);
+        }
+        return node; // É matéria nativa pura (int, string, Map), devolve como está.
     }
 
     // ⭐ O MOTOR DA "ÚLTIMA LINHA" (Retorno Implícito) ⭐

@@ -4,18 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/tests/omni.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/option.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/stress.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)">
+      <change afterPath="$PROJECT_DIR$/tests/alias.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TypeNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TypeNode.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -263,7 +257,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781990016862</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)">
+      <option name="closed" value="true" />
+      <created>1782059032174</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1782059032174</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -297,6 +299,7 @@
     <MESSAGE value="feat(parser): introduzir operador de potência, cleanup de dead-code e suporte a implicit return&#10;&#10;- Implementa o nó `power()` na hierarquia de precedência do Parser (entre `unary` e `factor`), resolvendo o parse error em operações com `**`.&#10;- Remove código zombie/duplicado de avaliação do nó `If` no método `primary()`.&#10;- Atualiza a mecânica de `expressionStatement` para adotar a semântica do Rust (Implicit Yielding), perdoando a ausência de `;` antes de fechamentos de bloco `}` para facilitar o retorno automático em expressões Orientadas a Bloco." />
     <MESSAGE value="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição." />
     <MESSAGE value="feat(core): implementar expressão de pattern matching ('match') com guardas lógicas&#10;&#10;- Adiciona as estruturas `Expr.Match` e `MatchArm` à AST para desconstrução avançada de dados.&#10;- Habilita 5 frentes de inspeção no Parser: verificação de tipo (`type T`), literais exatos, guardas compostas (`if cond`), guardas puras e fallback semântico (`none:` / `default:`).&#10;- Padroniza o fechamento de cada braço com ponto e vírgula (`;`) para garantir estabilidade máxima na fiação sintática.&#10;- Implementa o motor de metadados em tempo de execução (`checkTypeMatch`) capaz de resolver coerção entre tipos primitivos da JVM e instâncias de classes XPL.&#10;- Acopla a estrutura ao mecanismo de Implicit Yielding para ejeção limpa do valor calculado no braço vencedor." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(core): implementar expressão de pattern matching ('match') com guardas lógicas&#10;&#10;- Adiciona as estruturas `Expr.Match` e `MatchArm` à AST para desconstrução avançada de dados.&#10;- Habilita 5 frentes de inspeção no Parser: verificação de tipo (`type T`), literais exatos, guardas compostas (`if cond`), guardas puras e fallback semântico (`none:` / `default:`).&#10;- Padroniza o fechamento de cada braço com ponto e vírgula (`;`) para garantir estabilidade máxima na fiação sintática.&#10;- Implementa o motor de metadados em tempo de execução (`checkTypeMatch`) capaz de resolver coerção entre tipos primitivos da JVM e instâncias de classes XPL.&#10;- Acopla a estrutura ao mecanismo de Implicit Yielding para ejeção limpa do valor calculado no braço vencedor." />
+    <MESSAGE value="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)" />
   </component>
 </project>
