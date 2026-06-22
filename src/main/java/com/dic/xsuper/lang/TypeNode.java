@@ -60,4 +60,33 @@ public abstract class TypeNode {
             return "?" + innerType.toString();
         }
     }
+
+    // =========================================================================
+    // ⭐ NOVO: O TIPO FUNÇÃO MATURO (Ex: (int, string) -> bool)
+    // =========================================================================
+    public static class FunctionType extends TypeNode {
+        public final java.util.List<TypeNode> paramTypes;
+        public final TypeNode returnType; // Pode ser nulo (void)
+
+        public FunctionType(java.util.List<TypeNode> paramTypes, TypeNode returnType) {
+            // Chamamos o super com um Token sintético neutro (ex: "Callable")
+            // apenas para satisfazer a hierarquia herdada.
+            super(new Token(TokenType.IDENTIFIER, "Callable", null, 0, 0));
+            this.paramTypes = paramTypes;
+            this.returnType = returnType;
+        }
+
+        // Método utilitário vital para imprimir o tipo em mensagens de erro!
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("(");
+            for (int i = 0; i < paramTypes.size(); i++) {
+                sb.append(paramTypes.get(i) == null ? "any" : paramTypes.get(i).name.lexeme);
+                if (i < paramTypes.size() - 1) sb.append(", ");
+            }
+            sb.append(") -> ");
+            sb.append(returnType == null ? "void" : returnType.name.lexeme);
+            return sb.toString();
+        }
+    }
 }

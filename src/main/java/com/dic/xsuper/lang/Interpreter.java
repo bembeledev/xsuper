@@ -30,9 +30,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
+    // =========================================================================
+    // ⭐ CÂMARA CRIOGÉNICA DE GENÉRICOS (Monomorfização) ⭐
+    // Guarda o nó cru da AST exatamente como o utilizador o digitou!
+    // =========================================================================
+    private final Map<String, Stmt.DeclareDecl> registry_generic_blueprints = new HashMap<>();
+
     // O Armazém Global de prismas semânticos (NomeDoAlias -> TipoReal):
     private final java.util.Map<String, TypeNode> typeAliases = new java.util.HashMap<>();
 
+    // ⭐ CÂMARA CRIOGÉNICA DE MOLDES GENÉRICOS (Monomorfização) ⭐
+    private final Map<String, XPLModel> registry_generic_models = new HashMap<>();
 
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
 
@@ -131,6 +139,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         });
 
         errorInject();
+
+        // Injecão do Decorador Base
+        decoratorInject();
+    }
+
+    private void decoratorInject() {
+        XPLModel rootDecModel = new XPLModel("DecoratorRoot", null);
+        rootDecModel.isDecorator = true;
+        this.registry_model.put("DecoratorRoot", rootDecModel);
     }
 
     public static java.util.List<Object> unpackNativeArgs(Interpreter interpreter, java.util.List<Expr.CallArg> rawArgs) {
@@ -167,6 +184,29 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
     }
 
+
+    // =========================================================================
+    // ⭐ DESCASCADOR QUÂNTICO DE TEARDOWN (@Context.End) ⭐
+    // =========================================================================
+    private void triggerEndHooksRecursively(Object obj) {
+        if (obj instanceof XplInstance proxy && Boolean.TRUE.equals(proxy.fields.get("_isDecoratorProxy"))) {
+            Object decObj = proxy.fields.get("_decoratorInstance");
+            if (decObj instanceof XplInstance dec) {
+                XPLModel decModel = dec.klass.model;
+                if (decModel.metaEndHook != null) {
+                    Stmt.Function hookFunc = decModel.findMethod(decModel.metaEndHook);
+                    if (hookFunc != null) {
+                        try {
+                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
+                        } catch (Exception e) {} // O Teardown de memória é estritamente silencioso
+                    }
+                }
+            }
+            triggerEndHooksRecursively(proxy.fields.get("_val")); // Desce na Matryoshka
+        }
+    }
+
+
     public void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
@@ -174,8 +214,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         } catch (ControlFlow.RuntimeError error) {
             System.err.println(ConsoleTheme.ERROR + "Erro de Execução (Linha " + error.token.line + "): " + error.getMessage() + ConsoleTheme.RESET);
+        } finally {
+            // ⭐ GATILHO GLOBAL DE FIM DE SCRIPT (@Context.End) ⭐
+            for (Object obj : globals.values.values()) {
+                triggerEndHooksRecursively(obj);
+            }
         }
     }
+
 
     private void execute(Stmt stmt) {
         stmt.accept(this);
@@ -184,7 +230,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Object evaluate(Expr expr) {
         return expr.accept(this);
     }
-
 
     // ⭐ A POLÍCIA DE ENCAPSULAMENTO ⭐
     private void checkAccess(Token name, Stmt.FieldDecl field, XPLModel targetModel, boolean isWriting) {
@@ -219,8 +264,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-
-
     // ==========================================
     // EXECUÇÃO DE DECLARAÇÕES (STATEMENTS)
     // ==========================================
@@ -238,23 +281,64 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             value = evaluate(stmt.initializer);
         }
 
-        // Verificação Básica de Tipos (se a anotação :long, :string, etc. foi usada)
         if (stmt.typeAnnotation != null && value != null) {
             checkTypeCompatability(stmt.typeAnnotation.name, value);
         }
 
-        // Delega para o teu Environment aplicar as regras restritas!
+        // =====================================================================
+        // ⭐ METAPROGRAMAÇÃO: EXECUÇÃO DOS DECORADORES ANEXADOS ⭐
+        // =====================================================================
+        if (stmt.decorators != null && !stmt.decorators.isEmpty()) {
+            for (Stmt.DecoratorNode adorno : stmt.decorators) {
+                String decName = adorno.name.lexeme;
+                XPLModel decModel = registry_model.get(decName);
+
+                if (decModel == null || !decModel.isDecorator) {
+                    throw new ControlFlow.RuntimeError(adorno.name, "O identificador '" + decName + "' não designa um decorador válido.");
+                }
+
+                XplClass decClass = null;
+                try {
+                    decClass = (XplClass) environment.get(decName);
+                } catch (Exception e) {
+                    decClass = new XplClass(decModel, this.globals);
+                }
+                XplInstance decInstance = new XplInstance(decClass);
+
+                // 1. EMBRULHA NO CONTEXTO PROXY
+                String varTypeStr = (stmt.typeAnnotation != null) ? stmt.typeAnnotation.name.lexeme : "object";
+                XplInstance objetoCtx = createXplContextObject(value, stmt.name.lexeme, varTypeStr);
+                decInstance.fields.put("ctx", objetoCtx);
+                // ⭐ A AMARRAÇÃO VITAL: O proxy guarda o 'Monitor' vivo na sua mochila!
+                objetoCtx.fields.put("_decoratorInstance", decInstance);
+
+                // 2. A ALFÂNDEGA DE ENTRADA: init(...)
+                Stmt.Function initFunc = decModel.findMethod("init");
+                if (initFunc != null) {
+                    XplFunction initCallable = new XplFunction(initFunc, decClass.closure, decModel);
+                    initCallable.bind(decInstance).call(this, adorno.arguments);
+                } else if (adorno.arguments != null && !adorno.arguments.isEmpty()) {
+                    throw new ControlFlow.RuntimeError(adorno.name, "O decorador '" + decName + "' recebeu argumentos, mas não possui um método init(...) declarado.");
+                }
+
+                // 3. O GATILHO SOBERANO: @(Context.Init)
+                String initHookName = (decModel.metaInitHook != null) ? decModel.metaInitHook : "aoNascer";
+                Stmt.Function hookFunc = decModel.findMethod(initHookName);
+                if (hookFunc != null) {
+                    XplFunction hookCallable = new XplFunction(hookFunc, decClass.closure, decModel);
+                    hookCallable.bind(decInstance).call(this, java.util.Collections.emptyList());
+                }
+
+                // A variável real passa a ser a própria caixa proxy do Contexto!
+                value = objetoCtx;
+            }
+        }
+
         String name = stmt.name.lexeme;
         switch (stmt.keyword.type) {
-            case VAR:
-                environment.defineVar(name, value);
-                break;
-            case LET:
-                environment.defineLet(name, value);
-                break;
-            case CONST:
-                environment.defineConst(name, value);
-                break;
+            case VAR:   environment.defineVar(name, value); break;
+            case LET:   environment.defineLet(name, value); break;
+            case CONST: environment.defineConst(name, value); break;
         }
         return null;
     }
@@ -268,13 +352,119 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public void executeBlock(List<Stmt> statements, Environment blockEnv) {
         Environment previous = this.environment;
         try {
-            this.environment = blockEnv; // Entra no novo escopo
+            this.environment = blockEnv;
             for (Stmt statement : statements) {
                 execute(statement);
             }
         } finally {
-            this.environment = previous; // Restaura o escopo pai ao sair do bloco
+            // ⭐ O CANTO DO CISNE: Varre as variáveis que estão a morrer neste bloco
+            // e desmonta as Matryoshkas disparando os ganchos @Context.End!
+            for (Object obj : blockEnv.values.values()) {
+                triggerEndHooksRecursively(obj);
+            }
+            this.environment = previous;
         }
+    }
+
+    // =========================================================================
+    // ⭐ O MONOMORFIZADOR (Impressora 3D de Reificação C++ / Rust) ⭐
+    // =========================================================================
+    private XPLModel resolveMonomorphizedModel(Expr.New expr) {
+        String baseName = expr.className.lexeme;
+
+        // 1. Limpa a formatação da string de tipos (Ex: "<int, string>" vira "int, string")
+        String rawArgs = expr.typeArguments;
+        if (rawArgs.startsWith("<")) rawArgs = rawArgs.substring(1);
+        if (rawArgs.endsWith(">")) rawArgs = rawArgs.substring(0, rawArgs.length() - 1);
+        rawArgs = rawArgs.trim();
+
+        // 2. Extrai os nomes dos tipos concretos solicitados
+        String[] concreteTypes = rawArgs.split(",");
+        // =====================================================================
+        // ⭐ TRADUTOR DE GENÉRICOS ANINHADOS (JIT Translation) ⭐
+        // Se estamos a invocar 'new MapaKV<string, U>()' DENTRO do Ecossistema,
+        // o Ecossistema tem a cábula para transformar o 'U' em 'string' em milissegundos!
+        // =====================================================================
+        XPLModel currentContext = null;
+        try {
+            currentContext = (XPLModel) environment.get("__current_model");
+        } catch (Exception ignored) {}
+
+        for (int i = 0; i < concreteTypes.length; i++) {
+            String cType = concreteTypes[i].trim();
+            // Bate na cábula do contexto atual e traduz instantaneamente:
+            if (currentContext != null && currentContext.resolvedGenericMap.containsKey(cType)) {
+                concreteTypes[i] = currentContext.resolvedGenericMap.get(cType);
+            } else {
+                concreteTypes[i] = cType;
+            }
+        }
+
+        // 3. Vai buscar o Blueprint congelado à Câmara Criogénica
+        XPLModel blueprint = registry_generic_models.get(baseName);
+        if (blueprint == null) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "Erro de Linkage: O molde genérico '" + baseName + "<...>' não foi declarado.");
+        }
+
+        // 4. Valida a Aridade Genérica (O número de tipos passados bate certo com os <T>?)
+        if (concreteTypes.length != blueprint.typeParameters.size()) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "Aridade Genérica Incorreta: O molde '" + baseName + "' requer " +
+                            blueprint.typeParameters.size() + " parâmetro(s) de tipo, mas forneceste " + concreteTypes.length + ".");
+        }
+
+        // 5. Fabrica a Chave Genética Única da RAM (Ex: "Caixa<int>")
+        String synthesizedName = baseName + "<" + String.join(", ", concreteTypes) + ">";
+
+        // ⭐ OTIMIZAÇÃO DE CACHE: Se já fabricámos esta exata variação antes, devolve a que já está viva na RAM!
+        if (registry_model.containsKey(synthesizedName)) {
+            return registry_model.get(synthesizedName);
+        }
+
+        System.out.println("[XPL Monomorfizador] -> Sintetizando nova classe física na RAM: " + synthesizedName);
+
+        // ⭐ O PARTO DA CLASSE CLONE ⭐
+        XPLModel clonedModel = new XPLModel(synthesizedName, blueprint.superclass);
+        clonedModel.hasBaseImplementation = blueprint.hasBaseImplementation;
+        clonedModel.canBeInstantiated = true; // O clone nasce destrancado!
+
+        // Monta o dicionário de tradução quântica { "T": "int", "U": "string", "V": "object" }
+        Map<String, String> translationMap = new HashMap<>();
+        for (int i = 0; i < blueprint.typeParameters.size(); i++) {
+            translationMap.put(blueprint.typeParameters.get(i).lexeme, concreteTypes[i]);
+        }
+
+        // ⭐ GUARDA O ADN NESTA INSTÂNCIA PARA OS FILHOS PODEREM LER! ⭐
+        clonedModel.resolvedGenericMap.putAll(translationMap);
+
+        // --- A) TRANSMUTAR OS CAMPOS DA RAM (Fields) ---
+        for (Stmt.FieldDecl oldField : blueprint.fields.values()) {
+            TypeNode mutatedType = transmuteType(oldField.type, translationMap);
+
+            Stmt.FieldDecl newField = new Stmt.FieldDecl(
+                    oldField.modifier, oldField.isStatic, oldField.isFinal, oldField.isReadonly, oldField.name, mutatedType
+            );
+            clonedModel.addField(newField);
+        }
+
+        // --- B) ⭐ TRANSMUTAR AS ASSINATURAS DOS MÉTODOS (Methods) ⭐ ---
+        for (Stmt.Function oldMethod : blueprint.methods.values()) {
+            // Invocamos o bisturi antes de cravar o método no clone!
+            Stmt.Function mutatedMethod = transmuteMethodSignature(oldMethod, translationMap);
+            clonedModel.addMethod(mutatedMethod);
+        }
+
+        clonedModel.defaultInstanceFields.putAll(blueprint.defaultInstanceFields);
+
+        // 6. Regista a nova classe no ecossistema normal de execução
+        registry_model.put(synthesizedName, clonedModel);
+
+        // 7. Regista o construtor da classe no escopo global para o 'instanceof / typeof' funcionar
+        XplClass runtimeClass = new XplClass(clonedModel, this.globals);
+        this.environment.defineConst(synthesizedName, runtimeClass);
+
+        return clonedModel;
     }
 
 
@@ -331,7 +521,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitDeclareDeclStmt(Stmt.DeclareDecl stmt) {
         String modelName = stmt.name.lexeme;
 
+        // =====================================================================
+        // ⭐ ROTA A: É UM MOLDE GENÉRICO? (Ex: declare Caixa<T>)
+        // =====================================================================
+        if (stmt.typeParameters != null && !stmt.typeParameters.isEmpty()) {
+            System.out.println("[XPL Genéricos] -> Criando Blueprint Estrutural: " + modelName + "<" + stmt.typeParameters.size() + " parâmetro(s)>");
 
+            XPLModel blueprint = new XPLModel(modelName, null);
+            blueprint.isGenericBlueprint = true;
+            blueprint.typeParameters = stmt.typeParameters;
+            blueprint.canBeInstantiated = false;
+
+            for (Stmt.FieldDecl field : stmt.fields) {
+                blueprint.addField(field);
+            }
+
+            registry_generic_models.put(modelName, blueprint);
+            return null; // <-- Corta aqui! Não entra no registry_model normal.
+        }
+
+        // =====================================================================
+        // ⭐ ROTA B: É UMA CLASSE CONCRETA NORMAL? (Ex: declare Pessoa)
+        // =====================================================================
         System.out.println("[XPL Engine] -> Compilando Modelo de Dados (Declare): " + modelName);
 
         // 1. Resolve a herança (Extends)
@@ -340,28 +551,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             superclass = registry_model.get(stmt.superclass.lexeme);
             if (superclass == null) {
                 throw new ControlFlow.RuntimeError(stmt.superclass,
-                        "Erro: O modelo pai '" + stmt.superclass.lexeme + "' não foi encontrado ou declarado antes de " + modelName + ".");
+                        "Erro: O modelo pai '" + stmt.superclass.lexeme + "' não foi encontrado.");
             }
         }
 
-        // 2. Cria o Molde (Blueprint) Base
         XPLModel model = new XPLModel(modelName, superclass);
-        model.canBeInstantiated = false; // Declare puro NÃO nasce.
+        model.canBeInstantiated = false;
 
-        // Se este modelo tem um pai, ele herda IMEDIATAMENTE todos os campos do pai!
         if (superclass != null) {
             model.fields.putAll(superclass.fields);
         }
 
-        // 3. Injeta as propriedades (Campos de Dados)
         for (Stmt.FieldDecl field : stmt.fields) {
             model.addField(field);
         }
 
-        // 4. Arquiva o Molde no teu Registry de POO!
-        // Sem isto, o 'implement' nunca conseguiria fundir os métodos.
         registry_model.put(modelName, model);
-
         return null;
     }
 
@@ -384,11 +589,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
 
-
-
-
-
         String baseName = stmt.targetName.lexeme;
+
+        // =====================================================================
+        // ⭐ ROTA A: É A IMPLEMENTAÇÃO DE UM MOLDE GENÉRICO? (Ex: implement Caixa<T>)
+        // =====================================================================
+        if (registry_generic_models.containsKey(baseName)) {
+            XPLModel blueprint = registry_generic_models.get(baseName);
+            blueprint.hasBaseImplementation = true;
+
+            for (Stmt.Function method : stmt.methods) {
+                blueprint.addMethod(method);
+            }
+
+            System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
+            return null; // <-- Corta aqui! O blueprint fica completo na câmara criogénica.
+        }
+
 
         // 1. Vai buscar o modelo base (Declare) ao teu NOVO map!
         XPLModel baseModel = registry_model.get(baseName);
@@ -483,12 +700,57 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-        // 4. Instancia a classe para a memória RAM (O Global Environment)
-        XplClass executableClass = new XplClass(activeModel, this.globals);
-        globals.defineConst(activeModel.name, executableClass);
+        // ⭐ 4. Instancia a classe para a memória RAM (O Global Environment) ⭐
+        // A VACINA: Se o modelo for um Decorador (ex: Auditoria), a XplClass já mora na RAM
+        // desde o 'decorator Auditoria {}' e ganha os métodos por referência nativamente!
+        // Só definimos a constante global se NÃO for um decorador:
+        if (!activeModel.isDecorator) {
+            XplClass executableClass = new XplClass(activeModel, this.globals);
+            globals.defineConst(activeModel.name, executableClass);
+        }
 
         return null;
     }
+
+    // =========================================================================
+    // ⭐ FABRICANTE DE CONTEXTOS NATIVOS XPL (O 'this.ctx') ⭐
+    // =========================================================================
+    private XplInstance createXplContextObject(Object targetValue, String varName, String varType) {
+        XPLModel ctxModel = registry_model.get("ContextDecorator");
+        if (ctxModel == null) {
+            ctxModel = new XPLModel("ContextDecorator", null);
+            registry_model.put("ContextDecorator", ctxModel);
+        }
+        XplClass ctxClass = new XplClass(ctxModel, this.globals);
+        XplInstance ctxInst = new XplInstance(ctxClass);
+
+        ctxInst.fields.put("targetName", varName);
+        ctxInst.fields.put("targetType", varType);
+        ctxInst.fields.put("_val", targetValue);
+
+        ctxInst.fields.put("get", new XplCallable() {
+            @Override public int arity() { return 0; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                return ctxInst.fields.get("_val");
+            }
+        });
+
+        ctxInst.fields.put("set", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Object novoVal = interpreter.evaluate(args.getFirst().expression);
+                ctxInst.fields.put("_val", novoVal);
+                return null;
+            }
+        });
+
+        // ⭐ A ALTERAÇÃO AQUI: Injeção Dinâmica na RAM!
+        ctxInst.fields.put("_isDecoratorProxy", true);
+        // ⭐ A NOVA RANHURA: O Proxy passa a saber quem é o Vigilante que mora colado a ele!
+        ctxInst.fields.put("_decoratorInstance", null);
+        return ctxInst;
+    }
+
 
     @Override
     public Void visitThrowStmt(Stmt.Throw stmt) {
@@ -514,6 +776,42 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         typeAliases.put(aliasName, stmt.targetType);
+        return null;
+    }
+    // =========================================================================
+    // ⭐ VISITAÇÃO DA DECLARAÇÃO DO DECORADOR (A alocação de RAM) ⭐
+    // =========================================================================
+    @Override
+    public Void visitDecoratorDeclStmt(Stmt.DecoratorDecl stmt) {
+        String decName = stmt.name.lexeme;
+
+        // 1. Obtém o modelo real do Gerente ("DecoratorRoot") como OBJETO:
+        XPLModel superPai = this.registry_model.get("DecoratorRoot");
+
+        // Instância de segurança (garante que ele existe mesmo que a ordem de boot mude):
+        if (superPai == null) {
+            superPai = new XPLModel("DecoratorRoot", null);
+            superPai.isDecorator = true;
+            this.registry_model.put("DecoratorRoot", superPai);
+        }
+
+        XPLModel modelo = this.registry_model.get(decName);
+        if (modelo == null) {
+            // ⭐ A CORREÇÃO: Passamos a instância 'superPai' e não a String!
+            modelo = new XPLModel(decName, superPai);
+            modelo.isDecorator = true;
+            this.registry_model.put(decName, modelo);
+        }
+
+        if (stmt.fields != null) {
+            for (Stmt.FieldDecl campo : stmt.fields) {
+                modelo.fields.put(campo.name.lexeme, campo);
+            }
+        }
+
+        com.dic.xsuper.lang.poo.XplClass classeDecoradora = new com.dic.xsuper.lang.poo.XplClass(modelo, this.environment);
+        this.environment.defineConst(decName, classeDecoradora);
+
         return null;
     }
 
@@ -620,6 +918,78 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Se o loop rodou até ao fim sem disparar o 'return', nenhum catch serviu. Explode!
         throw originalException;
     }
+
+
+    // =========================================================================
+    // ⭐ MOTOR DE TRANSMUTAÇÃO DE AST (O Bisturi Quântico de C++/Rust) ⭐
+    // =========================================================================
+
+    // Helper quântico: Converte uma string crua no TokenType oficial da tua linguagem!
+    private TokenType getPrimitiveTokenType(String typeName) {
+        return switch (typeName.toLowerCase()) {
+            case "int", "long", "short", "byte" -> TokenType.T_INT;
+            case "float", "double" -> TokenType.T_FLOAT;
+            case "string", "char" -> TokenType.T_STRING;
+            case "bool", "boolean" -> TokenType.T_BOOL;
+            case "array", "list" -> TokenType.T_ARRAY;
+            case "object", "map", "dict" -> TokenType.T_OBJECT;
+            default -> TokenType.IDENTIFIER; // Se for uma classe POO (Ex: Pessoa)
+        };
+    }
+
+    private TypeNode transmuteType(TypeNode node, Map<String, String> dict) {
+        if (node == null) return null;
+
+        if (node instanceof TypeNode.Simple simple) {
+            String lex = simple.name.lexeme;
+            if (dict.containsKey(lex)) {
+                String concreteName = dict.get(lex);
+
+                // ⭐ A CURA: Em vez de fixar IDENTIFIER, detetamos o tipo biológico real!
+                TokenType realTokenType = getPrimitiveTokenType(concreteName);
+
+                Token concreteToken = new Token(realTokenType, concreteName, null, simple.name.line, simple.name.column);
+                return new TypeNode.Simple(concreteToken);
+            }
+        }
+        else if (node instanceof TypeNode.Generic gen) {
+            List<TypeNode> newArgs = new ArrayList<>();
+            for (TypeNode arg : gen.typeArguments) newArgs.add(transmuteType(arg, dict));
+            return new TypeNode.Generic(gen.name, newArgs);
+        }
+        else if (node instanceof TypeNode.Optional opt) {
+            return new TypeNode.Optional(transmuteType(opt.innerType, dict));
+        }
+
+        return node;
+    }
+
+    // 2. Transmuta a assinatura inteira de uma Função!
+    private Stmt.Function transmuteMethodSignature(Stmt.Function oldFunc, Map<String, String> dict) {
+        // A) Transmuta a lista de parâmetros: (a: U, b: T) vira (a: string, b: int)
+        List<Stmt.Param> newParams = new ArrayList<>();
+        for (Stmt.Param oldParam : oldFunc.params) {
+            TypeNode mutatedType = transmuteType(oldParam.typeNode, dict);
+            newParams.add(new Stmt.Param(oldParam.name, mutatedType, oldParam.defaultValue));
+        }
+
+        // B) Transmuta o tipo de retorno: : V vira : object
+        TypeNode newReturn = transmuteType(oldFunc.returnType, dict);
+
+        // C) Devolve um nó Stmt.Function novinho em folha, puramente concreto!
+        return new Stmt.Function(
+                oldFunc.accessModifier,
+                oldFunc.isStatic,
+                oldFunc.isAbstract,
+                oldFunc.name,
+                newParams, // <-- Injetados os parâmetros transmutados!
+                newReturn, // <-- Injetado o retorno transmutado!
+                oldFunc.thrownExceptions,
+                oldFunc.body, // O corpo desce igual
+                oldFunc.decorators // (Mantemos a mochila de decoradores que criámos ontem!)
+        );
+    }
+
     @Override
     public Void visitForCStyleStmt(Stmt.ForCStyle stmt) {
         // 1. Criamos uma "Jaula" (Escopo) só para o loop.
@@ -1011,10 +1381,34 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-// ⭐ É uma instância da nossa POO? ⭐
-        if (object instanceof XplInstance) {
-            XplInstance instance = (XplInstance) object;
+        // ⭐ É uma instância da nossa POO? ⭐
+        if (object instanceof XplInstance instance) {
 
+            // ⭐ O BURACO NEGRO DO DECORADOR (VIA CHAVE OCULTA) ⭐
+            // Verificamos de forma segura se a propriedade oculta existe e é verdadeira
+            if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
+
+                // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'GET' ⭐
+                Object decObj = instance.fields.get("_decoratorInstance");
+                if (decObj instanceof XplInstance dec) {
+                    XPLModel decModel = dec.klass.model;
+                    if (decModel.metaGetHook != null) {
+                        Stmt.Function hookFunc = decModel.findMethod(decModel.metaGetHook);
+                        if (hookFunc != null) {
+                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
+                        }
+                    }
+                }
+
+                // 2. Reencaminha a leitura para o miolo real:
+                String lex = expr.name.lexeme;
+                if (!lex.equals("get") && !lex.equals("set") && !lex.equals("targetName") && !lex.equals("targetType") && !lex.equals("_val") && !lex.equals("_decoratorInstance")) {
+                    Object wrappedObj = instance.fields.get("_val");
+                    if (wrappedObj != null) {
+                        return visitGetExpr(new Expr.Get(new Expr.Literal(wrappedObj), expr.name));
+                    }
+                }
+            }
 
             // 🚀0. INJEÇÃO NATIVA: O Método toObject() 🚀
             if (expr.name.lexeme.equals("toObject")) {
@@ -1039,6 +1433,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 // 🛑 CHAMA A POLÍCIA ANTES DE LER! 🛑
                 if (field != null) {
                     checkAccess(expr.name, field, instance.klass.model, false);
+                }
+
+                // ⭐ VIGILÂNCIA: Existe gancho @Context.Get?
+                XPLModel model = instance.klass.model;
+                if (model.metaGetHook != null) {
+                    Stmt.Function hookFunc = model.findMethod(model.metaGetHook);
+                    XplFunction hookCallable = new XplFunction(hookFunc, instance.klass.closure, model);
+                    hookCallable.bind(instance).call(this, java.util.Collections.emptyList());
                 }
 
                 return instance.fields.get(expr.name.lexeme);
@@ -1134,8 +1536,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         String modelName = expr.className.lexeme;
         XPLModel model = registry_model.get(modelName);
 
+        // =====================================================================
+        // ⭐ DESVIO QUÂNTICO: É uma invocação Genérica? (Ex: new Caixa<int>())
+        // =====================================================================
+        if (expr.typeArguments != null && !expr.typeArguments.isEmpty()) {
+            model = resolveMonomorphizedModel(expr);
+        } else {
+            model = registry_model.get(modelName);
+        }
+
         // 1. Verifica se o modelo sequer existe
         if (model == null) {
+            // Trava de Proteção: Se o utilizador tentou instanciar 'new Caixa()' sem os < >, avisa-o!
+            if (registry_generic_models.containsKey(modelName)) {
+                throw new ControlFlow.RuntimeError(expr.className,
+                        "Erro de Tipagem: '" + modelName + "' é um Template Genérico. Deves instanciá-lo declarando os seus tipos concretos (Ex: new " + modelName + "<int>()).");
+            }
             throw new ControlFlow.RuntimeError(expr.className,
                     "Erro: O modelo '" + modelName + "' não foi declarado.");
         }
@@ -1151,10 +1567,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     "ERRO FATAL: Operação Ilegal. O modelo '" + modelName + "' possui uma implementação abstrata e não pode ser instanciado diretamente.");
         }
 
+        // =====================================================================
+        // ⭐ A SENTINELA: A GUILHOTINA DE CONSTRUTORES FANTASMAS ⭐
+        // =====================================================================
+        // O modelo tem um método chamado 'init'?
+        // Se não tiver, o utilizador NÃO PODE passar argumentos!
+        Stmt.Function initMethod = model.findMethod("init");
+
+        if (initMethod == null && !expr.arguments.isEmpty()) {
+            throw new ControlFlow.RuntimeError(expr.className,
+                    "Quebra de Contrato: O modelo '" + modelName + "' não possui um método construtor 'init(...)', mas forneceste " + expr.arguments.size() + " argumento(s) na instanciação.");
+        }
+        // =====================================================================
+
         XplClass klass = new XplClass(model, environment);
 
-        // ⭐ PASSE DIRETO PURO: Entregamos a fila de Expr.CallArg crua à XplClass!
-        // O algoritmo de 3 fases do método init() fará o alinhamento de nomes e auditoria de omissões.
+        // Agora, klass.call() só será chamado se:
+        // a) O método init existir; OU
+        // b) O método init NÃO existir E o programador não passou argumentos.
         return klass.call(this, expr.arguments);
     }
 
@@ -1196,11 +1626,44 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 2. É Atribuição numa Instância POO? (Ex: leao.nome = "Simba")
         if (object instanceof XplInstance instance) {
-            Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
 
+            // ⭐ DELEGAÇÃO TRANSPARENTE DE ESCRITA (VIA CHAVE OCULTA) ⭐
+            if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
+
+                // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'SET' ⭐
+                Object decObj = instance.fields.get("_decoratorInstance");
+                if (decObj instanceof XplInstance dec) {
+                    XPLModel decModel = dec.klass.model;
+                    if (decModel.metaSetHook != null) {
+                        Stmt.Function hookFunc = decModel.findMethod(decModel.metaSetHook);
+                        if (hookFunc != null) {
+                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
+                        }
+                    }
+                }
+
+                // 2. Reencaminha a escrita para o miolo real:
+                String lex = expr.name.lexeme;
+                if (!lex.equals("_val")) {
+                    Object wrappedObj = instance.fields.get("_val");
+                    if (wrappedObj != null) {
+                        return visitSetExpr(new Expr.Set(new Expr.Literal(wrappedObj), expr.name, expr.value));
+                    }
+                }
+            }
+
+            Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
             if (field != null) {
                 // 🛑 CHAMA A POLÍCIA ANTES DE ESCREVER! 🛑
                 checkAccess(expr.name, field, instance.klass.model, true);
+
+                // ⭐ VIGILÂNCIA: Existe gancho @Context.Set?
+                XPLModel model = instance.klass.model;
+                if (model.metaSetHook != null) {
+                    Stmt.Function hookFunc = model.findMethod(model.metaSetHook);
+                    XplFunction hookCallable = new XplFunction(hookFunc, instance.klass.closure, model);
+                    hookCallable.bind(instance).call(this, java.util.Collections.emptyList());
+                }
 
                 instance.set(expr.name, value);
                 return value;
@@ -1475,9 +1938,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
-    // 3. ENCADEAMENTO DE PROPRIEDADE ( obj?.prop )
-    // =========================================================================
-    // =========================================================================
     // 3. ENCADEAMENTO DE PROPRIEDADE ( obj?.prop ) - BILINGUE ⭐
     // =========================================================================
     @Override
@@ -1540,40 +2000,111 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ⭐ 0. O PRISMA DO VOLUME 20: Dissolve qualquer Alias no seu tipo concreto! ⭐
         typeNode = resolveConcreteType(typeNode);
 
-        // ⭐ 1. A REGRA DE OURO DO VOLUME 21 ⭐
-        if (typeNode instanceof TypeNode.Optional) {
-            // Se o objeto é nulo, e o tipo aceita nulo (?T), PASSOU NA ALFÂNDEGA!
-            if (obj == null) return true;
+        // O vácuo quântico: se a ranhura não tem tipo (ex: fun teste(x)), passa tudo!
+        if (typeNode == null) return true;
 
-            // Se não é nulo, desempacota o '?' e testa o valor real contra o tipo interno:
-            return checkTypeMatch(obj, ((TypeNode.Optional) typeNode).innerType);
+        // ⭐ 1. A REGRA DE OURO DO VOLUME 21 ⭐
+        if (typeNode instanceof TypeNode.Optional opt) {
+            if (obj == null) return true;
+            return checkTypeMatch(obj, opt.innerType); // Desempacota e re-testa
         }
 
-        // Para todos os outros tipos normais (não-opcionais), o null é estritamente PROIBIDO!
+        // =========================================================================
+        // ⭐ AUDITORIA DE PRIMEIRA CLASSE: FUNÇÕES COMO ARGUMENTO ⭐
+        // =========================================================================
+        if (typeNode instanceof TypeNode.FunctionType fnType) {
+
+            // 1. O que tentaram enfiar nesta ranhura é sequer invocável?
+            if (!(obj instanceof XplCallable callable)) {
+                return false;
+            }
+
+            // 2. A Aridade (quantidade de parâmetros) bate certo?
+            // Se a ranhura pede (int, string) -> bool, a função fornecida TEM de exigir 2 parâmetros!
+            if (callable.arity() != fnType.paramTypes.size()) {
+                return false;
+            }
+
+            // 3. Validação de Assinatura Profunda (Se for uma função nativa do teu XPL)
+            if (obj instanceof XplFunction xplFunc) {
+                Stmt.Function declaracao = xplFunc.declaration;
+
+                // Verifica o tipo de retorno
+                if (fnType.returnType != null && declaracao.returnType != null) {
+                    // (Opcional: Podes chamar uma função auxiliar estática para comparar TypeNodes)
+                    if (!fnType.returnType.name.lexeme.equals(declaracao.returnType.name.lexeme)) {
+                        return false;
+                    }
+                }
+            }
+
+            // Se é invocável e tem o número certo de argumentos, a Alfândega aprova!
+            return true;
+        }
+
+        // Para todos os tipos normais (não-opcionais), o null é estritamente PROIBIDO!
         if (obj == null) return false;
 
-        Token typeToken;
-        if (typeNode instanceof TypeNode.Simple) {
-            typeToken = typeNode.name;
-        } else {
-            return false;
-        }
+        // ⭐ CORREÇÃO VITAL: Extrai o Token tanto de Simple (int) quanto de Generic (Caixa<T>)!
+        Token typeToken = typeNode.name;
 
         switch (typeToken.type) {
-            case T_INT:     return obj instanceof Long || obj instanceof Integer;
-            case T_FLOAT:   return obj instanceof Double || obj instanceof Float;
-            case T_STRING:  return obj instanceof String;
-            case T_BOOL:    return obj instanceof Boolean;
-            case T_ARRAY:   return obj instanceof java.util.List;
-            case T_OBJECT:  return obj instanceof java.util.Map;
+            case T_INT:
+                // Promove e engole os 4 tamanhos de inteiros do silício!
+                return obj instanceof Long || obj instanceof Integer ||
+                        obj instanceof Short || obj instanceof Byte;
+
+            case T_FLOAT:
+                // Engole decimais E TAMBÉM aceita promover um inteiro a float (ex: float x = 5)
+                return obj instanceof Double || obj instanceof Float ||
+                        obj instanceof Long || obj instanceof Integer ||
+                        obj instanceof Short || obj instanceof Byte;
+
+            case T_STRING:
+                return obj instanceof String || obj instanceof Character;
+
+            case T_BOOL:
+                return obj instanceof Boolean;
+
+            case T_ARRAY:
+                return obj instanceof java.util.List;
+
+            case T_OBJECT:
+                return obj instanceof java.util.Map;
 
             case IDENTIFIER:
                 String customTypeName = typeToken.lexeme;
-                if (obj instanceof XplInstance) {
-                    XPLModel modelo = ((XplInstance) obj).klass.model;
+
+                // =============================================================
+                // ⭐ A REDE DE SEGURANÇA DOS TIPOS JAVA (Sem Token Próprio) ⭐
+                // Se o programador digitou 'var x: byte', o Lexer leu "byte"
+                // como um Identifier comum. Intercetamos os nomes nativos aqui!
+                // =============================================================
+                switch (customTypeName.toLowerCase()) {
+                    case "long":
+                    case "short":
+                    case "byte":
+                    case "integer":
+                        return obj instanceof Long || obj instanceof Integer || obj instanceof Short || obj instanceof Byte;
+                    case "double":
+                    case "number":
+                        return obj instanceof Number;
+                    case "char":
+                    case "character":
+                        return obj instanceof Character || obj instanceof String;
+                    case "any":
+                    case "object":
+                        return true;
+                }
+
+                // Se não era um nome Java disfarçado, então é POO Moçambicana pura (Ex: Pessoa):
+                if (obj instanceof XplInstance instance) {
+                    XPLModel modelo = instance.klass.model;
                     return modelo.isSubclassOf(customTypeName);
                 }
-                return obj.getClass().getSimpleName().equals(customTypeName);
+
+                // Fallback para objetos Java nativos injetados no motor
+                return obj.getClass().getSimpleName().equalsIgnoreCase(customTypeName);
 
             default:
                 return false;

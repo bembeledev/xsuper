@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class Environment {
     private final Environment enclosing; // Escopo pai (ex: a função onde o if está dentro)
-    private final Map<String, Object> values = new HashMap<>();
+    public final Map<String, Object> values = new HashMap<>();
     private final Map<String, Boolean> isConstant = new HashMap<>();
     private final long depth; // Nível de profundidade (0 = Arquivo/Global)
 

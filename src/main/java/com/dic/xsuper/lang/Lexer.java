@@ -71,6 +71,7 @@ public class Lexer {
         keywords.put("case", TokenType.CASE);
         keywords.put("none", TokenType.NONE);
         keywords.put("match", TokenType.MATCH);
+        keywords.put("decorator", TokenType.DECORATOR);
     }
 
     public Lexer(String source) {
@@ -103,6 +104,7 @@ public class Lexer {
             case '&':
                 addToken(match('&') ? TokenType.AND : TokenType.BIT_AND);
                 break;
+            case '@': addToken(TokenType.AT); break;
             case '|':
                 addToken(match('|') ? TokenType.OR : TokenType.BIT_OR);
                 break;
@@ -112,6 +114,7 @@ public class Lexer {
             case '-': {
                 if (match('=')) addToken(TokenType.MINUS_ASSIGN);
                 else if (match('-')) addToken(TokenType.MINUS_MINUS);
+                else if (match('>')) addToken(TokenType.ARROW);
                 else addToken(TokenType.MINUS);
             }; break;
             case '+': {

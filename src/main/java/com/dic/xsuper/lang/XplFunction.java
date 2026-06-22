@@ -6,7 +6,7 @@ import com.dic.xsuper.lang.poo.XplInstance;
 import java.util.List;
 
 public class XplFunction implements XplCallable {
-    private final Stmt.Function declaration;
+    final Stmt.Function declaration;
     private final Environment closure; // Guarda o escopo onde a função foi criada
     private final XPLModel ownerModel;
 

@@ -1,6 +1,7 @@
 package com.dic.xsuper.lang.poo;
 
 import com.dic.xsuper.lang.Stmt;
+import com.dic.xsuper.lang.Token;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,26 @@ public class XPLModel {
     public boolean isAbstract = false;             // Fica true se for 'abstract implement Nome'
 
     public boolean canBeInstantiated = false; // Bloqueado por defeito
+
+    // =========================================================================
+    // ⭐ COORDENADAS DE METAPROGRAMAÇÃO (Decoradores) ⭐
+    // =========================================================================
+    public boolean isDecorator = false;
+
+    // Guardam o nome real dos métodos que o programador marcou com @(Context.X)
+    public String metaInitHook = null;
+    public String metaGetHook  = null;
+    public String metaSetHook  = null;
+    public String metaEndHook  = null;
+
+    // Injeta estas duas ranhuras na tua classe XPLModel:
+    public boolean isGenericBlueprint = false;
+    public java.util.List<Token> typeParameters = new java.util.ArrayList<>();
+
+
+    // ⭐ GUARDA A CÁBULA GENÉTICA DOS CLONES (Ex: { "T": "int", "U": "string" }) ⭐
+    public final java.util.Map<String, String> resolvedGenericMap = new java.util.HashMap<>();
+
 
     public XPLModel(String name, XPLModel superclass) {
         this.name = name;

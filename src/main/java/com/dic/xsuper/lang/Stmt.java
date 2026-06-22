@@ -24,6 +24,7 @@ public abstract class Stmt {
         R visitTryStmt(Try stmt);
         R visitThrowStmt(Throw stmt);
         R visitTypeAliasDecl(TypeAliasDecl typeAliasDecl);
+        R visitDecoratorDeclStmt(DecoratorDecl decoratorDecl);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -53,16 +54,29 @@ public abstract class Stmt {
         public final Token name;
         public final TypeNode typeAnnotation; // ⭐ A EVOLUÇÃO: Agora usa a árvore de tipos!
         public final Expr initializer;
+        public final java.util.List<DecoratorNode> decorators;
 
-        public VarDecl(Token keyword, Token name, TypeNode typeAnnotation, Expr initializer) {
+        public VarDecl(Token keyword, Token name, TypeNode typeAnnotation, Expr initializer, List<DecoratorNode> decorators) {
             this.keyword = keyword;
             this.name = name;
             this.typeAnnotation = typeAnnotation;
             this.initializer = initializer;
+            this.decorators = decorators;
         }
 
         @Override
         public <R> R accept(Visitor<R> visitor) { return visitor.visitVarDeclStmt(this); }
+
+        @Override
+        public String toString() {
+            return "VarDecl{" +
+                    "keyword=" + keyword +
+                    ", name=" + name +
+                    ", typeAnnotation=" + typeAnnotation +
+                    ", initializer=" + initializer +
+                    ", decorators=" + decorators +
+                    '}';
+        }
     }
 
     public static class Block extends Stmt {
@@ -174,10 +188,11 @@ public abstract class Stmt {
         public final TypeNode returnType;
         public final List<Token> thrownExceptions;
         public final List<Stmt> body;      // Será 'null' se isAbstract for verdadeiro!
+        public final java.util.List<DecoratorNode> decorators;
 
         // Atualiza o construtor com os novos campos
         public Function(Token accessModifier, boolean isStatic, boolean isAbstract, Token name,
-                        List<Param> params, TypeNode returnType, List<Token> thrownExceptions, List<Stmt> body) {
+                        List<Param> params, TypeNode returnType, List<Token> thrownExceptions, List<Stmt> body, List<DecoratorNode> decorators) {
             this.accessModifier = accessModifier;
             this.isStatic = isStatic;
             this.isAbstract = isAbstract;
@@ -186,6 +201,7 @@ public abstract class Stmt {
             this.returnType = returnType;
             this.thrownExceptions = thrownExceptions;
             this.body = body;
+            this.decorators = decorators;
         }
 
         @Override
@@ -348,13 +364,15 @@ public abstract class Stmt {
         public final Token name;
         public final Token superclass;
         public final java.util.List<FieldDecl> fields;
+        // ⭐ A NOVA RANHURA DA AST: Guarda os parâmetros de tipo (ex: [T, U])
+        public final java.util.List<Token> typeParameters;
 
 
-        public DeclareDecl(Token name, Token superclass, java.util.List<FieldDecl> fields) {
+        public DeclareDecl(Token name, Token superclass, java.util.List<FieldDecl> fields, List<Token> typeParameters) {
             this.name = name;
             this.superclass = superclass;
             this.fields = fields;
-
+            this.typeParameters = typeParameters;
         }
 
         @Override
@@ -366,6 +384,7 @@ public abstract class Stmt {
                     "name=" + name +
                     ", superclass=" + superclass +
                     ", fields=" + fields +
+                    ", typeParameters=" + typeParameters +
                     '}';
         }
     }
@@ -400,15 +419,18 @@ public abstract class Stmt {
         public final java.util.List<Token> interfaces; // Os contratos (Ex: [CRUD, EXEC])
         public final java.util.List<Stmt.Function> methods; // As funções reais com corpo { ... }
         public final boolean isAbstract;
+        // ⭐ NOVA RANHURA: Guarda os parâmetros genéricos do implement (ex: [T])
+        public final java.util.List<Token> typeParameters;
 
         public ImplementDecl(boolean isAbstract, Token targetName, Token aliasName,
-                             List<Token> interfaces, Map<String, Expr> defaultState, List<Stmt.Function> methods) {
+                             List<Token> interfaces, Map<String, Expr> defaultState, List<Stmt.Function> methods, List<Token> typeParameters) {
             this.isAbstract = isAbstract;
             this.targetName = targetName;
             this.aliasName = aliasName;
             this.defaultState = defaultState;
             this.interfaces = interfaces;
             this.methods = methods;
+            this.typeParameters = typeParameters;
         }
 
         @Override
@@ -421,9 +443,11 @@ public abstract class Stmt {
             return "ImplementDecl{" +
                     "targetName=" + targetName +
                     ", aliasName=" + aliasName +
+                    ", defaultState=" + defaultState +
                     ", interfaces=" + interfaces +
                     ", methods=" + methods +
                     ", isAbstract=" + isAbstract +
+                    ", typeParameters=" + typeParameters +
                     '}';
         }
     }
@@ -543,5 +567,46 @@ public abstract class Stmt {
                     '}';
         }
     }
+
+    // ⭐ 1. A DECLARAÇÃO DO DECORADOR NA AST (O layout de memória)
+    public static class DecoratorDecl extends Stmt {
+        public final Token name;
+        public final java.util.List<Stmt.FieldDecl> fields;
+
+        public DecoratorDecl(Token name, java.util.List<Stmt.FieldDecl> fields) {
+            this.name = name;
+            this.fields = fields;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDecoratorDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "DecoratorDecl{" +
+                    "name=" + name +
+                    ", fields=" + fields +
+                    '}';
+        }
+    }
+
+    // ⭐ 2. O AUTOCOLANTE DE METADADOS (A aplicação do Decorador)
+    public static class DecoratorNode {
+        public final Token name; // O Token "Logging"
+        public final java.util.List<Expr.CallArg> arguments; // A lista bivalente (id: 12, nome: "...")
+
+        public DecoratorNode(Token name, java.util.List<Expr.CallArg> arguments) {
+            this.name = name;
+            this.arguments = arguments;
+        }
+
+        @Override
+        public String toString() {
+            return "@" + name.lexeme + arguments;
+        }
+    }
+
 
 }
