@@ -1,5 +1,5 @@
 module app.main;
-
+import com.pdf.convert.globals.* prefix "PDFCONV";
 println("==================================================", "#00FFFF");
 println("       📦 SUPER XPL - TESTE DE MODULARIDADE 📦    ", "#00FFFF");
 println("==================================================\n", "#00FFFF");
@@ -23,7 +23,7 @@ var c = new Circle(5.5);
 println(" -> Circulo criado com raio: " + c.raio, "#00FF00");
 println(" -> Área calculada: " + c.area(), "#00FF00");
 
-var c1 = new Circe(12.23);
+var c1 = new Circe(12.23,PI);
 println(" -> Circulo criado com raio: " + c1.raio, "#00FF00");
 println(" -> Área calculada: " + c1.area(), "#00FF00");
 
@@ -37,3 +37,11 @@ println(" -> Constante PI isolada: " + PI, "#00FF00");
 println("\n==================================================", "#00FFFF");
 println(" 🏆 MÓDULOS CARREGADOS E ISOLADOS COM SUCESSO! 🏆 ", "#00FFFF");
 println("==================================================", "#00FFFF");
+
+fun executar() {
+    // 0 imports aqui dentro! O motor buscou na cadeia de ambientes!
+    println("Biblioteca PDF ativa na versão: " + PDFCONV_VERSION);
+    println("HASH: " + PDFCONV_PDF_SECRET_HASH);
+}
+
+executar();

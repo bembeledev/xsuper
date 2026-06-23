@@ -76,6 +76,8 @@ public class Lexer {
         keywords.put("import", TokenType.IMPORT);
         keywords.put("export", TokenType.EXPORT);
         keywords.put("all", TokenType.ALL);
+        keywords.put("prefix", TokenType.PREFIX);
+        keywords.put("global", TokenType.GLOBAL);
 
     }
 

@@ -32,7 +32,11 @@ public class Parser {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
             try {
-                statements.add(declaration());
+                Stmt stmt = declaration();
+                // ⭐ A VACINA DO NPE: Só adiciona à AST se o nó não for nulo!
+                if (stmt != null) {
+                    statements.add(stmt);
+                }
             } catch (ParseException e) {
                 // Se der erro, ele "sincroniza" (salta os tokens inválidos até ao próximo ';')
                 // para não crashar tudo e conseguir mostrar mais erros no resto do ficheiro.
@@ -74,6 +78,7 @@ public class Parser {
         }
 
         try {
+            if (match(TokenType.GLOBAL)) return globalDeclaration();
             if (match(TokenType.MODULE)) return moduleDeclaration();
             if (match(TokenType.IMPORT)) return importDeclaration();
             if (match(TokenType.EXPORT)) return exportDeclaration();
@@ -112,6 +117,20 @@ public class Parser {
         }
     }
 
+    private Stmt globalDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável global.");
+
+        TypeNode typeAnnotation = null;
+        if (match(TokenType.COLON)) {
+            typeAnnotation = parseTypeAnnotation(); // Lê o ':object' ou ':string'
+        }
+
+        consume(TokenType.ASSIGN, "Esperado '=' após a declaração da variável global.");
+        Expr initializer = expression();
+        consume(TokenType.SEMICOLON, "Esperado ';' no final da linha global.");
+
+        return new Stmt.GlobalDecl(name, typeAnnotation, initializer);
+    }
 
     // Lê: module banco.modelos;
     private Stmt moduleDeclaration() {
@@ -139,13 +158,12 @@ public class Parser {
         java.util.List<Stmt.ImportSymbol> symbols = new java.util.ArrayList<>();
         boolean isWildcard = false;
 
-        // Lemos o caminho até batermos numa chave '{', num asterisco '*', ou no último identificador
         while (true) {
-            if (match(TokenType.STAR)) { // import banco.*
+            if (match(TokenType.STAR)) {
                 isWildcard = true;
                 break;
             }
-            if (match(TokenType.LBRACE)) { // import banco.{A, B}
+            if (match(TokenType.LBRACE)) {
                 do {
                     Token originalName = consume(TokenType.IDENTIFIER, "Esperado nome do símbolo para importar.");
                     Token aliasName = null;
@@ -158,15 +176,13 @@ public class Parser {
                 break;
             }
 
-            // É um identificador normal
             Token part = consume(TokenType.IDENTIFIER, "Esperado nome no caminho de importação.");
 
             if (match(TokenType.DOT)) {
                 pathBuilder.append(part.lexeme).append(".");
             } else {
-                // É o último identificador (o símbolo único). Ex: import banco.modelos.Cliente
                 Token aliasName = null;
-                if (match(TokenType.AS)) { // import banco.modelos.Cliente as Pessoa
+                if (match(TokenType.AS)) {
                     aliasName = consume(TokenType.IDENTIFIER, "Esperado alias após 'as'.");
                 }
                 symbols.add(new Stmt.ImportSymbol(part, aliasName));
@@ -174,12 +190,21 @@ public class Parser {
             }
         }
 
-        // Limpa o ponto final do caminho, se existir (ex: "banco.modelos.")
         String path = pathBuilder.toString();
         if (path.endsWith(".")) path = path.substring(0, path.length() - 1);
 
+        // ⭐ NOVO: Captura o modificador 'prefix' se ele existir antes do ';'
+        Token prefixToken = null;
+        if (match(TokenType.PREFIX)) {
+            if (check(TokenType.STRING_LITERAL) || check(TokenType.IDENTIFIER)) {
+                prefixToken = advance(); // Aceita tanto prefix "PDF" quanto prefix PDF
+            } else {
+                throw error(peek(), "Esperado uma string literal ou identificador após 'prefix'.");
+            }
+        }
+
         consume(TokenType.SEMICOLON, "Esperado ';' no final do import.");
-        return new Stmt.ImportDecl(path, symbols, isWildcard);
+        return new Stmt.ImportDecl(path, symbols, isWildcard, prefixToken);
     }
 
     // Lê: export declare... | export Cliente, Pessoa; | export all;

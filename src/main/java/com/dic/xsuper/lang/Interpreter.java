@@ -235,13 +235,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     public void interpret(List<Stmt> statements) {
         try {
+            // ⭐ NOVO: CADEIA DE GLOBAIS AUTOMÁTICA PARA O SCRIPT PRINCIPAL ⭐
+            Environment parentEnv = this.globals;
+            if (resolvePhysicalFile("globals.xpl") != null) {
+                parentEnv = loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0)).localEnvironment;
+            }
+            this.environment = parentEnv;
+
             for (Stmt statement : statements) {
                 execute(statement);
             }
         } catch (ControlFlow.RuntimeError error) {
             System.err.println(ConsoleTheme.ERROR + "Erro de Execução (Linha " + error.token.line + "): " + error.getMessage() + ConsoleTheme.RESET);
         } finally {
-            // ⭐ GATILHO GLOBAL DE FIM DE SCRIPT (@Context.End) ⭐
+            // Gatilho global de fim de script
             for (Object obj : globals.values.values()) {
                 triggerEndHooksRecursively(obj);
             }
@@ -888,6 +895,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitGlobalDeclStmt(Stmt.GlobalDecl stmt) {
+        // Bloqueia utilizadores de usarem o prefixo reservado da linguagem
+        if (stmt.name.lexeme.startsWith("$_")) {
+            throw new ControlFlow.RuntimeError(stmt.name,
+                    "Erro de Sintaxe: O prefixo '$_' é estritamente reservado para variáveis globais nativas do ecossistema Super.");
+        }
+
+        Object value = evaluate(stmt.initializer);
+        if (stmt.typeAnnotation != null && value != null) {
+            if (!checkTypeMatch(value, stmt.typeAnnotation)) {
+                throw new ControlFlow.RuntimeError(stmt.name, "Erro de Tipagem na variável global.");
+            }
+        }
+
+        // 1. Injeta APENAS no escopo local do arquivo como Constante Imutável
+        this.environment.defineConst(stmt.name.lexeme, value);
+
+        // ⭐ MUDANÇA: Removemos a injeção automática no currentCompilingModule.exports!
+        // O programador agora DEVE usar 'export NOME;' se quiser partilhar para fora do projeto.
+
+        if (currentCompilingModule == null) {
+            this.globals.defineConst(stmt.name.lexeme, value); // Rota de fuga para script main solto
+        }
+        return null;
+    }
+
     // ⭐ AUXILIAR: Procura a exportação em todos os cofres do motor
     private Object safeGetSymbol(String symbolName) {
         // 1. Tenta no Environment (Variáveis, Funções, Classes Implementadas)
@@ -910,22 +944,34 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Token importKeyword = new Token(TokenType.IMPORT, "import", null, 0, 0);
         XplModule module = loadModule(stmt.modulePath, importKeyword);
 
+        // ⭐ LÓGICA DO PREFIXO: Se foi definido, limpa as aspas e adiciona o '_' no fim
+        String sufixoPrefixo = "";
+        if (stmt.prefix != null) {
+            sufixoPrefixo = stmt.prefix.lexeme.replace("\"", "") + "_";
+        }
+
         if (stmt.isWildcard) {
             for (java.util.Map.Entry<String, Object> entry : module.exports.entrySet()) {
-                injectImportedSymbol(entry.getKey(), entry.getValue());
+                // Se o prefixo for "PDFCONV", vira "PDFCONV_VERSION"
+                String nomeFinal = sufixoPrefixo + entry.getKey();
+                injectImportedSymbol(nomeFinal, entry.getValue());
             }
         } else {
             for (Stmt.ImportSymbol sym : stmt.symbols) {
                 String targetName = sym.originalName.lexeme;
 
                 if (!module.exports.containsKey(targetName)) {
-                    throw new ControlFlow.RuntimeError(sym.originalName, "O módulo '" + stmt.modulePath + "' não exporta o símbolo '" + targetName + "'.");
+                    throw new ControlFlow.RuntimeError(sym.originalName,
+                            "O módulo '" + stmt.modulePath + "' não exporta o símbolo '" + targetName + "'.");
                 }
 
                 Object importedValue = module.exports.get(targetName);
-                String localName = (sym.aliasName != null) ? sym.aliasName.lexeme : targetName;
 
-                injectImportedSymbol(localName, importedValue);
+                // Se usou alias individual (Circulo as Circ) respeita-o, senão usa o nome original
+                String baseLocalName = (sym.aliasName != null) ? sym.aliasName.lexeme : targetName;
+                String nomeFinal = sufixoPrefixo + baseLocalName;
+
+                injectImportedSymbol(nomeFinal, importedValue);
             }
         }
         return null;
@@ -988,9 +1034,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         XplModule newModule = new XplModule(modulePath);
 
-        // ⭐ A CURA DO VAR: Forçamos o depth a nascer em 0 para o escopo raiz do ficheiro externo!
-        Environment moduleEnv = new Environment(this.globals, 0);
+        // O ambiente do módulo passa a herdar da cadeia cascata de globais!
+        Environment parentEnv = resolveGlobalsChain(modulePath);
+        Environment moduleEnv = new Environment(parentEnv, 0);
         newModule.localEnvironment = moduleEnv;
+
+        // =====================================================================
+        // ⭐ VACINA CONTRA STACKOVERFLOW: Early-Caching (Registar ANTES de executar)
+        // Isso resolve Dependências Circulares perfeitamente!
+        // =====================================================================
+        moduleCache.put(modulePath, newModule);
 
         Environment previousEnv = this.environment;
         XplModule previousModule = this.currentCompilingModule;
@@ -1003,17 +1056,60 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 execute(stmt);
             }
 
+            // ⭐ MUDANÇA: O motor volta a ser rigoroso!
+            // O ficheiro só exporta tudo se tiver explicitamente 'export all;'
             if (newModule.exportAll) {
                 newModule.exports.putAll(moduleEnv.values);
             }
 
+        } catch (RuntimeException e) {
+            // Se o código do módulo tiver um erro fatal, removemos da cache
+            // para não deixar um módulo quebrado e "meio-vivo" na RAM do motor!
+            moduleCache.remove(modulePath);
+            throw e;
         } finally {
             this.environment = previousEnv;
             this.currentCompilingModule = previousModule;
         }
 
-        moduleCache.put(modulePath, newModule);
+        // Remove a antiga linha "moduleCache.put(modulePath, newModule);" que estava aqui no final!
         return newModule;
+    }
+
+    // ⭐ NOVO: Resolve a hierarquia cascata de escopos globais do projeto/módulo
+    private Environment resolveGlobalsChain(String modulePath) {
+        Environment currentParent = this.globals;
+
+        boolean isGlobalsFile = modulePath.equals("globals")||
+                modulePath.endsWith(".globals");
+
+        if (!isGlobalsFile) {
+            // 1. Busca primeiro o globals do pacote específico (escopo mais próximo, ex: com.pdf.convert.globals)
+            if (modulePath.contains(".")) {
+                int lastDot = modulePath.lastIndexOf('.');
+                String packagePath = modulePath.substring(0, lastDot);
+                String pkgGlobals1 = packagePath + ".globals";
+
+
+                if (resolvePhysicalFile(pkgGlobals1.replace(".", "/") + ".xpl") != null) {
+                    return loadModule(pkgGlobals1, new Token(TokenType.IDENTIFIER, "globals", null, 0, 0)).localEnvironment;
+                }
+            }
+
+            // 2. Fallback para o globals raiz do projeto geral
+            if (resolvePhysicalFile("globals.xpl") != null) {
+                return loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0)).localEnvironment;
+            }
+        } else {
+            // Se for um globals de pacote, ele herda do globals raiz da aplicação se existir
+            if (modulePath.contains(".") && !modulePath.equals("globals")) {
+                if (resolvePhysicalFile("globals.xpl") != null) {
+                    return loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0)).localEnvironment;
+                }
+            }
+        }
+
+        return currentParent;
     }
 
     private java.io.File resolvePhysicalFile(String relativePath) {
@@ -1537,7 +1633,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitGetExpr(Expr.Get expr) {
         // 1. Descobre quem é o objeto à esquerda do ponto (ex: a variável ou a string literal)
-        Object object = evaluate(expr.object);
+        // ---------------------------------------------------------------------
+        // ⭐ INTERCEÇÃO: RESOLUÇÃO DE CAMINHOS ABSOLUTOS DE MÓDULOS (Java Style)
+        // ---------------------------------------------------------------------
+        Object object = null;
+        try {
+            object = evaluate(expr.object);
+        } catch (RuntimeException e) {
+            // Se falhou a avaliar o objeto da esquerda, pode ser uma cadeia de pacotes (ex: com.dic.ui)
+            String absoluteModulePath = rebuildAbsoluteModulePath(expr.object);
+
+            // O cérebro logístico verifica se essa cadeia existe na Cache de Módulos!
+            if (absoluteModulePath != null && moduleCache.containsKey(absoluteModulePath)) {
+                XplModule targetModule = moduleCache.get(absoluteModulePath);
+                String symbolName = expr.name.lexeme; // Ex: "PI" ou "Context"
+
+                if (targetModule.exports.containsKey(symbolName)) {
+                    return targetModule.exports.get(symbolName); // Retorno imediato do cofre!
+                }
+            }
+            throw e; // Se não era um módulo válido na cache, mantém o erro original!
+        }
+        // ---------------------------------------------------------------------
 
         // 2. É uma Lista (Array)? Delega para ArrayMethods
         if (object instanceof List) {
@@ -1707,6 +1824,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos, Strings, Instâncias e Classes possuem propriedades/métodos.");
     }
+
+
+    // Transmuta uma árvore de Expr.Get aninhada numa String limpa "com.dic.ui"
+    private String rebuildAbsoluteModulePath(Expr expr) {
+        if (expr instanceof Expr.Variable v) {
+            return v.name.lexeme;
+        } else if (expr instanceof Expr.Get g) {
+            String parentPath = rebuildAbsoluteModulePath(g.object);
+            if (parentPath == null) return null;
+            return parentPath + "." + g.name.lexeme;
+        }
+        return null;
+    }
+
+
+
     @Override
     public Object visitArrowFunctionExpr(Expr.ArrowFunction expr) {
         // Guarda o ambiente atual para que a Arrow Function se lembre das variáveis de fora (Closure!)

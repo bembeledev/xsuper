@@ -25,12 +25,10 @@ public abstract class Stmt {
         R visitThrowStmt(Throw stmt);
         R visitTypeAliasDecl(TypeAliasDecl typeAliasDecl);
         R visitDecoratorDeclStmt(DecoratorDecl decoratorDecl);
-
         R visitModuleDeclStmt(ModuleDecl moduleDecl);
-
         R visitImportDeclStmt(ImportDecl importDecl);
-
         R visitExportDeclStmt(ExportDecl exportDecl);
+        R visitGlobalDeclStmt(GlobalDecl globalDecl);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -660,10 +658,13 @@ public abstract class Stmt {
         public final java.util.List<ImportSymbol> symbols; // Lista de símbolos. Vazia se for wildcard '*'
         public final boolean isWildcard; // true se for import pacote.*
 
-        public ImportDecl(String modulePath, java.util.List<ImportSymbol> symbols, boolean isWildcard) {
+        public final Token prefix;
+
+        public ImportDecl(String modulePath, java.util.List<ImportSymbol> symbols, boolean isWildcard, Token prefix) {
             this.modulePath = modulePath;
             this.symbols = symbols;
             this.isWildcard = isWildcard;
+            this.prefix = prefix;
         }
 
         @Override
@@ -677,6 +678,7 @@ public abstract class Stmt {
                     "modulePath='" + modulePath + '\'' +
                     ", symbols=" + symbols +
                     ", isWildcard=" + isWildcard +
+                    ", prefix=" + prefix +
                     '}';
         }
     }
@@ -712,6 +714,35 @@ public abstract class Stmt {
                     "declaration=" + declaration +
                     ", inlineSymbols=" + inlineSymbols +
                     ", isExportAll=" + isExportAll +
+                    '}';
+        }
+    }
+
+    // =========================================================================
+    // ⭐ NOVO: DECLARAÇÃO DE SUPERGLOBAL (Ex: global $_VERSION = "1.10";)
+    // =========================================================================
+    public static class GlobalDecl extends Stmt {
+        public final Token name;
+        public final TypeNode typeAnnotation; // Pode ser nulo
+        public final Expr initializer;
+
+        public GlobalDecl(Token name, TypeNode typeAnnotation, Expr initializer) {
+            this.name = name;
+            this.typeAnnotation = typeAnnotation;
+            this.initializer = initializer;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitGlobalDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "GlobalDecl{" +
+                    "name=" + name +
+                    ", typeAnnotation=" + typeAnnotation +
+                    ", initializer=" + initializer +
                     '}';
         }
     }

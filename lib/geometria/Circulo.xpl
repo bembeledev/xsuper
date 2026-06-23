@@ -2,6 +2,7 @@ module geometria;
 
 declare Circulo {
     pub raio: float;
+    pub pi: float;
 }
 
 implement Circulo {
@@ -15,12 +16,13 @@ implement Circulo {
 }
 
 implement Circulo as Circe {
-    pub fun init(r: float) {
+    pub fun init(r: float, pi: float) {
         this.raio = r;
+        this.pi = pi;
     }
 
     pub fun area(): float {
-        return 3.1415 * this.raio * this.raio;
+        return this.pi * this.raio * this.raio;
     }
 }
 

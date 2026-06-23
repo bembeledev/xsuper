@@ -12,7 +12,6 @@ var apelido: Texto = "Macassa";
 
 println("[1/4] Aliases Simples: " + apelido + " tem " + idade + " anos.");
 
-
 // 2. Apelidando Modelos de Domínio (OOP):
 declare FichaTecnica {
     pub peso: int;
