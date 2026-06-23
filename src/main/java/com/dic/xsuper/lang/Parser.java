@@ -275,10 +275,10 @@ public class Parser {
             Token accessModifier = null;
             boolean isStatic = false, isFinal = false, isReadonly = false;
 
-            while (match(TokenType.PUB, TokenType.PRIV, TokenType.PROT, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+            while (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
                 Token t = previous();
                 switch (t.type) {
-                    case PUB: case PRIV: case PROT:
+                    case PUB: case PRIVATE: case PROTECTED:
                         if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso (pub, priv, prot).");
                         accessModifier = t;
                         break;
@@ -288,9 +288,9 @@ public class Parser {
                 }
             }
 
-            // Se o programador não escreveu pub/priv/prot, o padrão por segurança é PRIV!
+            // Se o programador não escreveu pub/priv/prot, o padrão por segurança é PRIVATE!
             if (accessModifier == null) {
-                accessModifier = new Token(TokenType.PRIV, "priv", null, peek().line, peek().column);
+                accessModifier = new Token(TokenType.PRIVATE, "priv", null, peek().line, peek().column);
             }
 
             Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade.");
@@ -318,7 +318,7 @@ public class Parser {
 
             // ⭐ 1. Capturar o Modificador (Opcional na interface, mas suportado!)
             Token modifier = null;
-            if (match(TokenType.PUB, TokenType.PRIV, TokenType.PROT)) { // Garante que PROT está no teu Lexer!
+            if (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED)) { // Garante que PROT está no teu Lexer!
                 modifier = previous();
             }
 
@@ -427,7 +427,7 @@ public class Parser {
 
             // ⭐ 1. Modificadores de Acesso (pub / priv)
             Token modifier = null;
-            if (match(TokenType.PUB, TokenType.PRIV)) {
+            if (match(TokenType.PUB, TokenType.PRIVATE)) {
                 modifier = previous();
             }
 
@@ -507,7 +507,7 @@ public class Parser {
     private Stmt functionDeclaration(java.util.List<Stmt.DecoratorNode> decorators) {
         // 1. Modificadores de Acesso (Opcionais - Se a tua AST já suportar)
         Token modifier = null;
-        if (match(TokenType.PUB, TokenType.PRIV)) {
+        if (match(TokenType.PUB, TokenType.PRIVATE)) {
             modifier = previous();
         }
 
@@ -1027,6 +1027,7 @@ public class Parser {
         return new Stmt.ExpressionStmt(expr);
     }
 
+
     // ==========================================
     // EXPRESSÕES (Cálculos de Valores)
     // A ESCADA DA PRECEDÊNCIA MATEMÁTICA E LÓGICA
@@ -1371,10 +1372,10 @@ public class Parser {
             Token accessModifier = null;
             boolean isStatic = false, isFinal = false, isReadonly = false;
 
-            while (match(TokenType.PUB, TokenType.PRIV, TokenType.PROT, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+            while (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
                 Token t = previous();
                 switch (t.type) {
-                    case PUB: case PRIV: case PROT:
+                    case PUB: case PRIVATE: case PROTECTED:
                         if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso.");
                         accessModifier = t;
                         break;
@@ -1647,7 +1648,9 @@ public class Parser {
 
     /** Gera o aviso visual de erro e cria a Exceção. */
     private ParseException error(Token token, String message) {
-        System.err.println("Erro Sintático (L" + token.line + ":C" + token.column + "): " + message);
+        String path = (token.filePath != null) ? token.filePath : "Desconhecido";
+        // Formato: C:\Caminho\arquivo.xpl:10:5
+        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t Erro Sintático: " + message);
         return new ParseException();
     }
 

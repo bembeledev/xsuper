@@ -8,7 +8,7 @@ import java.util.Map;
 public class Lexer {
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
-
+    private final String filePath; // ⭐ NOVO
     private int start = 0;
     private int current = 0;
     private int line = 1;
@@ -50,8 +50,8 @@ public class Lexer {
         keywords.put("this", TokenType.THIS);
         // Modificadores de Encapsulamento
         keywords.put("pub", TokenType.PUB);
-        keywords.put("prot", TokenType.PROT);
-        keywords.put("priv", TokenType.PRIV);
+        keywords.put("prot", TokenType.PROTECTED);
+        keywords.put("priv", TokenType.PRIVATE);
         keywords.put("as", TokenType.AS);
         keywords.put("abstract", TokenType.ABSTRACT);
         keywords.put("super", TokenType.SUPER);
@@ -81,8 +81,9 @@ public class Lexer {
 
     }
 
-    public Lexer(String source) {
+    public Lexer(String source, String filePath) {
         this.source = source;
+        this.filePath = filePath;
     }
 
     public List<Token> tokenize() {
@@ -91,7 +92,7 @@ public class Lexer {
             columnStart = currentColumn;
             scanToken();
         }
-        tokens.add(new Token(TokenType.EOF, "", null, line, currentColumn));
+        tokens.add(new Token(TokenType.EOF, "", null, line, currentColumn,this.filePath));
         return tokens;
     }
 
@@ -123,7 +124,8 @@ public class Lexer {
                 else if (match('-')) addToken(TokenType.MINUS_MINUS);
                 else if (match('>')) addToken(TokenType.ARROW);
                 else addToken(TokenType.MINUS);
-            }; break;
+            }
+            break;
             case '+': {
                if(match('=')) addToken(TokenType.PLUS_ASSIGN);
                else if (match('+')) addToken(TokenType.PLUS_PLUS);
@@ -226,7 +228,7 @@ public class Lexer {
     private void identifier() {
         while (isAlphaNumeric(peek())) advance();
 
-        String text = source.substring((int) start, (int) current);
+        String text = source.substring(start, current);
         TokenType type = keywords.get(text);
         if (type == null) type = TokenType.IDENTIFIER;
 
@@ -252,35 +254,200 @@ public class Lexer {
         }
     }
 
+    // =========================================================================
+    // ⭐ VOLUME 14: STRINGS MULTI-LINHA E INTERPOLAÇÃO MÁGICA (${...}) ⭐
+    // =========================================================================
+    // =========================================================================
+    // ⭐ VOLUME 14: STRINGS MULTI-LINHA (TEXT BLOCKS) E INTERPOLAÇÃO ⭐
+    // =========================================================================
     private void string() {
-        while (peek() != '"' && !isAtEnd()) {
-            if (peek() == '\n') {
-                line++;
-                currentColumn = 1; // Genial! Mantém o rastreio da coluna perfeito.
+        // O primeiro '"' já foi consumido pelo switch no scanToken()
+        if (match('"')) {
+            if (match('"')) {
+                parseMultiLineString();
+            } else {
+                // Era apenas uma string vazia simples ""
+                tokens.add(new Token(TokenType.STRING_LITERAL, "", "", line, 0,this.filePath));
             }
-            advance();
+        } else {
+            parseNormalString();
+        }
+    }
+
+    private void parseMultiLineString() {
+        int startLine = this.line;
+        StringBuilder rawContent = new StringBuilder();
+
+        while (!isAtEnd()) {
+            // Deteta o fecho com as 3 aspas (""")
+            if (current + 2 < source.length() &&
+                    source.charAt(current) == '"' &&
+                    source.charAt(current + 1) == '"' &&
+                    source.charAt(current + 2) == '"') {
+                break;
+            }
+            char c = advance();
+            if (c == '\n') this.line++;
+            rawContent.append(c);
         }
 
         if (isAtEnd()) {
-            System.err.println("Erro Léxico na linha " + line + ": String não terminada.");
+            System.err.println("Erro Léxico (L" + line + "): String multi-linha não fechada.");
             return;
         }
 
-        advance(); // Consome as aspas de fecho (")
+        advance(); advance(); advance(); // Consome as 3 aspas de fecho
 
-        // 1. Retira as aspas do valor real (Texto cru)
-        String value = source.substring(start + 1, current - 1);
+        // 1. Limpeza de espaços (O Comportamento Genuíno de Text Blocks do Java)
+        String cleanedContent = cleanJavaTextBlock(rawContent.toString());
 
-        // ⭐ 2. A MAGIA DAS SEQUÊNCIAS DE ESCAPE ⭐
-        // Traduz os caracteres literais \ e n para um ENTER de verdade, etc.
-        value = value.replace("\\n", "\n")
-                .replace("\\t", "\t")
-                .replace("\\r", "\r")
-                .replace("\\\"", "\"")
-                .replace("\\\\", "\\");
+        // 2. Resolve a interpolação e injeta os tokens matemáticos no compilador
+        processInterpolation(cleanedContent, startLine);
+    }
 
-        // 3. Guarda o token formatado!
-        addToken(TokenType.STRING_LITERAL, value);
+    private void parseNormalString() {
+        int startLine = this.line;
+        StringBuilder rawContent = new StringBuilder();
+
+        while (!isAtEnd() && peek() != '"') {
+            if (peek() == '\n') line++;
+
+            // Processamento de escapes clássicos
+            if (peek() == '\\') {
+                advance(); // consome a barra
+                if (isAtEnd()) break;
+                char c = advance();
+                switch (c) {
+                    case 'n': rawContent.append('\n'); break;
+                    case 't': rawContent.append('\t'); break;
+                    case 'r': rawContent.append('\r'); break;
+                    case '\\': rawContent.append('\\'); break;
+                    case '"': rawContent.append('"'); break;
+                    case '$': rawContent.append('$'); break;
+                    default: rawContent.append('\\').append(c); break;
+                }
+            } else {
+                rawContent.append(advance());
+            }
+        }
+
+        if (isAtEnd()) {
+            System.err.println("Erro Léxico (L" + line + "): String não fechada.");
+            return;
+        }
+
+        advance(); // Consome a aspa de fecho (")
+
+        processInterpolation(rawContent.toString(), startLine);
+    }
+
+    // ⭐ Lógica Estilo Java: Remove a indentação vazia comum e a primeira quebra de linha
+    private String cleanJavaTextBlock(String raw) {
+        String[] lines = raw.split("\r?\n", -1);
+        int minIndent = Integer.MAX_VALUE;
+
+        for (int i = 0; i < lines.length; i++) {
+            String l = lines[i];
+            if (i == 0 && l.trim().isEmpty()) continue; // Ignora a 1ª linha vazia
+
+            int indent = 0;
+            while (indent < l.length() && (l.charAt(indent) == ' ' || l.charAt(indent) == '\t')) {
+                indent++;
+            }
+            if (!l.trim().isEmpty() || i == lines.length - 1) {
+                if (indent < minIndent) minIndent = indent;
+            }
+        }
+
+        if (minIndent == Integer.MAX_VALUE) minIndent = 0;
+
+        StringBuilder sb = new StringBuilder();
+        int startIdx = (lines.length > 0 && lines[0].trim().isEmpty()) ? 1 : 0;
+
+        for (int i = startIdx; i < lines.length; i++) {
+            String l = lines[i];
+            if (l.length() >= minIndent) {
+                sb.append(l.substring(minIndent));
+            } else {
+                sb.append(l.trim()); // Limpa espaços de linhas 100% vazias
+            }
+            if (i < lines.length - 1) sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    // ⭐ O Motor Quântico de Interpolação: Transforma strings em Somas na AST!
+    private void processInterpolation(String content, int startLine) {
+        boolean firstPart = true;
+        StringBuilder currentPart = new StringBuilder();
+        int i = 0;
+
+        while (i < content.length()) {
+            // Detetou a abertura de interpolação: ${
+            if (content.charAt(i) == '$' && i + 1 < content.length() && content.charAt(i + 1) == '{') {
+
+                // Emite a string lida até agora
+                if (!firstPart) {
+                    tokens.add(new Token(TokenType.PLUS, "+", null, startLine, 0,this.filePath));
+                }
+                tokens.add(new Token(TokenType.STRING_LITERAL, currentPart.toString(), currentPart.toString(), startLine, 0,this.filePath));
+                currentPart.setLength(0);
+                firstPart = false;
+
+                // Emite os tokens da SOMA + PARÊNTESIS: "+ ("
+                tokens.add(new Token(TokenType.PLUS, "+", null, startLine, 0,this.filePath));
+                tokens.add(new Token(TokenType.LPAREN, "(", null, startLine, 0,this.filePath));
+
+                i += 2; // Salta '${'
+                int braceDepth = 1;
+                int exprStart = i;
+                boolean inString = false;
+
+                // Navega até fechar a chave da interpolação, ignorando chaves dentro de strings!
+                while (i < content.length() && braceDepth > 0) {
+                    char c = content.charAt(i);
+                    if (c == '"' && (i == 0 || content.charAt(i - 1) != '\\')) {
+                        inString = !inString;
+                    }
+                    if (!inString) {
+                        if (c == '{') braceDepth++;
+                        else if (c == '}') braceDepth--;
+                    }
+                    if (braceDepth > 0) i++;
+                }
+
+                String innerExpr = content.substring(exprStart, i);
+                if (i < content.length()) i++; // Salta o '}'
+
+                // INCEPTION: Usa um Lexer clone para extrair os tokens da expressão matemática!
+                Lexer innerLexer = new Lexer(innerExpr, filePath);
+                innerLexer.line = startLine;
+                java.util.List<Token> innerTokens = innerLexer.tokenize();
+
+                for (Token t : innerTokens) {
+                    if (t.type != TokenType.EOF) tokens.add(t);
+                }
+
+                // Fecha a nossa expressão fantasma: ")"
+                tokens.add(new Token(TokenType.RPAREN, ")", null, startLine, 0,this.filePath));
+                continue;
+            }
+
+            // Letras normais da string
+            currentPart.append(content.charAt(i));
+            i++;
+        }
+
+        // Emite o bloco final da string
+        if (!firstPart) {
+            if (!currentPart.isEmpty()) {
+                tokens.add(new Token(TokenType.PLUS, "+", null, startLine, 0,this.filePath));
+                tokens.add(new Token(TokenType.STRING_LITERAL, currentPart.toString(), currentPart.toString(), startLine, 0,this.filePath));
+            }
+        } else {
+            // Se nunca houve interpolação, emite a string inteira, intocável.
+            tokens.add(new Token(TokenType.STRING_LITERAL, currentPart.toString(), currentPart.toString(), startLine, 0,this.filePath));
+        }
     }
 
     // --- Métodos Auxiliares de Varredura (Iguais aos do Rust) ---
@@ -330,6 +497,6 @@ public class Lexer {
 
     private void addToken(TokenType type, Object literal) {
         String text = source.substring(start, current);
-        tokens.add(new Token(type, text, literal, line, columnStart));
+        tokens.add(new Token(type, text, literal, line, columnStart,this.filePath));
     }
 }

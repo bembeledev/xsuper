@@ -46,7 +46,7 @@ public class RunXplCmd implements Command {
         System.out.println(ConsoleTheme.TEXT + ">> 2. Tamanho do código: " + sourceCode.length() + " bytes lidos." + ConsoleTheme.RESET);
 
         try {
-            Lexer lexer = new Lexer(sourceCode);
+            Lexer lexer = new Lexer(sourceCode, target.toAbsolutePath().toString());
             List<Token> tokens = lexer.tokenize();
             /*for (Token a: tokens){
                 System.out.println(ConsoleTheme.TEXT + a + ConsoleTheme.RESET);

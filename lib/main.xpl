@@ -7,6 +7,8 @@ println("==================================================\n", "#00FFFF");
 // 1. Importação Simples
 import geometria.Ponto.Ponto; // src/geometria/Ponto.xpl/Símbolo
 
+
+
 // 2. Importação com Alias (O Circulo vai disfarçar-se de Circle)
 import geometria.Circulo.{Circulo as Circle,Circe};// src/geometria/Circulo.xpl/Símbolo
 

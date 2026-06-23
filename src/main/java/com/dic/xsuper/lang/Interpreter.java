@@ -243,10 +243,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             this.environment = parentEnv;
 
             for (Stmt statement : statements) {
+                if (statement == null) continue;
                 execute(statement);
             }
         } catch (ControlFlow.RuntimeError error) {
-            System.err.println(ConsoleTheme.ERROR + "Erro de Execução (Linha " + error.token.line + "): " + error.getMessage() + ConsoleTheme.RESET);
+            String path = (error.token.filePath != null) ? error.token.filePath : "Desconhecido";
+            System.err.println(ConsoleTheme.ERROR + path + ":\n\t" + error.token.line + ":" + error.token.column + ": Erro de Execução: " + error.getMessage() + ConsoleTheme.RESET);
         } finally {
             // Gatilho global de fim de script
             for (Object obj : globals.values.values()) {
@@ -287,12 +289,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // 3. Regra do PRIV (Privado): Só a própria classe lê e escreve!
-        if (field.modifier.type == TokenType.PRIV && !isInsideClass) {
+        if (field.modifier.type == TokenType.PRIVATE && !isInsideClass) {
             throw new ControlFlow.RuntimeError(name, "Erro de Acesso: A propriedade '" + name.lexeme + "' é PRIVADA. Só a classe '" + targetModel.name + "' pode aceder.");
         }
 
         // 4. Regra do PROT (Protegido): Só a classe e os filhos (herança) acedem!
-        if (field.modifier.type == TokenType.PROT && !isSubclass) {
+        if (field.modifier.type == TokenType.PROTECTED && !isSubclass) {
             throw new ControlFlow.RuntimeError(name, "Erro de Acesso: A propriedade '" + name.lexeme + "' é PROTEGIDA. Só acessível por herança.");
         }
     }
@@ -387,6 +389,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         try {
             this.environment = blockEnv;
             for (Stmt statement : statements) {
+                if (statement==null) continue;
                 execute(statement);
             }
         } finally {
@@ -1027,7 +1030,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new ControlFlow.RuntimeError(importKeyword, "Erro ao ler ficheiro: " + file.getAbsolutePath());
         }
 
-        Lexer lexer = new Lexer(source);
+        Lexer lexer = new Lexer(source, file.getAbsolutePath());
         java.util.List<Token> tokens = lexer.tokenize();
         Parser parser = new Parser(tokens);
         java.util.List<Stmt> statements = parser.parse();
