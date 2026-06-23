@@ -14,6 +14,12 @@ public class Environment {
         this.depth = 0;
     }
 
+    // ⭐ NOVO: Construtor Quântico para Raízes de Módulos
+    public Environment(Environment enclosing, long depth) {
+        this.enclosing = enclosing;
+        this.depth = depth;
+    }
+
     public Environment(Environment enclosing) {
         this.enclosing = enclosing;
         this.depth = enclosing.depth + 1;

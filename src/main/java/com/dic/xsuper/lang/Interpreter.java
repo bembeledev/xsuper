@@ -14,7 +14,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
@@ -34,13 +37,37 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ⭐ CÂMARA CRIOGÉNICA DE GENÉRICOS (Monomorfização) ⭐
     // Guarda o nó cru da AST exatamente como o utilizador o digitou!
     // =========================================================================
-    private final Map<String, Stmt.DeclareDecl> registry_generic_blueprints = new HashMap<>();
 
     // O Armazém Global de prismas semânticos (NomeDoAlias -> TipoReal):
     private final java.util.Map<String, TypeNode> typeAliases = new java.util.HashMap<>();
 
     // ⭐ CÂMARA CRIOGÉNICA DE MOLDES GENÉRICOS (Monomorfização) ⭐
     private final Map<String, XPLModel> registry_generic_models = new HashMap<>();
+
+    // A memória cache global de módulos já carregados
+    public final java.util.Map<String, XplModule> moduleCache = new java.util.HashMap<>();
+
+    // Ponteiro quântico para saber que módulo estamos a compilar neste momento
+    private XplModule currentCompilingModule = null;
+
+    @Override
+    public Void visitModuleDeclStmt(Stmt.ModuleDecl stmt) {
+        if (currentCompilingModule != null) {
+            String importPath = currentCompilingModule.path; // Ex: "geometria.Ponto"
+            String declaredModule = stmt.modulePath;         // Ex: "geometria"
+
+            // ⭐ A FLEXIBILIDADE DOS NAMESPACES (Estilo Java) ⭐
+            // O ficheiro importado como "geometria.Ponto" pertence legitimamente ao namespace "geometria"?
+            // Sim! Passa na alfândega se for exatamente igual OU se começar por "geometria."
+            if (!importPath.equals(declaredModule) && !importPath.startsWith(declaredModule + ".")) {
+                throw new ControlFlow.RuntimeError(stmt.keyword,
+                        "Inconsistência de Namespace: O ficheiro físico declara pertencer ao módulo '" + declaredModule +
+                                "', mas foi importado sob o caminho '" + importPath + "'. A hierarquia não coincide.");
+            }
+        }
+        return null;
+    }
+
 
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
 
@@ -183,7 +210,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.registry_model.put("Error", baseErrorModel);
         this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
     }
-
 
     // =========================================================================
     // ⭐ DESCASCADOR QUÂNTICO DE TEARDOWN (@Context.End) ⭐
@@ -680,7 +706,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-
         // ⭐ 3. A GUILHOTINA: VALIDAÇÃO DE CONTRATOS (TYPE CHECKING) ⭐
         for (Token interfaceToken : stmt.interfaces) {
             String interfaceName = interfaceToken.lexeme;
@@ -700,15 +725,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-        // ⭐ 4. Instancia a classe para a memória RAM (O Global Environment) ⭐
-        // A VACINA: Se o modelo for um Decorador (ex: Auditoria), a XplClass já mora na RAM
-        // desde o 'decorator Auditoria {}' e ganha os métodos por referência nativamente!
-        // Só definimos a constante global se NÃO for um decorador:
+        // ⭐ 4. Instancia a classe e regista-a no escopo do Ficheiro Atual ⭐
         if (!activeModel.isDecorator) {
             XplClass executableClass = new XplClass(activeModel, this.globals);
-            globals.defineConst(activeModel.name, executableClass);
+            // MUDANÇA: Guarda no environment local (que será o moduleEnv), não no globals!
+            this.environment.defineConst(activeModel.name, executableClass);
         }
-
         return null;
     }
 
@@ -813,6 +835,207 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment.defineConst(decName, classeDecoradora);
 
         return null;
+    }
+
+    @Override
+    public Void visitExportDeclStmt(Stmt.ExportDecl stmt) {
+        Token exportTokenBase = new Token(TokenType.IDENTIFIER, "export", null, 0, 0);
+
+        if (currentCompilingModule == null) {
+            throw new ControlFlow.RuntimeError(exportTokenBase, "Comando 'export' usado fora de um módulo!");
+        }
+
+        if (stmt.isExportAll) {
+            currentCompilingModule.exportAll = true;
+            return null;
+        }
+
+        if (stmt.declaration != null) {
+            execute(stmt.declaration);
+
+            String symbolName = null;
+            Token symbolToken = exportTokenBase;
+
+            if (stmt.declaration instanceof Stmt.DeclareDecl d) {
+                symbolName = d.name.lexeme;
+                symbolToken = d.name;
+            } else if (stmt.declaration instanceof Stmt.Function f) {
+                symbolName = f.name.lexeme;
+                symbolToken = f.name;
+            } else if (stmt.declaration instanceof Stmt.VarDecl v) {
+                symbolName = v.name.lexeme;
+                symbolToken = v.name;
+            }
+
+            if (symbolName != null) {
+                Object valor = safeGetSymbol(symbolName);
+                if (valor != null) {
+                    currentCompilingModule.exports.put(symbolName, valor);
+                } else {
+                    throw new ControlFlow.RuntimeError(symbolToken, "Falha Crítica no Export: O símbolo '" + symbolName + "' não foi encontrado na RAM.");
+                }
+            }
+        } else if (stmt.inlineSymbols != null) {
+            for (Token sym : stmt.inlineSymbols) {
+                Object valor = safeGetSymbol(sym.lexeme);
+                if (valor != null) {
+                    currentCompilingModule.exports.put(sym.lexeme, valor);
+                } else {
+                    throw new ControlFlow.RuntimeError(sym, "Falha Crítica no Export: O símbolo '" + sym.lexeme + "' não foi encontrado na RAM.");
+                }
+            }
+        }
+        return null;
+    }
+
+    // ⭐ AUXILIAR: Procura a exportação em todos os cofres do motor
+    private Object safeGetSymbol(String symbolName) {
+        // 1. Tenta no Environment (Variáveis, Funções, Classes Implementadas)
+        try { return this.environment.get(symbolName); } catch (RuntimeException ignored) {}
+
+        // 2. Tenta no Cofre de Modelos (Declare)
+        if (this.registry_model.containsKey(symbolName)) return this.registry_model.get(symbolName);
+
+        // 3. Tenta no Cofre de Genéricos (declare Caixa<T>)
+        if (this.registry_generic_models.containsKey(symbolName)) return this.registry_generic_models.get(symbolName);
+
+        // 4. Tenta no Cofre de Interfaces
+        if (this.registry_Interfaces.containsKey(symbolName)) return this.registry_Interfaces.get(symbolName);
+
+        return null;
+    }
+
+    @Override
+    public Void visitImportDeclStmt(Stmt.ImportDecl stmt) {
+        Token importKeyword = new Token(TokenType.IMPORT, "import", null, 0, 0);
+        XplModule module = loadModule(stmt.modulePath, importKeyword);
+
+        if (stmt.isWildcard) {
+            for (java.util.Map.Entry<String, Object> entry : module.exports.entrySet()) {
+                injectImportedSymbol(entry.getKey(), entry.getValue());
+            }
+        } else {
+            for (Stmt.ImportSymbol sym : stmt.symbols) {
+                String targetName = sym.originalName.lexeme;
+
+                if (!module.exports.containsKey(targetName)) {
+                    throw new ControlFlow.RuntimeError(sym.originalName, "O módulo '" + stmt.modulePath + "' não exporta o símbolo '" + targetName + "'.");
+                }
+
+                Object importedValue = module.exports.get(targetName);
+                String localName = (sym.aliasName != null) ? sym.aliasName.lexeme : targetName;
+
+                injectImportedSymbol(localName, importedValue);
+            }
+        }
+        return null;
+    }
+
+    private void injectImportedSymbol(String localName, Object importedValue) {
+        if (importedValue instanceof XplClass xplClass) {
+            // Regista o modelo na gaveta POO para que o 'new' consiga encontrar os metadados da classe
+            this.registry_model.put(localName, xplClass.model);
+            this.environment.defineConst(localName, xplClass);
+        } else if (importedValue instanceof XPLModel model) {
+            if (model.isGenericBlueprint) {
+                this.registry_generic_models.put(localName, model);
+            } else {
+                this.registry_model.put(localName, model);
+                if (model.hasBaseImplementation && !model.isDecorator) {
+                    this.environment.defineConst(localName, new XplClass(model, this.globals));
+                }
+            }
+        } else if (importedValue instanceof XplInterface iface) {
+            this.registry_Interfaces.put(localName, iface);
+        } else {
+            this.environment.defineConst(localName, importedValue);
+        }
+    }
+
+
+    // =========================================================================
+    // ⭐ VOLUME 13: O CARREGADOR DE MÓDULOS ⭐
+    // =========================================================================
+    private XplModule loadModule(String modulePath, Token importKeyword) {
+        if (moduleCache.containsKey(modulePath)) {
+            return moduleCache.get(modulePath);
+        }
+
+        String osPath = modulePath.replace(".", "/") + ".xpl";
+        java.io.File file = resolvePhysicalFile(osPath);
+
+        if (file == null) {
+            String absoluteCwd = new java.io.File(".").getAbsolutePath();
+            throw new ControlFlow.RuntimeError(importKeyword,
+                    "Módulo não encontrado no disco: '" + modulePath + "'.\n" +
+                            " -> Tentou procurar o ficheiro: " + osPath + "\n" +
+                            " -> Diretório atual do Java: " + absoluteCwd);
+        }
+
+        System.out.println("[XPL Modularity] -> A compilar módulo externo: " + modulePath);
+
+        String source;
+        try {
+            source = java.nio.file.Files.readString(file.toPath());
+        } catch (java.io.IOException e) {
+            throw new ControlFlow.RuntimeError(importKeyword, "Erro ao ler ficheiro: " + file.getAbsolutePath());
+        }
+
+        Lexer lexer = new Lexer(source);
+        java.util.List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens);
+        java.util.List<Stmt> statements = parser.parse();
+
+        XplModule newModule = new XplModule(modulePath);
+
+        // ⭐ A CURA DO VAR: Forçamos o depth a nascer em 0 para o escopo raiz do ficheiro externo!
+        Environment moduleEnv = new Environment(this.globals, 0);
+        newModule.localEnvironment = moduleEnv;
+
+        Environment previousEnv = this.environment;
+        XplModule previousModule = this.currentCompilingModule;
+
+        try {
+            this.environment = moduleEnv;
+            this.currentCompilingModule = newModule;
+
+            for (Stmt stmt : statements) {
+                execute(stmt);
+            }
+
+            if (newModule.exportAll) {
+                newModule.exports.putAll(moduleEnv.values);
+            }
+
+        } finally {
+            this.environment = previousEnv;
+            this.currentCompilingModule = previousModule;
+        }
+
+        moduleCache.put(modulePath, newModule);
+        return newModule;
+    }
+
+    private java.io.File resolvePhysicalFile(String relativePath) {
+        relativePath = relativePath.replace("\\", "/");
+        String[] searchPaths = {".", "src", "lib"};
+        for (String base : searchPaths) {
+            java.io.File f = new java.io.File(base, relativePath);
+            if (f.exists() && f.isFile()) return f;
+        }
+        return null;
+    }
+
+    // A estrutura física de um módulo em RAM
+    public static class XplModule {
+        public final String path;
+        public final java.util.Map<String, Object> exports = new java.util.HashMap<>();
+        public boolean exportAll = false;
+        public Environment localEnvironment; // Guarda o estado final do ficheiro
+
+        public XplModule(String path) {
+            this.path = path;
+        }
     }
 
     // Detetor proativo de buracos negros (Ciclos infinitos):

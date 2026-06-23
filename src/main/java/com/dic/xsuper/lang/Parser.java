@@ -74,6 +74,10 @@ public class Parser {
         }
 
         try {
+            if (match(TokenType.MODULE)) return moduleDeclaration();
+            if (match(TokenType.IMPORT)) return importDeclaration();
+            if (match(TokenType.EXPORT)) return exportDeclaration();
+
             if (match(TokenType.DECORATOR)) {
                 if (!decorators.isEmpty()) throw error(previous(), "Definições de decoradores não podem ser decoradas.");
                 return decoratorDeclaration();
@@ -106,6 +110,99 @@ public class Parser {
             synchronize();
             return null;
         }
+    }
+
+
+    // Lê: module banco.modelos;
+    private Stmt moduleDeclaration() {
+        Token keyword = previous();
+        StringBuilder pathBuilder = new StringBuilder();
+
+        do {
+            pathBuilder.append(consume(TokenType.IDENTIFIER, "Esperado nome do módulo.").lexeme);
+            if (check(TokenType.DOT)) {
+                advance(); // Consome o '.'
+                pathBuilder.append(".");
+            } else {
+                break;
+            }
+        } while (true);
+
+        consume(TokenType.SEMICOLON, "Esperado ';' após a declaração do módulo.");
+        return new Stmt.ModuleDecl(keyword, pathBuilder.toString());
+    }
+
+    // Lê as 5 variações do teu documento:
+    // import x.y.Z; | import x.y.*; | import x.y.{A, B as C}; | import x.y.A as B;
+    private Stmt importDeclaration() {
+        StringBuilder pathBuilder = new StringBuilder();
+        java.util.List<Stmt.ImportSymbol> symbols = new java.util.ArrayList<>();
+        boolean isWildcard = false;
+
+        // Lemos o caminho até batermos numa chave '{', num asterisco '*', ou no último identificador
+        while (true) {
+            if (match(TokenType.STAR)) { // import banco.*
+                isWildcard = true;
+                break;
+            }
+            if (match(TokenType.LBRACE)) { // import banco.{A, B}
+                do {
+                    Token originalName = consume(TokenType.IDENTIFIER, "Esperado nome do símbolo para importar.");
+                    Token aliasName = null;
+                    if (match(TokenType.AS)) {
+                        aliasName = consume(TokenType.IDENTIFIER, "Esperado alias após 'as'.");
+                    }
+                    symbols.add(new Stmt.ImportSymbol(originalName, aliasName));
+                } while (match(TokenType.COMMA));
+                consume(TokenType.RBRACE, "Esperado '}' após lista de imports.");
+                break;
+            }
+
+            // É um identificador normal
+            Token part = consume(TokenType.IDENTIFIER, "Esperado nome no caminho de importação.");
+
+            if (match(TokenType.DOT)) {
+                pathBuilder.append(part.lexeme).append(".");
+            } else {
+                // É o último identificador (o símbolo único). Ex: import banco.modelos.Cliente
+                Token aliasName = null;
+                if (match(TokenType.AS)) { // import banco.modelos.Cliente as Pessoa
+                    aliasName = consume(TokenType.IDENTIFIER, "Esperado alias após 'as'.");
+                }
+                symbols.add(new Stmt.ImportSymbol(part, aliasName));
+                break;
+            }
+        }
+
+        // Limpa o ponto final do caminho, se existir (ex: "banco.modelos.")
+        String path = pathBuilder.toString();
+        if (path.endsWith(".")) path = path.substring(0, path.length() - 1);
+
+        consume(TokenType.SEMICOLON, "Esperado ';' no final do import.");
+        return new Stmt.ImportDecl(path, symbols, isWildcard);
+    }
+
+    // Lê: export declare... | export Cliente, Pessoa; | export all;
+    private Stmt exportDeclaration() {
+        if (match(TokenType.ALL)) {
+            consume(TokenType.SEMICOLON, "Esperado ';' após 'export all'.");
+            return new Stmt.ExportDecl(null, true);
+        }
+
+        // Se for uma declaração embutida (export declare, export fun, export var)
+        if (check(TokenType.DECLARE) || check(TokenType.FUN) || check(TokenType.VAR)) {
+            Stmt decl = declaration(); // Delega para o parser normal ler a classe/função
+            return new Stmt.ExportDecl(decl);
+        }
+
+        // Se for uma lista de nomes no fim do ficheiro (export Cliente, Pessoa;)
+        java.util.List<Token> exportNames = new java.util.ArrayList<>();
+        do {
+            exportNames.add(consume(TokenType.IDENTIFIER, "Esperado nome do símbolo para exportar."));
+        } while (match(TokenType.COMMA));
+
+        consume(TokenType.SEMICOLON, "Esperado ';' após lista de exports.");
+        return new Stmt.ExportDecl(exportNames, false);
     }
 
     // ⭐ O CONSTRUTOR SINTÁTICO DO ALIAS ⭐

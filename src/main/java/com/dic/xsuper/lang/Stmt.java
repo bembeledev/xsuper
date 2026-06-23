@@ -25,6 +25,12 @@ public abstract class Stmt {
         R visitThrowStmt(Throw stmt);
         R visitTypeAliasDecl(TypeAliasDecl typeAliasDecl);
         R visitDecoratorDeclStmt(DecoratorDecl decoratorDecl);
+
+        R visitModuleDeclStmt(ModuleDecl moduleDecl);
+
+        R visitImportDeclStmt(ImportDecl importDecl);
+
+        R visitExportDeclStmt(ExportDecl exportDecl);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -608,5 +614,106 @@ public abstract class Stmt {
         }
     }
 
+
+    // =========================================================================
+    // ⭐ NÓS DE MODULARIDADE ⭐
+    // =========================================================================
+
+    // 1. A Declaração do Módulo (Ex: module banco.modelos;)
+    public static class ModuleDecl extends Stmt {
+        public final String modulePath; // Ex: "banco.modelos"
+        public final Token keyword;     // O token 'module' para reportar erros de linha
+
+        public ModuleDecl(Token keyword, String modulePath) {
+            this.keyword = keyword;
+            this.modulePath = modulePath;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitModuleDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "ModuleDecl{" +
+                    "modulePath='" + modulePath + '\'' +
+                    ", keyword=" + keyword +
+                    '}';
+        }
+    }
+
+    // Estrutura Auxiliar para Imports com Alias (Ex: Cliente as Pessoa)
+    public static class ImportSymbol {
+        public final Token originalName;
+        public final Token aliasName; // Pode ser null se não usar 'as'
+
+        public ImportSymbol(Token originalName, Token aliasName) {
+            this.originalName = originalName;
+            this.aliasName = aliasName;
+        }
+    }
+
+    // 2. A Declaração de Import (Ex: import banco.modelos.{Cliente as C};)
+    public static class ImportDecl extends Stmt {
+        public final String modulePath; // Ex: "banco.modelos"
+        public final java.util.List<ImportSymbol> symbols; // Lista de símbolos. Vazia se for wildcard '*'
+        public final boolean isWildcard; // true se for import pacote.*
+
+        public ImportDecl(String modulePath, java.util.List<ImportSymbol> symbols, boolean isWildcard) {
+            this.modulePath = modulePath;
+            this.symbols = symbols;
+            this.isWildcard = isWildcard;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitImportDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "ImportDecl{" +
+                    "modulePath='" + modulePath + '\'' +
+                    ", symbols=" + symbols +
+                    ", isWildcard=" + isWildcard +
+                    '}';
+        }
+    }
+
+    // 3. A Declaração de Export (Polimórfica)
+    public static class ExportDecl extends Stmt {
+        public final Stmt declaration; // Se for: export declare Pessoa {...}
+        public final java.util.List<Token> inlineSymbols; // Se for: export Cliente, Pessoa;
+        public final boolean isExportAll; // Se for: export all;
+
+        // Construtor A: Exporta uma declaração embutida
+        public ExportDecl(Stmt declaration) {
+            this.declaration = declaration;
+            this.inlineSymbols = null;
+            this.isExportAll = false;
+        }
+
+        // Construtor B: Exporta uma lista de nomes ou 'all'
+        public ExportDecl(java.util.List<Token> inlineSymbols, boolean isExportAll) {
+            this.declaration = null;
+            this.inlineSymbols = inlineSymbols;
+            this.isExportAll = isExportAll;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitExportDeclStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "ExportDecl{" +
+                    "declaration=" + declaration +
+                    ", inlineSymbols=" + inlineSymbols +
+                    ", isExportAll=" + isExportAll +
+                    '}';
+        }
+    }
 
 }
