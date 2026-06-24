@@ -248,7 +248,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         } catch (ControlFlow.RuntimeError error) {
             String path = (error.token.filePath != null) ? error.token.filePath : "Desconhecido";
-            System.err.println(ConsoleTheme.ERROR + path + ":\n\t" + error.token.line + ":" + error.token.column + ": Erro de Execução: " + error.getMessage() + ConsoleTheme.RESET);
+            System.err.println(ConsoleTheme.ERROR + path + ":" + error.token.line + ":" + error.token.column + ":\n\t Erro de Execução: " + error.getMessage() + ConsoleTheme.RESET);
         } finally {
             // Gatilho global de fim de script
             for (Object obj : globals.values.values()) {
@@ -572,7 +572,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 blueprint.addField(field);
             }
 
+
+
             registry_generic_models.put(modelName, blueprint);
+            this.environment.defineConst(modelName, blueprint);
             return null; // <-- Corta aqui! Não entra no registry_model normal.
         }
 
@@ -602,7 +605,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             model.addField(field);
         }
 
+
         registry_model.put(modelName, model);
+        this.environment.defineConst(modelName, model);
         return null;
     }
 
@@ -624,31 +629,48 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
-
         String baseName = stmt.targetName.lexeme;
+
+        // =====================================================================
+        // ⭐ A MURALHA DE ENCAPSULAMENTO (SEALED CLASSES / OPAQUE TYPES) ⭐
+        // =====================================================================
+        Object localSymbol = null;
+        try {
+            // Tenta ler o declare da memória ESTRITAMENTE LOCAL do ficheiro!
+            localSymbol = this.environment.get(baseName);
+        } catch (RuntimeException e) {
+            // Se o ficheiro não tem o declare nativo nem o importou, bloqueamos o hacker!
+            throw new ControlFlow.RuntimeError(stmt.targetName,
+                    "Erro de Segurança (Encapsulamento): O 'declare' chamado '" + baseName + "' é estritamente privado ou não existe neste escopo. Não podes implementar modelos que não foram declarados neste ficheiro ou explicitamente importados.");
+        }
+
+        XPLModel baseModel;
+        if (localSymbol instanceof XPLModel) {
+            baseModel = (XPLModel) localSymbol;
+        } else if (localSymbol instanceof XplClass) {
+            // Se já tem implementação, o símbolo exportado foi uma classe executável.
+            // Extraímos a "alma" (XPLModel) lá de dentro!
+            baseModel = ((XplClass) localSymbol).model;
+        } else {
+            throw new ControlFlow.RuntimeError(stmt.targetName, "O identificador '" + baseName + "' não corresponde a um modelo de dados válido para implementação.");
+        }
 
         // =====================================================================
         // ⭐ ROTA A: É A IMPLEMENTAÇÃO DE UM MOLDE GENÉRICO? (Ex: implement Caixa<T>)
         // =====================================================================
-        if (registry_generic_models.containsKey(baseName)) {
-            XPLModel blueprint = registry_generic_models.get(baseName);
-            blueprint.hasBaseImplementation = true;
+        if (baseModel.isGenericBlueprint) {
+            baseModel.hasBaseImplementation = true;
 
             for (Stmt.Function method : stmt.methods) {
-                blueprint.addMethod(method);
+                baseModel.addMethod(method);
             }
-
             System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
             return null; // <-- Corta aqui! O blueprint fica completo na câmara criogénica.
         }
 
-
-        // 1. Vai buscar o modelo base (Declare) ao teu NOVO map!
-        XPLModel baseModel = registry_model.get(baseName);
-        if (baseModel == null) {
-            throw new ControlFlow.RuntimeError(stmt.targetName, "Erro Fatal: O modelo base '" + baseName + "' não foi declarado.");
-        }
-
+        // =====================================================================
+        // ⭐ ROTA B: IMPLEMENTAÇÃO DE CLASSE CONCRETA NORMAL
+        // =====================================================================
         XPLModel activeModel; // O modelo que vamos validar, registar e instanciar
 
         // ⭐ 2. A BIFURCAÇÃO (BASE vs VARIANTE) ⭐
@@ -667,8 +689,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             activeModel = baseModel;
             System.out.println("[XPL Engine] -> Injetando Comportamento (Base): " + activeModel.name);
 
-        }
-        else {
+        } else {
             // ---> É UMA VARIANTE! (Ex: implement Mamifero as Mam1) <---
             String variantName = stmt.aliasName.lexeme;
 
@@ -738,8 +759,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ⭐ 4. Instancia a classe e regista-a no escopo do Ficheiro Atual ⭐
         if (!activeModel.isDecorator) {
             XplClass executableClass = new XplClass(activeModel, this.globals);
-            // MUDANÇA: Guarda no environment local (que será o moduleEnv), não no globals!
-            this.environment.defineConst(activeModel.name, executableClass);
+
+            if (stmt.aliasName == null) {
+                // ---> A FUSÃO QUÂNTICA <---
+                // O 'declare' já tinha reservado o nome como constante na RAM.
+                // Em vez de criarmos uma constante nova (o que dá erro), fazemos o UPGRADE
+                // do modelo nu (XPLModel) para a classe armada (XplClass) forçando no mapa!
+                this.environment.values.put(activeModel.name, executableClass);
+            } else {
+                // ---> É UMA VARIANTE (Ex: as Circe) <---
+                // Como a variante tem um nome novo que nunca foi declarado,
+                // usamos a via oficial para a registar como uma nova constante intocável!
+                this.environment.defineConst(activeModel.name, executableClass);
+            }
         }
         return null;
     }
@@ -988,10 +1020,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else if (importedValue instanceof XPLModel model) {
             if (model.isGenericBlueprint) {
                 this.registry_generic_models.put(localName, model);
+                this.environment.defineConst(localName, model);
             } else {
                 this.registry_model.put(localName, model);
                 if (model.hasBaseImplementation && !model.isDecorator) {
                     this.environment.defineConst(localName, new XplClass(model, this.globals));
+                }else{
+                    // ⭐ NOVO: É um 'declare' nu! Injeta-o para podermos fazer o 'implement' dele neste ficheiro!
+                    this.environment.defineConst(localName, model);
                 }
             }
         } else if (importedValue instanceof XplInterface iface) {

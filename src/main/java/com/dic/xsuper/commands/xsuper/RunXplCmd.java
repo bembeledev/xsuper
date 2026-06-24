@@ -60,6 +60,15 @@ public class RunXplCmd implements Command {
             }*/
             System.out.println(ConsoleTheme.SUCCESS + ">> 4. Parser: " + statements.size() + " declarações geradas na AST." + ConsoleTheme.RESET);
 
+            // ⭐ A TUA NOVA MURALHA DE SEGURANÇA!
+            if (parser.hasErrors()) {
+                System.err.println(ConsoleTheme.ERROR +
+                        "\n>> Execução abortada: Foram encontrados " + parser.getErrorCount() +
+                        " erro(s) sintático(s) no código fonte. Corrija-os antes de rodar o motor." +
+                        ConsoleTheme.RESET);
+                return currentDirectory; // 🛑 CORTA AQUI! O interpretador nunca será chamado!
+            }
+
             if (statements.isEmpty()) {
                 System.out.println(ConsoleTheme.WARNING + ">> AVISO: A AST está vazia. Não há nada para executar!" + ConsoleTheme.RESET);
             } else {

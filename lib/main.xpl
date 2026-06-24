@@ -1,13 +1,11 @@
 module app.main;
-import com.pdf.convert.globals.* prefix "PDFCONV";
+//import com.pdf.convert.globals.* prefix "PDFCONV";
 println("==================================================", "#00FFFF");
 println("       📦 SUPER XPL - TESTE DE MODULARIDADE 📦    ", "#00FFFF");
 println("==================================================\n", "#00FFFF");
 
 // 1. Importação Simples
 import geometria.Ponto.Ponto; // src/geometria/Ponto.xpl/Símbolo
-
-
 
 // 2. Importação com Alias (O Circulo vai disfarçar-se de Circle)
 import geometria.Circulo.{Circulo as Circle,Circe};// src/geometria/Circulo.xpl/Símbolo
@@ -47,3 +45,17 @@ fun executar() {
 }
 
 executar();
+
+implement Circle as Circe02 { // Tenta adivinhar o nome do declare!
+    pub fun init(raio:int, pi:float=3.132343543){
+    this.raio = raio;
+    this.pi = pi;
+    }
+
+    pub fun getArea():float{
+        return this.raio * this.raio * this.pi;
+    }
+}
+
+var v2 = Circe02(12);
+println("Bom dia: "+ v2.getArea());

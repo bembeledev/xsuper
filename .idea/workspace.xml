@@ -4,17 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`).">
-      <change afterPath="$PROJECT_DIR$/tests/string.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/com/pdf/convert/globals.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/com/pdf/convert/globals.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/geometria/Circulo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/geometria/Circulo.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/globals.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/globals.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/main.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TestXPL.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TestXPL.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Token.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Token.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/fun02.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/fun02.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -312,7 +312,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782241459618</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`.">
+      <option name="closed" value="true" />
+      <created>1782247998336</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1782247998337</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -352,6 +360,7 @@
     <MESSAGE value="feat(core/parser): implementar First-Class Functions e fechar validação em `tests/generic.xpl`&#10;&#10;- Adicionada a interceção sintática no Parser para assinaturas estruturais do tipo `(Param) -&gt; Return`.&#10;- Implementado o nó `TypeNode.FunctionType` na AST para tipagem forte de funções passadas como argumento.&#10;- Atualizada a alfândega de tipos no Interpreter (`checkTypeMatch`) para validar aridade e assinaturas biométricas de objetos `XplCallable`.&#10;- Validada a estabilidade e eliminação de overhead quântico através do script de teste complexo `tests/generic.xpl`.&#10;- Infraestrutura de callbacks nativos para o reator gráfico SuperUI 100% operacional." />
     <MESSAGE value="feat(core/modules): concluir sistema de modularidade e isolamento de escopo de ficheiros&#10;&#10;- Adicionado construtor especializado em `Environment` para forçar `depth = 0` na raiz de módulos externos, corrigindo o falso positivo do validador de `var`.&#10;- Corrigido o registo no `visitImplementDeclStmt` para injetar classes diretamente no `this.environment` local, permitindo a captura pelo motor de exportações.&#10;- Refatorados os métodos `visitExportDeclStmt` e `visitImportDeclStmt` para cruzar dados estruturais (POO) entre os registros globais (`registry_model`) e o escopo local de importação.&#10;- Implementada a resolução universal de caminhos de arquivos e tolerância flexível de namespaces baseada na hierarquia de pastas.&#10;- Sucesso absoluto de integração validado através do script de teste em `lib/main.xpl`." />
     <MESSAGE value="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`)." />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`)." />
+    <MESSAGE value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
   </component>
 </project>

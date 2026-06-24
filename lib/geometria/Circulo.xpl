@@ -27,4 +27,4 @@ implement Circulo as Circe {
 }
 
 // Exporta absolutamente tudo o que estiver neste ficheiro!
-export all;
+export Circe, Circulo;

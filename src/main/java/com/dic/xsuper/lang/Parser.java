@@ -17,11 +17,25 @@ public class Parser {
     // Rastreador de profundidade para aplicar a regra rigorosa do 'var'
     private int scopeDepth = 0;
 
+    // ⭐ NOVO: Contador universal para IDs sintéticos únicos
+    private int syntheticIdCounter = 0;
 
+    private int errorCount = 0;
+
+    // Mantemos o hasErrors() para não quebrar a lógica antiga, mas agora ele lê o contador!
+    public boolean hasErrors() {
+        return this.errorCount > 0;
+    }
+
+    // ⭐ NOVO: Permite extrair a quantidade exata de bugs encontrados!
+    public int getErrorCount() {
+        return this.errorCount;
+    }
 
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
+
 
     /**
      * PONTO DE ENTRADA DO PARSER.
@@ -53,18 +67,18 @@ public class Parser {
     // ==========================================
 
     private Stmt enumDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome do Enum.");
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do Enum.");
+        Token name = consumeIdentifierSoft( "Esperado nome do Enum.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do Enum.");
 
         List<Token> constants = new ArrayList<>();
 
         if (!check(TokenType.RBRACE)) {
             do {
-                constants.add(consume(TokenType.IDENTIFIER, "Esperado nome da constante do Enum."));
+                constants.add(consumeIdentifierSoft( "Esperado nome da constante do Enum."));
             } while (match(TokenType.COMMA));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do Enum.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do Enum.");
         return new Stmt.Enum(name, constants);
     }
 
@@ -97,7 +111,7 @@ public class Parser {
             if (match(TokenType.DECLARE))   return declareDeclaration();
 
             if (match(TokenType.ABSTRACT)) {
-                consume(TokenType.IMPLEMENT, "Esperado 'implement' após a palavra 'abstract'.");
+                consumeSoft(TokenType.IMPLEMENT, "implement", "Esperado 'implement' após a palavra 'abstract'.");
                 return implementDeclaration(true);
             }
             if (match(TokenType.IMPLEMENT)) {
@@ -118,16 +132,16 @@ public class Parser {
     }
 
     private Stmt globalDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável global.");
+        Token name = consumeIdentifierSoft( "Esperado nome da variável global.");
 
         TypeNode typeAnnotation = null;
         if (match(TokenType.COLON)) {
             typeAnnotation = parseTypeAnnotation(); // Lê o ':object' ou ':string'
         }
 
-        consume(TokenType.ASSIGN, "Esperado '=' após a declaração da variável global.");
+        consumeSoft(TokenType.ASSIGN, "=", "Esperado '=' após a declaração da variável global.");
         Expr initializer = expression();
-        consume(TokenType.SEMICOLON, "Esperado ';' no final da linha global.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final da linha global.");
 
         return new Stmt.GlobalDecl(name, typeAnnotation, initializer);
     }
@@ -138,7 +152,7 @@ public class Parser {
         StringBuilder pathBuilder = new StringBuilder();
 
         do {
-            pathBuilder.append(consume(TokenType.IDENTIFIER, "Esperado nome do módulo.").lexeme);
+            pathBuilder.append(consumeIdentifierSoft( "Esperado nome do módulo.").lexeme);
             if (check(TokenType.DOT)) {
                 advance(); // Consome o '.'
                 pathBuilder.append(".");
@@ -147,7 +161,7 @@ public class Parser {
             }
         } while (true);
 
-        consume(TokenType.SEMICOLON, "Esperado ';' após a declaração do módulo.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a declaração do módulo.");
         return new Stmt.ModuleDecl(keyword, pathBuilder.toString());
     }
 
@@ -165,25 +179,25 @@ public class Parser {
             }
             if (match(TokenType.LBRACE)) {
                 do {
-                    Token originalName = consume(TokenType.IDENTIFIER, "Esperado nome do símbolo para importar.");
+                    Token originalName = consumeIdentifierSoft( "Esperado nome do símbolo para importar.");
                     Token aliasName = null;
                     if (match(TokenType.AS)) {
-                        aliasName = consume(TokenType.IDENTIFIER, "Esperado alias após 'as'.");
+                        aliasName = consumeIdentifierSoft( "Esperado alias após 'as'.");
                     }
                     symbols.add(new Stmt.ImportSymbol(originalName, aliasName));
                 } while (match(TokenType.COMMA));
-                consume(TokenType.RBRACE, "Esperado '}' após lista de imports.");
+                consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após lista de imports.");
                 break;
             }
 
-            Token part = consume(TokenType.IDENTIFIER, "Esperado nome no caminho de importação.");
+            Token part = consumeIdentifierSoft( "Esperado nome no caminho de importação.");
 
             if (match(TokenType.DOT)) {
                 pathBuilder.append(part.lexeme).append(".");
             } else {
                 Token aliasName = null;
                 if (match(TokenType.AS)) {
-                    aliasName = consume(TokenType.IDENTIFIER, "Esperado alias após 'as'.");
+                    aliasName = consumeIdentifierSoft( "Esperado alias após 'as'.");
                 }
                 symbols.add(new Stmt.ImportSymbol(part, aliasName));
                 break;
@@ -203,48 +217,83 @@ public class Parser {
             }
         }
 
-        consume(TokenType.SEMICOLON, "Esperado ';' no final do import.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final do import.");
         return new Stmt.ImportDecl(path, symbols, isWildcard, prefixToken);
     }
 
     // Lê: export declare... | export Cliente, Pessoa; | export all;
+    // =========================================================================
+    // ⭐ ATUALIZAÇÃO: EXPORT DECLARATION BLINDADO E ESTRITO ⭐
+    // =========================================================================
+    // =========================================================================
+    // ⭐ EXPANSÃO: EXPORT COM DIAGNÓSTICO DE CONTEXTO CIRÚRGICO ⭐
+    // =========================================================================
     private Stmt exportDeclaration() {
+        // 1. Caso 1: export all;
         if (match(TokenType.ALL)) {
-            consume(TokenType.SEMICOLON, "Esperado ';' após 'export all'.");
+            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após 'export all'.");
             return new Stmt.ExportDecl(null, true);
         }
 
-        // Se for uma declaração embutida (export declare, export fun, export var)
-        if (check(TokenType.DECLARE) || check(TokenType.FUN) || check(TokenType.VAR)) {
-            Stmt decl = declaration(); // Delega para o parser normal ler a classe/função
+        // 2. Caso 2: Declaração embutida (export var, export fun, export global...)
+        if (check(TokenType.DECLARE) || check(TokenType.FUN) || check(TokenType.VAR) ||
+                check(TokenType.LET) || check(TokenType.CONST) || check(TokenType.GLOBAL)) {
+
+            Stmt decl = declaration();
             return new Stmt.ExportDecl(decl);
         }
 
-        // Se for uma lista de nomes no fim do ficheiro (export Cliente, Pessoa;)
+        // 3. Caso 3: Lista inline (export Cliente, Pessoa;)
         java.util.List<Token> exportNames = new java.util.ArrayList<>();
-        do {
-            exportNames.add(consume(TokenType.IDENTIFIER, "Esperado nome do símbolo para exportar."));
-        } while (match(TokenType.COMMA));
 
-        consume(TokenType.SEMICOLON, "Esperado ';' após lista de exports.");
+        // Consome o primeiro identificador
+        exportNames.add(consumeIdentifierSoft("Esperado nome do símbolo para exportar."));
+
+        // ⭐ A MURALHA CONTEXTUAL: O detetor de colisões de identificadores ⭐
+        while (!check(TokenType.SEMICOLON) && !isAtEnd()) {
+
+            if (check(TokenType.COMMA)) {
+                advance(); // Consome a vírgula legítima ','
+                exportNames.add(consumeIdentifierSoft("Esperado nome do próximo símbolo após a vírgula ','."));
+            }
+            // 💡 A MÁGICA AQUI: Se o próximo token for OUTRO identificador ou literal solto sem vírgula!
+            else if (check(TokenType.IDENTIFIER) || check(TokenType.STRING_LITERAL) ||
+                    check(TokenType.INT_LITERAL) || check(TokenType.FLOAT_LITERAL)) {
+
+                // Dispara o erro correto e cristalino na coordenada exata do invasor!
+                reportSoftError(peek(), "Símbolos de exportação consecutivos detetados. Os elementos devem ser estritamente separados por vírgula ','.");
+
+                // Forçamos o avanço de uma casa para consumir o invasor e não prender o Parser em loop!
+                exportNames.add(advance());
+            }
+            else {
+                // Se encontrou qualquer outra anomalia estranha que não seja uma vírgula ou ponto e vírgula
+                reportSoftError(peek(), "Caractere inválido '" + peek().lexeme + "' na listagem de exportação. Use apenas vírgulas(',') para separar os símbolos.");
+                advance(); // Sincroniza o fluxo
+            }
+        }
+
+        // Agora sim! O consumeSoft só vai falhar se o ';' realmente não estiver lá no fim!
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no encerramento da linha de exportação.");
+
         return new Stmt.ExportDecl(exportNames, false);
     }
 
     // ⭐ O CONSTRUTOR SINTÁTICO DO ALIAS ⭐
     private Stmt typeAliasDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado identificador para o nome do Alias.");
-        consume(TokenType.ASSIGN, "Esperado '=' após o nome do Alias.");
+        Token name = consumeIdentifierSoft( "Esperado identificador para o nome do Alias.");
+        consumeSoft(TokenType.ASSIGN, "=", "Esperado '=' após o nome do Alias.");
 
         // Reutilizamos a nossa coroa de ouro: a leitura fractal de tipos!
         TypeNode target = parseTypeAnnotation();
 
-        consume(TokenType.SEMICOLON, "Esperado ';' após a definição do sinónimo de tipo.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a definição do sinónimo de tipo.");
 
         return new Stmt.TypeAliasDecl(name, target);
     }
 
     private Stmt declareDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome do modelo de dados (declare).");
+        Token name = consumeIdentifierSoft( "Esperado nome do modelo de dados (declare).");
 
         // =====================================================================
         // ⭐ ENXERTO QUÂNTICO: LEITURA DE PARÂMETROS GENÉRICOS (Ex: <T, U>) ⭐
@@ -252,17 +301,17 @@ public class Parser {
         java.util.List<Token> typeParameters = new java.util.ArrayList<>();
         if (match(TokenType.LESS)) { // Se encontrar o caractere '<'
             do {
-                typeParameters.add(consume(TokenType.IDENTIFIER, "Esperado identificador do tipo genérico (ex: T)."));
+                typeParameters.add(consumeIdentifierSoft( "Esperado identificador do tipo genérico (ex: T)."));
             } while (match(TokenType.COMMA));
-            consume(TokenType.GREATER, "Esperado '>' para fechar os parâmetros genéricos.");
+            consumeSoft(TokenType.GREATER, ">", "Esperado '>' para fechar os parâmetros genéricos.");
         }
 
         Token superclass = null;
         if (match(TokenType.EXTENDS)) {
-            superclass = consume(TokenType.IDENTIFIER, "Esperado nome do modelo pai após 'extends'.");
+            superclass = consumeIdentifierSoft( "Esperado nome do modelo pai após 'extends'.");
         }
 
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do declare.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do declare.");
 
         java.util.List<Stmt.FieldDecl> fields = new java.util.ArrayList<>();
 
@@ -293,23 +342,23 @@ public class Parser {
                 accessModifier = new Token(TokenType.PRIVATE, "priv", null, peek().line, peek().column);
             }
 
-            Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade.");
-            consume(TokenType.COLON, "Esperado ':' após a propriedade.");
+            Token memberName = consumeIdentifierSoft( "Esperado nome da propriedade.");
+            consumeSoft(TokenType.COLON, ":", "Esperado ':' após a propriedade.");
             TypeNode type = parseTypeAnnotation();
-            consume(TokenType.SEMICOLON, "Esperado ';' no final da declaração.");
+            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final da declaração.");
 
             fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do declare.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do declare.");
 
         // ⭐ NOTA: Atualiza a tua classe Stmt.DeclareDecl para deixar de pedir a lista de methods!
         return new Stmt.DeclareDecl(name, superclass, fields,typeParameters);
     }
 
     private Stmt interfaceDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da interface.");
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo da interface.");
+        Token name = consumeIdentifierSoft( "Esperado nome da interface.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da interface.");
 
         // ⭐ 1. MUDANÇA: A lista passa a ser de FunctionSig
         java.util.List<Stmt.FunctionSig> methods = new java.util.ArrayList<>();
@@ -322,16 +371,16 @@ public class Parser {
                 modifier = previous();
             }
 
-            consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para definir um método na interface.");
-            Token methodName = consume(TokenType.IDENTIFIER, "Esperado nome do método.");
+            consumeSoft(TokenType.FUN, "fun", "Esperada a palavra-chave 'fun' para definir um método na interface.");
+            Token methodName = consumeIdentifierSoft( "Esperado nome do método.");
 
             // 2. Parâmetros (Mantém-se igual, mesmo que o tenhas simplificado no teu comentário)
-            consume(TokenType.LPAREN, "Esperado '(' após o nome do método.");
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome do método.");
             java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
             if (!check(TokenType.RPAREN)) {
                 do {
-                    Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
+                    Token paramName = consumeIdentifierSoft( "Esperado nome do parâmetro.");
+                    consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do parâmetro.");
 
                     TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
@@ -344,7 +393,7 @@ public class Parser {
 
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após parâmetros.");
 
             // ⭐ 3. Embrulhar o Retorno na Alfândega Universal!
             TypeNode returnTypeNode = null;
@@ -352,21 +401,21 @@ public class Parser {
                 returnTypeNode = parseTypeAnnotation();
             }
 
-            consume(TokenType.SEMICOLON, "Esperado ';' após a assinatura do método na interface.");
+            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a assinatura do método na interface.");
 
             // ⭐ 4. A Nova Instanciação (Ajusta os parâmetros consoante o construtor real da tua classe)
             // Se a tua classe final tiver a lista de parâmetros descomentada, envia os 'parameters' também!
             methods.add(new Stmt.FunctionSig(modifier, methodName, parameters, returnTypeNode));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo da interface.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo da interface.");
         return new Stmt.InterfaceDecl(name, methods);
 
     }
 
     private Stmt implementDeclaration(boolean isAbstractImplement) {
         // 1. O Alvo Base (Ex: Mamifero ou Animal)
-        Token targetName = consume(TokenType.IDENTIFIER, "Esperado nome do modelo de dados base.");
+        Token targetName = consumeIdentifierSoft( "Esperado nome do modelo de dados base.");
 
 
         // =====================================================================
@@ -375,16 +424,16 @@ public class Parser {
         java.util.List<Token> typeParameters = new java.util.ArrayList<>();
         if (match(TokenType.LESS)) {
             do {
-                typeParameters.add(consume(TokenType.IDENTIFIER, "Esperado identificador do tipo genérico."));
+                typeParameters.add(consumeIdentifierSoft( "Esperado identificador do tipo genérico."));
             } while (match(TokenType.COMMA));
-            consume(TokenType.GREATER, "Esperado '>' para fechar os parâmetros genéricos.");
+            consumeSoft(TokenType.GREATER, ">", "Esperado '>' para fechar os parâmetros genéricos.");
         }
 
 
         // 2. A Variante / Alias (Opcional - Ex: as Mam1)
         Token aliasName = null;
         if (match(TokenType.AS)) {
-            aliasName = consume(TokenType.IDENTIFIER, "Esperado nome da variante após 'as'.");
+            aliasName = consumeIdentifierSoft( "Esperado nome da variante após 'as'.");
         }
 
         // 3. Os Contratos (Opcional - Ex: for CRUD, EXEC)
@@ -392,26 +441,26 @@ public class Parser {
         java.util.List<Token> interfaces = new java.util.ArrayList<>();
         if (match(TokenType.FOR)) {
             do {
-                interfaces.add(consume(TokenType.IDENTIFIER, "Esperado nome da interface."));
+                interfaces.add(consumeIdentifierSoft( "Esperado nome da interface."));
             } while (match(TokenType.COMMA));
         }
 
         // 4. O Corpo com o Código
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo da implementação.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da implementação.");
 
         // ⭐ LER O BLOCO DEFAULT ⭐
         java.util.Map<String, Expr> defaultState = new java.util.HashMap<>();
         if (match(TokenType.DEFAULT)) {
-            consume(TokenType.LBRACE, "Esperado '{' após 'default'.");
+            consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após 'default'.");
             if (!check(TokenType.RBRACE)) {
                 do {
-                    Token key = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade no bloco default.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome da propriedade.");
+                    Token key = consumeIdentifierSoft( "Esperado nome da propriedade no bloco default.");
+                    consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome da propriedade.");
                     Expr value = expression();
                     defaultState.put(key.lexeme, value);
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RBRACE, "Esperado '}' após o bloco 'default'.");
+            consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o bloco 'default'.");
         }
 
 
@@ -439,22 +488,22 @@ public class Parser {
             }
 
             // ⭐ 3. A Palavra-chave OBRIGATÓRIA
-            consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para declarar um método.");
+            consumeSoft(TokenType.FUN, "fun", "Esperada a palavra-chave 'fun' para declarar um método.");
 
             // 4. Nome do Método
-            Token methodName = consume(TokenType.IDENTIFIER, "Esperado nome do método.");
+            Token methodName = consumeIdentifierSoft( "Esperado nome do método.");
 
             // 5. Parâmetros ( )
-            consume(TokenType.LPAREN, "Esperado '(' após o nome do método.");
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome do método.");
             java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
             if (!check(TokenType.RPAREN)) {
                 do {
                     if (parameters.size() >= 255) {
-                        error(peek(), "Não podes ter mais de 255 parâmetros.");
+                       throw error(peek(), "Não podes ter mais de 255 parâmetros.");
                     }
 
-                    Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
+                    Token paramName = consumeIdentifierSoft( "Esperado nome do parâmetro.");
+                    consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do parâmetro.");
 
                     TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
@@ -467,7 +516,7 @@ public class Parser {
 
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RPAREN, "Esperado ')' após parâmetros.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após parâmetros.");
 
             // ⭐ 6. Tipo de Retorno Delegado ao Rei Quântico ⭐
             TypeNode returnType = null;
@@ -479,7 +528,7 @@ public class Parser {
             java.util.List<Token> thrownExceptions = new java.util.ArrayList<>();
             if (match(TokenType.THROWS)) {
                 do {
-                    Token errorName = consume(TokenType.IDENTIFIER, "Esperado nome da exceção após 'throws'.");
+                    Token errorName = consumeIdentifierSoft( "Esperado nome da exceção após 'throws'.");
                     thrownExceptions.add(errorName);
                 } while (match(TokenType.COMMA)); // Permite 'throws IOError, NetError'
             }
@@ -487,9 +536,9 @@ public class Parser {
             // ⭐ 7. A BIFURCAÇÃO: Abstrato vs Concreto ⭐
             java.util.List<Stmt> body = null;
             if (isAbstract) {
-                consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
+                consumeSoft(TokenType.SEMICOLON, ";", "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
             } else {
-                consume(TokenType.LBRACE, "Esperado '{' antes do corpo do método.");
+                consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do método.");
                 body = block();
             }
 
@@ -498,7 +547,7 @@ public class Parser {
             methods.add(new Stmt.Function(modifier, isStatic, isAbstract, methodName, parameters, returnType, thrownExceptions, body,methodDecorators));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do implement.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do implement.");
 
         return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, defaultState, methods,typeParameters);
     }
@@ -515,18 +564,18 @@ public class Parser {
         boolean isAbstract = match(TokenType.ABSTRACT);
 
         // ⭐ 3. A NOVA REGRA DE SINTAXE: O TOKEN 'fun' É OBRIGATÓRIO ⭐
-        consume(TokenType.FUN, "Esperada a palavra-chave 'fun' para declarar um método ou função.");
+        consumeSoft(TokenType.FUN, "fun", "Esperada a palavra-chave 'fun' para declarar um método ou função.");
 
         // 4. Nome da Função
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da função.");
-        consume(TokenType.LPAREN, "Esperado '(' após o nome da função.");
+        Token name = consumeIdentifierSoft( "Esperado nome da função.");
+        consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome da função.");
 
         // 5. Parâmetros (com a tua tipagem forte!)
         List<Stmt.Param> parameters = new ArrayList<>();
         if (!check(TokenType.RPAREN)) {
             do {
-                Token paramName = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro.");
-                consume(TokenType.COLON, "Esperado ':' após o nome do parâmetro.");
+                Token paramName = consumeIdentifierSoft( "Esperado nome do parâmetro.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do parâmetro.");
 
                 TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
 
@@ -538,7 +587,7 @@ public class Parser {
                 parameters.add(new Stmt.Param(paramName, type, defaultValue));
             } while (match(TokenType.COMMA));
         }
-        consume(TokenType.RPAREN, "Esperado ')' após os parâmetros.");
+        consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os parâmetros.");
 
         // 6. Tipo de Retorno (ex: : int)
         TypeNode returnType = null;
@@ -550,7 +599,7 @@ public class Parser {
         List<Token> thrownExceptions = new ArrayList<>();
         if (match(TokenType.THROWS)) {
             do {
-                Token errorName = consume(TokenType.IDENTIFIER, "Esperado nome da exceção após 'throws'.");
+                Token errorName = consumeIdentifierSoft( "Esperado nome da exceção após 'throws'.");
                 thrownExceptions.add(errorName);
             } while (match(TokenType.COMMA)); // Suporta múltiplas: throws IOError, NetError
         }
@@ -558,13 +607,13 @@ public class Parser {
         // ⭐ 7. A BIFURCAÇÃO DA ABSTRAÇÃO (O Grande Salto!) ⭐
         if (isAbstract) {
             // Se for um método abstrato, NÃO PODE ter corpo. Exige ponto-e-vírgula!
-            consume(TokenType.SEMICOLON, "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
+            consumeSoft(TokenType.SEMICOLON, ";", "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
             return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, thrownExceptions,null, decorators);
         } else {
             // Se for um método concreto, EXIGE as chaves e o corpo de código!
-            consume(TokenType.LBRACE, "Esperado '{' antes do corpo da função concreta.");
+            consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da função concreta.");
             List<Stmt> body = block();
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
@@ -579,7 +628,7 @@ public class Parser {
             throw error(keyword, "Erro de Escopo: A palavra-chave 'var' só pode ser usada ao nível do arquivo global.");
         }
 
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável.");
+        Token name = consumeIdentifierSoft( "Esperado nome da variável.");
 
         // ⭐ A EVOLUÇÃO: Agora usamos a Árvore de Tipos (TypeNode) em vez de String!
         TypeNode typeAnnotation = null;
@@ -596,7 +645,7 @@ public class Parser {
             throw error(name, "Uma constante ('const') precisa ser inicializada com um valor.");
         }
 
-        consume(TokenType.SEMICOLON, "Esperado ';' após a declaração da variável.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a declaração da variável.");
 
         // O teu VarDecl agora recebe o TypeNode estruturado com sucesso!
         return new Stmt.VarDecl(keyword, name, typeAnnotation, initializer,decorators);
@@ -615,10 +664,10 @@ public class Parser {
                     paramTypes.add(parseTypeAnnotation());
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RPAREN, "Esperado ')' após os tipos de parâmetros.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os tipos de parâmetros.");
 
             // Exige a seta (->)
-            consume(TokenType.ARROW, "Esperado '->' para definir o retorno do tipo de função.");
+            consumeSoft(TokenType.ARROW, "->", "Esperado '->' para definir o retorno do tipo de função.");
 
             // Lê o tipo de retorno
             TypeNode returnType = parseTypeAnnotation();
@@ -639,7 +688,7 @@ public class Parser {
         if (match(TokenType.IDENTIFIER, TokenType.T_INT,TokenType.T_BOOL, TokenType.T_FLOAT, TokenType.T_STRING, TokenType.T_ARRAY, TokenType.T_OBJECT, TokenType.T_ENUM)) {
             baseName = previous();
         } else {
-            throw error(peek(), "Esperado nome do tipo (ex: int, String, Map).");
+            throw error(peek(), "Esperado nome do tipo (ex: int, string,bool, object, array, etc).");
         }
 
         // 2. Verifica se existem Tipos Genéricos '< ... >'
@@ -650,7 +699,7 @@ public class Parser {
                 generics.add(parseTypeAnnotation());
             } while (match(TokenType.COMMA));
 
-            consume(TokenType.GREATER, "Esperado '>' após os tipos genéricos.");
+            consumeSoft(TokenType.GREATER, ">", "Esperado '>' após os tipos genéricos.");
 
             // Retorna o nó complexo!
             return new TypeNode.Generic(baseName, generics);
@@ -691,7 +740,7 @@ public class Parser {
     private Expr.If ifExpressionBlock() {
         // Lê a condição (usando a tua sintaxe)
         Expr condition = expression();
-        consume(TokenType.LBRACE, "Esperado '{' após a condição do if.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após a condição do if.");
         Stmt thenBranch = new Stmt.Block(block());
 
         Stmt elseBranch = null;
@@ -704,7 +753,7 @@ public class Parser {
                 Expr.If elseIfExpr = ifExpressionBlock();
                 elseBranch = new Stmt.ExpressionStmt(elseIfExpr);
             } else {
-                consume(TokenType.LBRACE, "Esperado '{' após 'else'.");
+                consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após 'else'.");
                 elseBranch = new Stmt.Block(block());
             }
         }
@@ -714,11 +763,11 @@ public class Parser {
 
     // ⭐ O LEITOR DO SWITCH SEM BREAK ⭐
     private Expr switchExpression() {
-        consume(TokenType.LPAREN, "Esperado '(' após 'switch'.");
+        consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após 'switch'.");
         Expr target = expression();
-        consume(TokenType.RPAREN, "Esperado ')' após o alvo do switch.");
+        consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o alvo do switch.");
 
-        consume(TokenType.LBRACE, "Esperado '{' antes dos casos do switch.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes dos casos do switch.");
 
         java.util.List<Expr.SwitchCase> cases = new java.util.ArrayList<>();
         Stmt defaultBranch = null;
@@ -733,31 +782,31 @@ public class Parser {
                     values.add(expression());
                 } while (match(TokenType.COMMA));
 
-                consume(TokenType.COLON, "Esperado ':' após os valores do caso.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':' após os valores do caso.");
 
                 // 2. Lê o corpo! Como reaproveitamos o statement(), ele aceita um comando solto ou um bloco {}
                 Stmt body = statement();
                 cases.add(new Expr.SwitchCase(values, body));
 
             } else if (match(TokenType.DEFAULT)) {
-                consume(TokenType.COLON, "Esperado ':' após 'default'.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':' após 'default'.");
                 defaultBranch = statement();
             } else {
                 throw error(peek(), "Esperado 'case' ou 'default' dentro do switch.");
             }
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do switch.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do switch.");
         return new Expr.Switch(target, cases, defaultBranch);
     }
 
     // ⭐ O LEITOR DO MATCH COMPLEXO ⭐
     private Expr matchExpression() {
-        consume(TokenType.LPAREN, "Esperado '(' após 'match'.");
+        consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após 'match'.");
         Expr target = expression();
-        consume(TokenType.RPAREN, "Esperado ')' após o alvo do match.");
+        consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o alvo do match.");
 
-        consume(TokenType.LBRACE, "Esperado '{' antes dos braços do match.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes dos braços do match.");
 
         java.util.List<Expr.MatchArm> arms = new java.util.ArrayList<>();
         Stmt defaultBranch = null;
@@ -769,7 +818,7 @@ public class Parser {
 
             // ⭐ A TUA REGRA: Suporte simultâneo a 'default:' e 'none:'
             if (match(TokenType.DEFAULT, TokenType.NONE)) { // Garante que NONE está no teu Lexer!
-                consume(TokenType.COLON, "Esperado ':' após default/none.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':' após default/none.");
                 defaultBranch = statement();
                 continue;
             }
@@ -793,39 +842,39 @@ public class Parser {
                 }
             }
 
-            consume(TokenType.COLON, "Esperado ':' após a definição do padrão.");
+            consumeSoft(TokenType.COLON, ":", "Esperado ':' após a definição do padrão.");
             Stmt body = statement(); // Lê a linha ou o bloco {}
 
             arms.add(new Expr.MatchArm(typeTest, valueTest, guard, body));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do match.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do match.");
         return new Expr.Match(target, arms, defaultBranch);
     }
 
     private Stmt throwStatement() {
         Token keyword = previous();
         Expr value = expression(); // O que vamos lançar? Pode ser uma string, número ou objeto!
-        consume(TokenType.SEMICOLON, "Esperado ';' após o valor do throw.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após o valor do throw.");
         return new Stmt.Throw(keyword, value);
     }
 
     private Stmt tryStatement() {
-        consume(TokenType.LBRACE, "Esperado '{' após 'try'.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após 'try'.");
         Stmt tryBlock = new Stmt.Block(block());
 
         // ⭐ NOVO: Lê vários blocos catch em loop!
         java.util.List<Stmt.CatchClause> catchClauses = new java.util.ArrayList<>();
         while (match(TokenType.CATCH)) {
-            consume(TokenType.LPAREN, "Esperado '(' após 'catch'.");
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após 'catch'.");
 
-            Token catchName = consume(TokenType.IDENTIFIER, "Esperado nome da variável para o erro.");
-            consume(TokenType.COLON, "Esperado ':' após a variável para definir o tipo de erro a capturar.");
+            Token catchName = consumeIdentifierSoft( "Esperado nome da variável para o erro.");
+            consumeSoft(TokenType.COLON, ":", "Esperado ':' após a variável para definir o tipo de erro a capturar.");
 
             TypeNode catchType = parseTypeAnnotation(); // Usa o teu sistema de tipagem nativo!
 
-            consume(TokenType.RPAREN, "Esperado ')' após o tipo do erro.");
-            consume(TokenType.LBRACE, "Esperado '{' antes do bloco catch.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o tipo do erro.");
+            consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do bloco catch.");
 
             Stmt.Block catchBlock = new Stmt.Block(block());
             catchClauses.add(new Stmt.CatchClause(catchName, catchType, catchBlock));
@@ -833,7 +882,7 @@ public class Parser {
 
         Stmt finallyBlock = null;
         if (match(TokenType.FINALLY)) {
-            consume(TokenType.LBRACE, "Esperado '{' antes do bloco finally.");
+            consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do bloco finally.");
             finallyBlock = new Stmt.Block(block());
         }
 
@@ -851,7 +900,7 @@ public class Parser {
         if (!check(TokenType.SEMICOLON)) {
             value = expression();
         }
-        consume(TokenType.SEMICOLON, "Esperado ';' após o valor de retorno.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após o valor de retorno.");
         return new Stmt.Return(keyword, value);
     }
 
@@ -877,14 +926,14 @@ public class Parser {
 
     private Stmt forInStatement() {
         // Ex: for a in [1, 2, 3] { ... }
-        Token loopVar = consume(TokenType.IDENTIFIER, "Esperado nome da variável após 'for'.");
-        consume(TokenType.IN, "Esperado 'in' após a variável do loop.");
+        Token loopVar = consumeIdentifierSoft( "Esperado nome da variável após 'for'.");
+        consumeSoft(TokenType.IN, "in", "Esperado 'in' após a variável do loop.");
 
         if (check(TokenType.LPAREN)){
             return forInRangeStatement(loopVar);
         }
         Expr iterable = expression();
-        consume(TokenType.LBRACE, "Esperado '{' após a expressão do for-in.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após a expressão do for-in.");
         Stmt body = new Stmt.Block(block());
         return new Stmt.ForIn(loopVar, iterable, body);
     }
@@ -892,16 +941,15 @@ public class Parser {
     private Stmt forCStyleStatement() {
         // TODO: Criar o nó AST Stmt.ForCStyle no ficheiro Stmt.java e processar aqui!
         // Ex: for (let i = 0; i < 10; i = i + 1) { ... }
-        consume(TokenType.LPAREN,"Esperado '(' após a definição do loop for-c-style.");
+        consumeSoft(TokenType.LPAREN, "(","Esperado '(' após a definição do loop for-c-style.");
 
 
-        Token keyword = consume(TokenType.LET,"Erro de declaração: Apenas a palavra chave 'let' é suportada para o loop for-c-style.");
+        Token keyword = consumeSoft(TokenType.LET, "let","Erro de declaração: Apenas a palavra chave 'let' é suportada para o loop for-c-style.");
 
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome da variável.");
+        Token name = consumeIdentifierSoft( "Esperado nome da variável.");
 
         Token typeAnnotation;
         if (match(TokenType.COLON)){
-            System.out.println(previous());
 
             if (match(TokenType.T_INT, TokenType.T_FLOAT)) {
                 typeAnnotation = previous();
@@ -917,16 +965,16 @@ public class Parser {
         } else {
             throw error(keyword, "Esperado '=' após o tipo da variável.");
         }
-        consume(TokenType.SEMICOLON, "Esperado ';' após a declaração da variável.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a declaração da variável.");
 
         Expr condition = expression();
-        consume(TokenType.SEMICOLON, "Esperado ';' após a condição do for-c-style.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a condição do for-c-style.");
 
         // ⭐ Lemos a Expressão pura!
         Expr increment = expression();
 
-        consume(TokenType.RPAREN, "Esperado ')' após o incremento do loop for-c-style.");
-        consume(TokenType.LBRACE, "Esperado '{' após a expressão do for-c-style.");
+        consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o incremento do loop for-c-style.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após a expressão do for-c-style.");
 
         Stmt init = new Stmt.VarDecl(keyword, name, new TypeNode.Simple(typeAnnotation), initializer,null);
         Stmt body = new Stmt.Block(block());
@@ -938,10 +986,10 @@ public class Parser {
     // ESQUELETO FUTURO: for a in (1, 10, 2)
     private Stmt forInRangeStatement(Token loopVar) {
         // TODO: Criar a lógica de range loop baseado na tua especificação.
-        consume(TokenType.LPAREN,"Esperado '(' após a variável do loop.");
+        consumeSoft(TokenType.LPAREN, "(","Esperado '(' após a variável do loop.");
 
         Expr start = expression();
-        consume(TokenType.COMMA,"Esperado ',' após a variável do loop.");
+        consumeSoft(TokenType.COMMA, ",","Esperado ',' após a variável do loop.");
         Expr end = expression();
 
         Optional<Expr> jump = Optional.empty();
@@ -949,8 +997,8 @@ public class Parser {
             jump = Optional.ofNullable(expression());
         }
 
-        consume(TokenType.RPAREN, "Esperado ')' para fechar o range.");
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do loop.");
+        consumeSoft(TokenType.RPAREN, ")", "Esperado ')' para fechar o range.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do loop.");
         Stmt body = new Stmt.Block(block());
         return new Stmt.ForInRange(loopVar,start,end,jump,body);
     }
@@ -970,7 +1018,7 @@ public class Parser {
             do {
                 // A chave pode ser um Identificador ou uma String Literal
                 Expr key = expression();
-                consume(TokenType.COLON, "Esperado ':' após a chave do objeto.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':' após a chave do objeto.");
                 Expr value = expression();
 
                 keys.add(key);
@@ -978,19 +1026,19 @@ public class Parser {
             } while (match(TokenType.COMMA));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do objeto.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do objeto.");
         return new Expr.ObjectLiteral(keys, values);
     }
 
     private Stmt breakStatement() {
         Token keyword = previous();
-        consume(TokenType.SEMICOLON, "Esperado ';' após 'break'.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após 'break'.");
         return new Stmt.Break(keyword);
     }
 
     private Stmt continueStatement() {
         Token keyword = previous();
-        consume(TokenType.SEMICOLON, "Esperado ';' após 'continue'.");
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após 'continue'.");
         return new Stmt.Continue(keyword);
     }
 
@@ -1005,7 +1053,7 @@ public class Parser {
             statements.add(declaration());
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' para fechar o bloco.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' para fechar o bloco.");
         scopeDepth--; // Sai do mundo (escopo)
         return statements;
     }
@@ -1027,6 +1075,66 @@ public class Parser {
         return new Stmt.ExpressionStmt(expr);
     }
 
+    // =========================================================================
+    // ⭐ VOLUME 15: RECUPERAÇÃO DE ERROS MADURA (SYNTHETIC TOKENS) ⭐
+    // =========================================================================
+
+    /** * 1. O Relator Tolerante: Regista o erro no terminal, mas NÃO atira a exceção fatal!
+     */
+    private void reportSoftError(Token token, String message) {
+        this.errorCount++; // ⭐ Incrementa o contador de bugs!
+        String path = (token.filePath != null) ? token.filePath : "Desconhecido";
+        // O sufixo (Recuperado) mostra que o motor não entrou em pânico!
+        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\tErro Sintático (Recuperado): " + message);
+    }
+
+    /**
+     * 2. O Injetor Sintético: Se o utilizador esquecer uma pontuação (}, ), ;),
+     * este método cria o token fantasma na memória e permite à AST continuar a compilar!
+     */
+    private Token consumeSoft(TokenType type, String syntheticLexeme, String message) {
+        if (check(type)) return advance(); // Fluxo perfeito
+
+        // Avisa o programador do erro
+        reportSoftError(peek(), message);
+
+        // 💡 A EVOLUÇÃO: Se o token atual for um erro óbvio ou pontuação trocada,
+        // avançamos uma casa para não prender o Parser num loop infinito de falsos erros!
+        if (!isAtEnd() && (peek().type == TokenType.SEMICOLON || peek().type == TokenType.COMMA || peek().type == TokenType.RBRACE)) {
+            advance();
+        }
+
+        // Injeta o token fantasma para a AST fechar o nó feliz
+        return new Token(type, syntheticLexeme, null, peek().line, peek().column, peek().filePath);
+    }
+
+
+    /**
+     * ⭐ NOVO: Consumidor Universal e Resiliente de Identificadores.
+     * Se o nome faltar, ele injeta um identificador único na AST e prossegue.
+     */
+    private Token consumeIdentifierSoft(String errorMessage) {
+        if (check(TokenType.IDENTIFIER)) {
+            return advance(); // Se o identificador existe, segue o fluxo perfeito!
+        }
+
+        // 1. Reporta o erro suave no terminal (path:linha:coluna)
+        reportSoftError(peek(), errorMessage);
+
+        // 2. Fabrica um nome único para evitar colisões na tabela de símbolos
+        syntheticIdCounter++;
+        String uniqueSyntheticName = "_synthetic_id_" + syntheticIdCounter;
+
+        // 3. Injeta o Token fantasma
+        return new Token(
+                TokenType.IDENTIFIER,
+                uniqueSyntheticName,
+                null,
+                peek().line,
+                peek().column,
+                peek().filePath
+        );
+    }
 
     // ==========================================
     // EXPRESSÕES (Cálculos de Valores)
@@ -1045,7 +1153,7 @@ public class Parser {
 
         if (match(TokenType.IF)) {
             Expr condition = expression();
-            consume(TokenType.ELSE, "Esperado 'else' na expressão 'if' inline (Ex: valor if cond else default).");
+            consumeSoft(TokenType.ELSE, "else", "Esperado 'else' na expressão 'if' inline (Ex: valor if cond else default).");
             Expr elseExpr = expression();
 
             // Truque de Mestre: Embrulhamos as expressões simples em Stmt.ExpressionStmt para caberem na AST!
@@ -1062,8 +1170,8 @@ public class Parser {
 
         // ⭐ Detetar Arrow Function de 1 parâmetro (Ex: e => e.toUpperCase()) [INTACTO!]
         if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
-            Token param = consume(TokenType.IDENTIFIER, "Esperado nome do parâmetro da Arrow Function.");
-            consume(TokenType.FAT_ARROW, "Esperado '=>' após o parâmetro.");
+            Token param = consumeIdentifierSoft( "Esperado nome do parâmetro da Arrow Function.");
+            consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após o parâmetro.");
 
             Expr body = expression();
             return new Expr.ArrowFunction(param, body);
@@ -1272,9 +1380,9 @@ public class Parser {
         // ⭐ NOVO: Ler o typeof(expr)
         if (match(TokenType.TYPEOF)) {
             Token keyword = previous();
-            consume(TokenType.LPAREN, "Esperado '(' após 'typeof'.");
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após 'typeof'.");
             Expr expr = expression();
-            consume(TokenType.RPAREN, "Esperado ')' após a expressão.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após a expressão.");
             return new Expr.Typeof(keyword, expr);
         }
 
@@ -1313,12 +1421,12 @@ public class Parser {
             }
             // ⭐ NOVO: O Operador Ponto ( . ) ⭐
             else if (match(TokenType.DOT)) {
-                Token name = consume(TokenType.IDENTIFIER, "Esperado nome do método após '.'.");
+                Token name = consumeIdentifierSoft( "Esperado nome do método após '.'.");
                 expr = new Expr.Get(expr, name);
             }
             // ⭐ NOVO: O Encadeamento Opcional (?.)
             else if (match(TokenType.QUESTION_DOT)) {
-                Token name = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade ou método após '?.'");
+                Token name = consumeIdentifierSoft( "Esperado nome da propriedade ou método após '?.'");
 
                 // ⭐ LOOKAHEAD QUÂNTICO: O token seguinte é um '(' ?
                 if (match(TokenType.LPAREN)) {
@@ -1343,28 +1451,28 @@ public class Parser {
             do {
                 Token argName = null;
                 if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
-                    argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                    argName = consumeIdentifierSoft( "Esperado identificador do argumento.");
+                    consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do argumento.");
                 }
                 arguments.add(new Expr.CallArg(argName, expression()));
             } while (match(TokenType.COMMA));
         }
 
-        Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos da chamada opcional.");
+        Token paren = consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos da chamada opcional.");
         return new Expr.OptionalCall(calleeObject, methodName, paren, arguments);
     }
 
     // NOVO MÉTODO AUXILIAR
     private Expr finishIndexAccess(Expr object) {
         Expr index = expression();
-        Token bracket = consume(TokenType.RBRACKET, "Esperado ']' após o índice.");
+        Token bracket = consumeSoft(TokenType.RBRACKET, "]", "Esperado ']' após o índice.");
         return new Expr.IndexAccess(object, bracket, index);
     }
 
     // ⭐ CONSTRUTOR ESTRUTURAL DO DECORADOR (decorator Logging { pub id: int; }) ⭐
     private Stmt decoratorDeclaration() {
-        Token name = consume(TokenType.IDENTIFIER, "Esperado nome do decorador.");
-        consume(TokenType.LBRACE, "Esperado '{' antes do corpo do decorador.");
+        Token name = consumeIdentifierSoft( "Esperado nome do decorador.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do decorador.");
 
         java.util.List<Stmt.FieldDecl> fields = new java.util.ArrayList<>();
 
@@ -1389,15 +1497,15 @@ public class Parser {
                 accessModifier = new Token(TokenType.PUB, "pub", null, peek().line, peek().column);
             }
 
-            Token memberName = consume(TokenType.IDENTIFIER, "Esperado nome da propriedade do decorador.");
-            consume(TokenType.COLON, "Esperado ':' após o nome da propriedade.");
+            Token memberName = consumeIdentifierSoft( "Esperado nome da propriedade do decorador.");
+            consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome da propriedade.");
             TypeNode type = parseTypeAnnotation();
-            consume(TokenType.SEMICOLON, "Esperado ';' no final da declaração da propriedade.");
+            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final da declaração da propriedade.");
 
             fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
         }
 
-        consume(TokenType.RBRACE, "Esperado '}' após o corpo do decorador.");
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do decorador.");
         return new Stmt.DecoratorDecl(name, fields);
     }
 
@@ -1409,10 +1517,10 @@ public class Parser {
         // ⭐ ROTA A: GATILHO DE SISTEMA (Ex: @(Context.Init))
         // =====================================================================
         if (match(TokenType.LPAREN)) {
-            Token contextToken = consume(TokenType.IDENTIFIER, "Esperado identificador 'Context' dentro de @(...)");
-            consume(TokenType.DOT, "Esperado '.' após 'Context'.");
-            Token hookToken = consume(TokenType.IDENTIFIER, "Esperado nome do gatilho (Init, Get, Set, End).");
-            consume(TokenType.RPAREN, "Esperado ')' para fechar a meta-anotação.");
+            Token contextToken = consumeIdentifierSoft( "Esperado identificador 'Context' dentro de @(...)");
+            consumeSoft(TokenType.DOT, ".", "Esperado '.' após 'Context'.");
+            Token hookToken = consumeIdentifierSoft( "Esperado nome do gatilho (Init, Get, Set, End).");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' para fechar a meta-anotação.");
 
             // Fundimos os dois tokens num só ("Context.Init") para a AST ler limpo:
             Token metaToken = new Token(
@@ -1429,7 +1537,7 @@ public class Parser {
         // =====================================================================
         // ⭐ ROTA B: DECORADOR CLÁSSICO DE USUÁRIO (Ex: @Logging(id: 12))
         // =====================================================================
-        Token name = consume(TokenType.IDENTIFIER, "Esperado identificador do decorador após '@'.");
+        Token name = consumeIdentifierSoft( "Esperado identificador do decorador após '@'.");
 
         java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
 
@@ -1438,13 +1546,13 @@ public class Parser {
                 do {
                     Token argName = null;
                     if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
-                        argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento do decorador.");
-                        consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                        argName = consumeIdentifierSoft( "Esperado identificador do argumento do decorador.");
+                        consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do argumento.");
                     }
                     arguments.add(new Expr.CallArg(argName, expression()));
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RPAREN, "Esperado ')' após os argumentos do decorador.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos do decorador.");
         }
 
         return new Stmt.DecoratorNode(name, arguments);
@@ -1459,8 +1567,8 @@ public class Parser {
 
                 // ⭐ LOOKAHEAD: Se o token atual é uma palavra e o SEGUINTE é um dois-pontos, é nomeado!
                 if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
-                    argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
-                    consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                    argName = consumeIdentifierSoft( "Esperado identificador do argumento.");
+                    consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do argumento.");
                 }
 
                 Expr expr = expression();
@@ -1469,7 +1577,7 @@ public class Parser {
             } while (match(TokenType.COMMA));
         }
 
-        Token paren = consume(TokenType.RPAREN, "Esperado ')' após os argumentos.");
+        Token paren = consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos.");
         return new Expr.Call(callee, paren, arguments);
     }
 
@@ -1508,8 +1616,8 @@ public class Parser {
         // ⭐ NOVO: Chamada ao método do Pai (ex: super.init)
         if (match(TokenType.SUPER)) {
             Token keyword = previous();
-            consume(TokenType.DOT, "Esperado '.' após a palavra 'super'.");
-            Token method = consume(TokenType.IDENTIFIER, "Esperado nome do método da superclasse.");
+            consumeSoft(TokenType.DOT, ".", "Esperado '.' após a palavra 'super'.");
+            Token method = consumeIdentifierSoft( "Esperado nome do método da superclasse.");
             return new Expr.Super(keyword, method);
         }
 
@@ -1525,7 +1633,7 @@ public class Parser {
                     elements.add(expression());
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RBRACKET, "Esperado ']' após os elementos do array.");
+            consumeSoft(TokenType.RBRACKET, "]", "Esperado ']' após os elementos do array.");
             return new Expr.ArrayLiteral(elements);
         }
 
@@ -1537,7 +1645,7 @@ public class Parser {
         if (match(TokenType.LPAREN)) {
             // O uso de parêntesis agrupa matemática (força precedência máxima).
             Expr expr = expression();
-            consume(TokenType.RPAREN, "Esperado ')' após a expressão.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após a expressão.");
             return expr;
         }
 
@@ -1546,7 +1654,7 @@ public class Parser {
         // ⭐ NOVO: Instanciação de classes (Com suporte a Argumentos Nomeados!)
         if (match(TokenType.NEW)) {
             Token keyword = previous();
-            Token className = consume(TokenType.IDENTIFIER, "Esperado nome da classe após 'new'.");
+            Token className = consumeIdentifierSoft( "Esperado nome da classe após 'new'.");
 
             // Lê os tipos genéricos, se existirem!
             StringBuilder typeArgs = new StringBuilder();
@@ -1563,11 +1671,11 @@ public class Parser {
                     isFirstParam = false;
                 } while (match(TokenType.COMMA));
 
-                consume(TokenType.GREATER, "Esperado '>' após os argumentos genéricos.");
+                consumeSoft(TokenType.GREATER, ">", "Esperado '>' após os argumentos genéricos.");
                 typeArgs.append(">");
             }
 
-            consume(TokenType.LPAREN, "Esperado '(' após o nome da classe.");
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome da classe.");
 
             // =================================================================
             // ⭐ A ATUALIZAÇÃO: Captura bivalente de CallArgs (Nomeados/Posicionais)
@@ -1579,15 +1687,15 @@ public class Parser {
 
                     // LOOKAHEAD: Se o token atual é um nome e o SEGUINTE é um ':', é nomeado!
                     if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
-                        argName = consume(TokenType.IDENTIFIER, "Esperado identificador do argumento.");
-                        consume(TokenType.COLON, "Esperado ':' após o nome do argumento.");
+                        argName = consumeIdentifierSoft( "Esperado identificador do argumento.");
+                        consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do argumento.");
                     }
 
                     arguments.add(new Expr.CallArg(argName, expression()));
 
                 } while (match(TokenType.COMMA));
             }
-            consume(TokenType.RPAREN, "Esperado ')' após os argumentos.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos.");
 
             // Passamos a lista de CallArgs perfeitamente compatível com a AST!
             return new Expr.New(keyword, className, typeArgs.toString(), arguments);
@@ -1648,6 +1756,7 @@ public class Parser {
 
     /** Gera o aviso visual de erro e cria a Exceção. */
     private ParseException error(Token token, String message) {
+        this.errorCount++; // ⭐ Incrementa o contador de bugs!
         String path = (token.filePath != null) ? token.filePath : "Desconhecido";
         // Formato: C:\Caminho\arquivo.xpl:10:5
         System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t Erro Sintático: " + message);

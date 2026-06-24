@@ -5,7 +5,7 @@ fun gritar(mensagem: string) {
 
 // Uma função que recebe a tua função como argumento
 fun processarEvento( id: int, callback: (string) -> void ) {
-    if (id == 1) {
+    if (id == 1){
         callback("O evento 1 disparou"); // Invoca a função recebida!
     }
 }
@@ -17,7 +17,6 @@ processarEvento(1, gritar);
 fun somar(a: int, b: int): int {
     return a + b;
 }
-
 // 2. ⭐ O PODER DA FUNÇÃO COMO ARGUMENTO ⭐
 // O parâmetro 'operacao' exige receber uma função que tome dois 'int' e devolva 'int'
 fun calcularTudo(x: int, y: int, operacao: (int, int) -> int) {
@@ -27,6 +26,7 @@ fun calcularTudo(x: int, y: int, operacao: (int, int) -> int) {
     let resultado = operacao(x, y);
     println("Resultado final: " + resultado);
 }
+
 
 // 3. A Execução
 // Passamos a REFERÊNCIA da função 'somar' (sem os parêntesis, não a estamos a invocar!)
