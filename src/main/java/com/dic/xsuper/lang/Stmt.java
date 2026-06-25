@@ -365,6 +365,7 @@ public abstract class Stmt {
     }
 
     public static class DeclareDecl extends Stmt {
+        public final boolean isSealed;
         public final Token name;
         public final Token superclass;
         public final java.util.List<FieldDecl> fields;
@@ -372,7 +373,8 @@ public abstract class Stmt {
         public final java.util.List<Token> typeParameters;
 
 
-        public DeclareDecl(Token name, Token superclass, java.util.List<FieldDecl> fields, List<Token> typeParameters) {
+        public DeclareDecl(boolean isSealed, Token name, Token superclass, java.util.List<FieldDecl> fields, List<Token> typeParameters) {
+            this.isSealed = isSealed;
             this.name = name;
             this.superclass = superclass;
             this.fields = fields;
@@ -385,7 +387,8 @@ public abstract class Stmt {
         @Override
         public String toString() {
             return "DeclareDecl{" +
-                    "name=" + name +
+                    "isSealed=" + isSealed +
+                    ", name=" + name +
                     ", superclass=" + superclass +
                     ", fields=" + fields +
                     ", typeParameters=" + typeParameters +

@@ -97,6 +97,7 @@ public class Parser {
             if (match(TokenType.IMPORT)) return importDeclaration();
             if (match(TokenType.EXPORT)) return exportDeclaration();
 
+
             if (match(TokenType.DECORATOR)) {
                 if (!decorators.isEmpty()) throw error(previous(), "Definições de decoradores não podem ser decoradas.");
                 return decoratorDeclaration();
@@ -108,7 +109,16 @@ public class Parser {
             if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration(decorators);
 
             if (match(TokenType.INTERFACE)) return interfaceDeclaration();
-            if (match(TokenType.DECLARE))   return declareDeclaration();
+            // =========================================================
+            // ⭐ A LEITURA DO 'SEALED DECLARE' VS 'DECLARE' ABERTO ⭐
+            // =========================================================
+            boolean isSealed = match(TokenType.SEALED);
+            if (isSealed || match(TokenType.DECLARE)) {
+                if (isSealed) {
+                    consumeSoft(TokenType.DECLARE, "declare", "Esperado 'declare' após o modificador 'sealed'.");
+                }
+                return declareDeclaration(isSealed); // Enviamos a flag para o construtor!
+            }
 
             if (match(TokenType.ABSTRACT)) {
                 consumeSoft(TokenType.IMPLEMENT, "implement", "Esperado 'implement' após a palavra 'abstract'.");
@@ -123,6 +133,9 @@ public class Parser {
             if (!decorators.isEmpty()) {
                 throw error(decorators.get(0).name, "Decoradores só podem ser anexados a funções ou variáveis.");
             }
+
+
+
 
             return statement();
         } catch (ParseException e) {
@@ -292,7 +305,7 @@ public class Parser {
         return new Stmt.TypeAliasDecl(name, target);
     }
 
-    private Stmt declareDeclaration() {
+    private Stmt declareDeclaration(boolean isSealed) {
         Token name = consumeIdentifierSoft( "Esperado nome do modelo de dados (declare).");
 
         // =====================================================================
@@ -324,10 +337,10 @@ public class Parser {
             Token accessModifier = null;
             boolean isStatic = false, isFinal = false, isReadonly = false;
 
-            while (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+            while (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
                 Token t = previous();
                 switch (t.type) {
-                    case PUB: case PRIVATE: case PROTECTED:
+                    case PUBLIC: case PRIVATE: case PROTECTED:
                         if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso (pub, priv, prot).");
                         accessModifier = t;
                         break;
@@ -353,7 +366,7 @@ public class Parser {
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do declare.");
 
         // ⭐ NOTA: Atualiza a tua classe Stmt.DeclareDecl para deixar de pedir a lista de methods!
-        return new Stmt.DeclareDecl(name, superclass, fields,typeParameters);
+        return new Stmt.DeclareDecl(isSealed,name, superclass, fields,typeParameters);
     }
 
     private Stmt interfaceDeclaration() {
@@ -367,7 +380,7 @@ public class Parser {
 
             // ⭐ 1. Capturar o Modificador (Opcional na interface, mas suportado!)
             Token modifier = null;
-            if (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED)) { // Garante que PROT está no teu Lexer!
+            if (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED)) { // Garante que PROT está no teu Lexer!
                 modifier = previous();
             }
 
@@ -476,7 +489,7 @@ public class Parser {
 
             // ⭐ 1. Modificadores de Acesso (pub / priv)
             Token modifier = null;
-            if (match(TokenType.PUB, TokenType.PRIVATE)) {
+            if (match(TokenType.PUBLIC, TokenType.PRIVATE)) {
                 modifier = previous();
             }
 
@@ -556,7 +569,7 @@ public class Parser {
     private Stmt functionDeclaration(java.util.List<Stmt.DecoratorNode> decorators) {
         // 1. Modificadores de Acesso (Opcionais - Se a tua AST já suportar)
         Token modifier = null;
-        if (match(TokenType.PUB, TokenType.PRIVATE)) {
+        if (match(TokenType.PUBLIC, TokenType.PRIVATE)) {
             modifier = previous();
         }
 
@@ -1480,10 +1493,10 @@ public class Parser {
             Token accessModifier = null;
             boolean isStatic = false, isFinal = false, isReadonly = false;
 
-            while (match(TokenType.PUB, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+            while (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
                 Token t = previous();
                 switch (t.type) {
-                    case PUB: case PRIVATE: case PROTECTED:
+                    case PUBLIC: case PRIVATE: case PROTECTED:
                         if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso.");
                         accessModifier = t;
                         break;
@@ -1494,7 +1507,7 @@ public class Parser {
             }
 
             if (accessModifier == null) {
-                accessModifier = new Token(TokenType.PUB, "pub", null, peek().line, peek().column);
+                accessModifier = new Token(TokenType.PUBLIC, "pub", null, peek().line, peek().column);
             }
 
             Token memberName = consumeIdentifierSoft( "Esperado nome da propriedade do decorador.");

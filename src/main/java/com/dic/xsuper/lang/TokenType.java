@@ -44,7 +44,7 @@ public enum TokenType {
     EXTENDS,
 
     // --- Modificadores de Acesso ---
-    PUB,
+    PUBLIC,
     PROTECTED,
     PRIVATE, AS, THIS,
     ABSTRACT, SUPER,
@@ -55,6 +55,6 @@ public enum TokenType {
     STRICT_NOT_EQUAL, STRICT_EQUAL, T_BOOL,
     CASE, SWITCH, MATCH, NONE, QUESTION_QUESTION, QUESTION_DOT, QUESTION, DECORATOR,
     AT, ARROW, MODULE, IMPORT, EXPORT, ALL,
-    GLOBAL, PREFIX,
+    GLOBAL, PREFIX, SEALED,
 
 }

@@ -1,5 +1,4 @@
 package com.dic.xsuper.lang;
-
 import com.dic.xsuper.core.CommandRegistry;
 import com.dic.xsuper.lang.helpers.ArrayMethods;
 import com.dic.xsuper.lang.helpers.ObjectMethods;
@@ -9,7 +8,6 @@ import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.poo.XplInterface;
 import com.dic.xsuper.utils.ConsoleTheme;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -44,11 +42,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ⭐ CÂMARA CRIOGÉNICA DE MOLDES GENÉRICOS (Monomorfização) ⭐
     private final Map<String, XPLModel> registry_generic_models = new HashMap<>();
 
+
+    // A estrutura física de um módulo em RAM
+    public static class XplModule {
+        public final String path;
+        public final java.util.Map<String, Object> exports = new java.util.HashMap<>();
+        public boolean exportAll = false;
+        public Environment localEnvironment; // Guarda o estado final do ficheiro
+
+        public XplModule(String path) {
+            this.path = path;
+        }
+    }
+
     // A memória cache global de módulos já carregados
     public final java.util.Map<String, XplModule> moduleCache = new java.util.HashMap<>();
 
     // Ponteiro quântico para saber que módulo estamos a compilar neste momento
     private XplModule currentCompilingModule = null;
+
+
 
     @Override
     public Void visitModuleDeclStmt(Stmt.ModuleDecl stmt) {
@@ -67,7 +80,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return null;
     }
-
 
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
 
@@ -195,7 +207,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // ⭐ A ARMA DESARMADA: Fabricamos um Token de visibilidade 'pub' legítimo!
         // (Nota: Se no teu TokenType o modificador público se chamar PUBLIC em vez de PUB, altera abaixo)
-        Token pubToken = new Token(TokenType.PUB, "pub", null, 0, 0);
+        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
 
         Token msgToken = new Token(TokenType.IDENTIFIER, "message", null, 0, 0);
 
@@ -232,7 +244,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-
     public void interpret(List<Stmt> statements) {
         try {
             // ⭐ NOVO: CADEIA DE GLOBAIS AUTOMÁTICA PARA O SCRIPT PRINCIPAL ⭐
@@ -256,7 +267,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
     }
-
 
     private void execute(Stmt stmt) {
         stmt.accept(this);
@@ -503,7 +513,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return clonedModel;
     }
 
-
     @Override
     public Void visitForInStmt(Stmt.ForIn stmt) {
         Object iterable = evaluate(stmt.iterable);
@@ -564,6 +573,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             System.out.println("[XPL Genéricos] -> Criando Blueprint Estrutural: " + modelName + "<" + stmt.typeParameters.size() + " parâmetro(s)>");
 
             XPLModel blueprint = new XPLModel(modelName, null);
+            blueprint.isSealed = stmt.isSealed;
             blueprint.isGenericBlueprint = true;
             blueprint.typeParameters = stmt.typeParameters;
             blueprint.canBeInstantiated = false;
@@ -595,6 +605,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         XPLModel model = new XPLModel(modelName, superclass);
+        model.isSealed = stmt.isSealed;
         model.canBeInstantiated = false;
 
         if (superclass != null) {
@@ -626,25 +637,38 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-
     @Override
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
         String baseName = stmt.targetName.lexeme;
+
+
+        // =====================================================================
+        // ⭐ A MURALHA HÍBRIDA FINAL (SEALED CLASSES BLINDADO) ⭐
+        // =====================================================================
+        // 1. O símbolo foi importado?
+        boolean isImported = this.environment.isImported(baseName);
 
         // =====================================================================
         // ⭐ A MURALHA DE ENCAPSULAMENTO (SEALED CLASSES / OPAQUE TYPES) ⭐
         // =====================================================================
         Object localSymbol = null;
+        XPLModel baseModel;
+        boolean isLocal = true;
         try {
             // Tenta ler o declare da memória ESTRITAMENTE LOCAL do ficheiro!
             localSymbol = this.environment.get(baseName);
         } catch (RuntimeException e) {
-            // Se o ficheiro não tem o declare nativo nem o importou, bloqueamos o hacker!
-            throw new ControlFlow.RuntimeError(stmt.targetName,
-                    "Erro de Segurança (Encapsulamento): O 'declare' chamado '" + baseName + "' é estritamente privado ou não existe neste escopo. Não podes implementar modelos que não foram declarados neste ficheiro ou explicitamente importados.");
+            isLocal = false; // Não foi criado nem importado neste ficheiro!
         }
 
-        XPLModel baseModel;
+        if (!isLocal) {
+            // 2. Não está local? Tenta buscar ao Cofre Global (Extensão Comunitária!)
+            localSymbol = safeGetSymbol(baseName);
+            if (localSymbol == null) {
+                throw new ControlFlow.RuntimeError(stmt.targetName, "Erro Fatal: O modelo '" + baseName + "' não foi declarado em lado nenhum no ecossistema.");
+            }
+        }
+
         if (localSymbol instanceof XPLModel) {
             baseModel = (XPLModel) localSymbol;
         } else if (localSymbol instanceof XplClass) {
@@ -653,6 +677,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             baseModel = ((XplClass) localSymbol).model;
         } else {
             throw new ControlFlow.RuntimeError(stmt.targetName, "O identificador '" + baseName + "' não corresponde a um modelo de dados válido para implementação.");
+        }
+
+        // =====================================================================
+        // ⭐ A GUILHOTINA DO 'SEALED' ⭐
+        // Se o programador for de FORA do ficheiro (isLocal = false) e tentar
+        // mexer num declare que o autor marcou como SEALED, o compilador esmaga a execução!
+        // =====================================================================
+        if ((isImported || !isLocal) && baseModel.isSealed) {
+            throw new ControlFlow.RuntimeError(stmt.targetName,
+                    "Erro de Segurança (Sealed Class): O 'declare " + baseName + "' está SELADO. " +
+                            "Modelos selados só podem ser implementados no próprio ficheiro onde foram criados. Acesso negado para extensões externas.");
         }
 
         // =====================================================================
@@ -814,7 +849,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         ctxInst.fields.put("_decoratorInstance", null);
         return ctxInst;
     }
-
 
     @Override
     public Void visitThrowStmt(Stmt.Throw stmt) {
@@ -1014,29 +1048,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private void injectImportedSymbol(String localName, Object importedValue) {
         if (importedValue instanceof XplClass xplClass) {
-            // Regista o modelo na gaveta POO para que o 'new' consiga encontrar os metadados da classe
             this.registry_model.put(localName, xplClass.model);
-            this.environment.defineConst(localName, xplClass);
+            this.environment.defineImported(localName, xplClass); // ⭐ MUDOU AQUI
         } else if (importedValue instanceof XPLModel model) {
             if (model.isGenericBlueprint) {
                 this.registry_generic_models.put(localName, model);
-                this.environment.defineConst(localName, model);
+                this.environment.defineImported(localName, model); // ⭐ MUDOU AQUI
             } else {
                 this.registry_model.put(localName, model);
                 if (model.hasBaseImplementation && !model.isDecorator) {
-                    this.environment.defineConst(localName, new XplClass(model, this.globals));
-                }else{
-                    // ⭐ NOVO: É um 'declare' nu! Injeta-o para podermos fazer o 'implement' dele neste ficheiro!
-                    this.environment.defineConst(localName, model);
+                    this.environment.defineImported(localName, new XplClass(model, this.globals)); // ⭐ MUDOU AQUI
+                } else {
+                    this.environment.defineImported(localName, model); // ⭐ MUDOU AQUI
                 }
             }
         } else if (importedValue instanceof XplInterface iface) {
             this.registry_Interfaces.put(localName, iface);
         } else {
-            this.environment.defineConst(localName, importedValue);
+            this.environment.defineImported(localName, importedValue); // ⭐ MUDOU AQUI
         }
     }
-
 
     // =========================================================================
     // ⭐ VOLUME 13: O CARREGADOR DE MÓDULOS ⭐
@@ -1161,17 +1192,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    // A estrutura física de um módulo em RAM
-    public static class XplModule {
-        public final String path;
-        public final java.util.Map<String, Object> exports = new java.util.HashMap<>();
-        public boolean exportAll = false;
-        public Environment localEnvironment; // Guarda o estado final do ficheiro
-
-        public XplModule(String path) {
-            this.path = path;
-        }
-    }
 
     // Detetor proativo de buracos negros (Ciclos infinitos):
     private boolean detectCircularAlias(String originName, TypeNode target) {
@@ -1250,7 +1270,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return errInst; // Transmutado em POO nativa com sucesso!
     }
 
-
     // ⭐ 3. O ROTEADOR SEQUENCIAL ⭐
     private void handleCatch(Stmt.Try stmt, Object errorValue, RuntimeException originalException) {
 
@@ -1276,7 +1295,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Se o loop rodou até ao fim sem disparar o 'return', nenhum catch serviu. Explode!
         throw originalException;
     }
-
 
     // =========================================================================
     // ⭐ MOTOR DE TRANSMUTAÇÃO DE AST (O Bisturi Quântico de C++/Rust) ⭐
@@ -1422,7 +1440,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Dispara o valor de volta para o chamador através da nossa exceção leve
         throw new ControlFlow.ReturnException(value);
     }
-
 
     @Override
     public Void visitForInRangeStmt(Stmt.ForInRange stmt) {
@@ -1864,7 +1881,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos, Strings, Instâncias e Classes possuem propriedades/métodos.");
     }
 
-
     // Transmuta uma árvore de Expr.Get aninhada numa String limpa "com.dic.ui"
     private String rebuildAbsoluteModulePath(Expr expr) {
         if (expr instanceof Expr.Variable v) {
@@ -1876,8 +1892,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return null;
     }
-
-
 
     @Override
     public Object visitArrowFunctionExpr(Expr.ArrowFunction expr) {
@@ -2386,7 +2400,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 "O método opcional '?." + expr.methodName.lexeme + "()' não existe ou não é invocável no objeto alvo.");
     }
 
-
     // =========================================================================
     // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
     // =========================================================================
@@ -2505,7 +2518,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 return false;
         }
     }
-
 
     // =========================================================================
     // O PRISMA DE DISSOLUÇÃO (Auxiliar do Volume 20)
@@ -2724,7 +2736,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return 0.0;
     }
 
-
     // Assistente da Igualdade Estrita (Compara Memória/Tipo antes do valor)
     private boolean isEqualStrict(Object a, Object b) {
         if (a == null && b == null) return true;
@@ -2782,7 +2793,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ==========================================
 
     // Converte literais do Java para representação XPL segura no terminal
-    // ⭐ A MAGIA DO TOSTRING NATIVO (AGORA RECURSIVO!) ⭐
+    // ⭐ A MAGIA DO TO_STRING NATIVO (AGORA RECURSIVO!) ⭐
     private String stringify(Object object) {
         if (object == null) return "null";
 

@@ -49,7 +49,7 @@ public class Lexer {
         keywords.put("extends", TokenType.EXTENDS);
         keywords.put("this", TokenType.THIS);
         // Modificadores de Encapsulamento
-        keywords.put("pub", TokenType.PUB);
+        keywords.put("pub", TokenType.PUBLIC);
         keywords.put("prot", TokenType.PROTECTED);
         keywords.put("priv", TokenType.PRIVATE);
         keywords.put("as", TokenType.AS);
@@ -78,6 +78,7 @@ public class Lexer {
         keywords.put("all", TokenType.ALL);
         keywords.put("prefix", TokenType.PREFIX);
         keywords.put("global", TokenType.GLOBAL);
+        keywords.put("sealed", TokenType.SEALED);
 
     }
 

@@ -9,6 +9,7 @@ import java.util.Map;
 public class XPLModel {
     public final String name; // Ex: "Mam1" ou "Animal"
     public final XPLModel superclass; // Para lidar com o 'extends'
+    public boolean isSealed = false;
 
     // Os dados vêm do 'declare'
     public final Map<String, Stmt.FieldDecl> fields = new HashMap<>();

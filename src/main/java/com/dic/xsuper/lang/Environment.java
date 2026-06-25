@@ -9,6 +9,19 @@ public class Environment {
     private final Map<String, Boolean> isConstant = new HashMap<>();
     private final long depth; // Nível de profundidade (0 = Arquivo/Global)
 
+    // ⭐ NOVO: Registo de quem entrou por via de 'import'
+    private final java.util.Set<String> importedSymbols = new java.util.HashSet<>();
+
+    // ⭐ NOVO: Método para registar variáveis importadas
+    public void defineImported(String name, Object value) {
+        values.put(name, value);
+        importedSymbols.add(name); // Carimba o passaporte como "Importado"!
+    }
+
+    // ⭐ NOVO: Método para a Guilhotina perguntar se o símbolo é importado
+    public boolean isImported(String name) {
+        return importedSymbols.contains(name);
+    }
     public Environment() {
         this.enclosing = null;
         this.depth = 0;
