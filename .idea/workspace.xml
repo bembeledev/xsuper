@@ -4,10 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança.">
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/meta_test.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/ref.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/reflect.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/geometria/Circulo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/geometria/Circulo.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
@@ -328,7 +330,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782339643311</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`.">
+      <option name="closed" value="true" />
+      <created>1782383096683</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1782383096684</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -370,6 +380,7 @@
     <MESSAGE value="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`)." />
     <MESSAGE value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
     <MESSAGE value="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança." />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança." />
+    <MESSAGE value="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`." />
+    <option name="LAST_COMMIT_MESSAGE" value="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`." />
   </component>
 </project>

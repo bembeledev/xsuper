@@ -34,6 +34,8 @@ public abstract class Expr {
         R visitNullCoalesceExpr(NullCoalesce nullCoalesce);
         R visitOptionalChainingExpr(OptionalChaining optionalChaining);
         R visitOptionalCallExpr(OptionalCall optionalCall);
+        R visitMetaAccessExpr(MetaAccess metaAccess);
+        R visitTernaryExpr(Ternary ternary);
     }
 
 
@@ -373,25 +375,19 @@ public abstract class Expr {
     public static class New extends Expr {
         public final Token keyword;
         public final Token className;
-        public final String typeArguments;
-        public final List<CallArg> arguments; // ⭐ PROMOVIDO de List<Expr> para List<CallArg>!
+        public final java.util.List<TypeNode> typeArguments; // ⭐ Atualizado aqui!
+        public final java.util.List<CallArg> arguments;
 
-        public New(Token keyword, Token className, String typeArguments, List<CallArg> arguments) {
+        public New(Token keyword, Token className, java.util.List<TypeNode> typeArguments, java.util.List<CallArg> arguments) {
             this.keyword = keyword;
             this.className = className;
-            this.arguments = arguments;
             this.typeArguments = typeArguments;
+            this.arguments = arguments;
         }
-        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitNewExpr(this); }
 
         @Override
-        public String toString() {
-            return "New{" +
-                    "keyword=" + keyword +
-                    ", className=" + className +
-                    ", typeArguments='" + typeArguments + '\'' +
-                    ", arguments=" + arguments +
-                    '}';
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitNewExpr(this);
         }
     }
 
@@ -745,6 +741,52 @@ public abstract class Expr {
                     '}';
         }
     }
+
+    // ⭐ ACESSO A METADADOS (A Dimensão Quântica)
+    public static class MetaAccess extends Expr {
+        public final Expr object;
+        public final Token operator; // :: o :
+        public final Token name;
+
+        public MetaAccess(Expr object, Token operator, Token name) {
+            this.object = object;
+            this.operator = operator;
+            this.name = name;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitMetaAccessExpr(this);
+        }
+
+        @Override
+        public String toString() {
+            return "MetaAccess{" +
+                    "object=" + object +
+                    ", operator=" + operator +
+                    ", name=" + name +
+                    '}';
+        }
+    }
+
+    // ⭐ OPERADOR TERNÁRIO ( condicao ? verdadeiro : falso )
+    public static class Ternary extends Expr {
+        public final Expr condition;
+        public final Expr trueBranch;
+        public final Expr falseBranch;
+
+        public Ternary(Expr condition, Expr trueBranch, Expr falseBranch) {
+            this.condition = condition;
+            this.trueBranch = trueBranch;
+            this.falseBranch = falseBranch;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitTernaryExpr(this);
+        }
+    }
+
 
 
 }

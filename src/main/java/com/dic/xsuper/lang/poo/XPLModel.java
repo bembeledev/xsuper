@@ -3,14 +3,16 @@ package com.dic.xsuper.lang.poo;
 import com.dic.xsuper.lang.Stmt;
 import com.dic.xsuper.lang.Token;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class XPLModel {
     public final String name; // Ex: "Mam1" ou "Animal"
     public final XPLModel superclass; // Para lidar com o 'extends'
     public boolean isSealed = false;
-
+    public XPLModel baseModel; // referência ao modelo original (para variantes)
     // Os dados vêm do 'declare'
     public final Map<String, Stmt.FieldDecl> fields = new HashMap<>();
 
@@ -45,6 +47,22 @@ public class XPLModel {
 
     // ⭐ GUARDA A CÁBULA GENÉTICA DOS CLONES (Ex: { "T": "int", "U": "string" }) ⭐
     public final java.util.Map<String, String> resolvedGenericMap = new java.util.HashMap<>();
+
+
+    // ⭐ NOVO: Árvore de Contratos (Interfaces)
+    public final java.util.List<String> implementedInterfaces = new java.util.ArrayList<>();
+
+    // ⭐ NOVO: Armazém de Decoradores (Para a Metaprogramação)
+    public final java.util.List<String> appliedDecorators = new java.util.ArrayList<>();
+
+
+    public final List<String> variantAliases = new ArrayList<>();
+    public List<Stmt.DecoratorNode> decoratorNodes = new ArrayList<>();
+
+    // ⭐ NOVO: Validadores de Estado (O "Carimbo de Aprovação")
+    public boolean canBeInstantiated() {
+        return !isAbstract && hasBaseImplementation;
+    }
 
 
     public XPLModel(String name, XPLModel superclass) {

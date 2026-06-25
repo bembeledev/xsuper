@@ -29,6 +29,7 @@ public abstract class Stmt {
         R visitImportDeclStmt(ImportDecl importDecl);
         R visitExportDeclStmt(ExportDecl exportDecl);
         R visitGlobalDeclStmt(GlobalDecl globalDecl);
+        R visitDoWhileStmt(DoWhile doWhile);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -149,6 +150,22 @@ public abstract class Stmt {
                     ", increment=" + increment +
                     ", body=" + body +
                     '}';
+        }
+    }
+
+    // ⭐ LAÇO DO-WHILE
+    public static class DoWhile extends Stmt {
+        public final Stmt body;
+        public final Expr condition;
+
+        public DoWhile(Stmt body, Expr condition) {
+            this.body = body;
+            this.condition = condition;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDoWhileStmt(this);
         }
     }
 

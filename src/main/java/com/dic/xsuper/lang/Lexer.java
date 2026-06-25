@@ -108,7 +108,13 @@ public class Lexer {
             case ']': addToken(TokenType.RBRACKET); break;
             case ',': addToken(TokenType.COMMA); break;
             case '.': addToken(TokenType.DOT); break;
-            case ':': addToken(TokenType.COLON); break;
+            case ':':
+                if (match(':')) {
+                    addToken(TokenType.DOUBLE_COLON); // É um ::
+                } else {
+                    addToken(TokenType.COLON); // É apenas um :
+                }
+                break;
             case ';': addToken(TokenType.SEMICOLON); break;
             case '&':
                 addToken(match('&') ? TokenType.AND : TokenType.BIT_AND);

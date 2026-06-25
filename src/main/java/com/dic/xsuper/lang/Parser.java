@@ -739,14 +739,51 @@ public class Parser {
         if (match(TokenType.TRY)) return tryStatement();
         if (match(TokenType.THROW)) return throwStatement();
 
+
+        if (match(TokenType.DO)) return doWhileStatement();
         // ESQUELETOS FUTUROS:
-        // if (match(TokenType.WHILE)) return whileStatement();
+        if (match(TokenType.WHILE)) return whileStatement();
 
         // Se abrir chavetas soltas, cria um escopo (bloco) isolado.
         if (match(TokenType.LBRACE)) return new Stmt.Block(block());
 
         // Se não for nada disso, assume que é uma expressão a tentar calcular algo (ex: a = 10; ou println("ola");)
         return expressionStatement();
+    }
+
+    private Stmt doWhileStatement() {
+        // 1. Lê o bloco de código que vai ser executado pelo menos uma vez
+        Stmt body = statement();
+
+        // 2. Exige o 'while' no final
+        consumeSoft(TokenType.WHILE,"while",  "Esperado 'while' no final do bloco 'do'.");
+        consumeSoft(TokenType.LPAREN, "(","Esperado '(' após 'while'.");
+        // 3. Lê a condição
+        Expr condition = expression();
+
+        consumeSoft(TokenType.RPAREN, ")","Esperado ')' após a condição do 'while'.");
+        consumeSoft(TokenType.SEMICOLON, ";","Esperado ';' no final do laço 'do-while'.");
+        return new Stmt.DoWhile(body, condition);
+    }
+
+    private Expr ternary() {
+        // Desce para o próximo nível de precedência (geralmente logicalOr)
+        Expr expr = nullCoalesce();
+
+        // Se encontrar um '?', é um ternário!
+        if (match(TokenType.QUESTION)) {
+            Expr trueBranch = expression();
+
+            // Exige os dois pontos DO TERNÁRIO (o TokenType.COLON isolado)
+            consumeSoft(TokenType.COLON, ":","Esperado ':' após a expressão verdadeira no operador ternário.");
+
+            // Recursão para suportar ternários encadeados (a ? b : c ? d : e)
+            Expr falseBranch = ternary();
+
+            expr = new Expr.Ternary(expr, trueBranch, falseBranch);
+        }
+
+        return expr;
     }
 
     // ⭐ O NOVO IF (Bloco) - Agora devolve uma Expressão! ⭐
@@ -1191,7 +1228,7 @@ public class Parser {
         }
 
         // ⭐ A PONTE DE ENGENHARIA: Em vez de equality(), chamamos o topo da hierarquia lógica!
-        Expr expr = nullCoalesce();
+        Expr expr = ternary();
 
         // 1. Atribuição Simples (=)
         if (match(TokenType.ASSIGN)) {
@@ -1449,7 +1486,11 @@ public class Parser {
                     // É um ACESSO OPCIONAL DE PROPRIEDADE! ( obj?.propriedade )
                     expr = new Expr.OptionalChaining(expr, name);
                 }
-            } else {
+            }else if (match(TokenType.DOUBLE_COLON)) {
+                // ⭐ CORREÇÃO AQUI: Usa um identificador neutro para recuperação de erro
+                Token name = consumeSoft(TokenType.IDENTIFIER, "_meta_access_", "Esperado nome do método meta após '::'.");
+                expr = new Expr.MetaAccess(expr, previous(), name);
+            }else {
                 break;
             }
         }
@@ -1662,36 +1703,26 @@ public class Parser {
             return expr;
         }
 
-        // ⭐ NOVO: Instanciação de classes
-        // Instanciação de classes (ex: new Map() ou new Map<String, Integer>())
-        // ⭐ NOVO: Instanciação de classes (Com suporte a Argumentos Nomeados!)
+        // ⭐ NOVO: Instanciação de classes (Com suporte a Argumentos Nomeados e Genéricos Reais!)
         if (match(TokenType.NEW)) {
             Token keyword = previous();
             Token className = consumeIdentifierSoft( "Esperado nome da classe após 'new'.");
 
-            // Lê os tipos genéricos, se existirem!
-            StringBuilder typeArgs = new StringBuilder();
+            // ⭐ A CORREÇÃO: Em vez de StringBuilder, usamos uma Lista de TypeNodes!
+            java.util.List<TypeNode> typeArguments = new java.util.ArrayList<>();
             if (match(TokenType.LESS)) {
-                typeArgs.append("<");
-
-                // ⭐ A TESTEMUNHA OCULAR: Injetamos a vírgula de volta entre os ciclos! ⭐
-                boolean isFirstParam = true;
                 do {
-                    if (!isFirstParam) {
-                        typeArgs.append(", ");
-                    }
-                    typeArgs.append(parseTypeAnnotation());
-                    isFirstParam = false;
+                    // Guarda o objeto TypeNode intacto na memória da AST
+                    typeArguments.add(parseTypeAnnotation());
                 } while (match(TokenType.COMMA));
 
                 consumeSoft(TokenType.GREATER, ">", "Esperado '>' após os argumentos genéricos.");
-                typeArgs.append(">");
             }
 
             consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome da classe.");
 
             // =================================================================
-            // ⭐ A ATUALIZAÇÃO: Captura bivalente de CallArgs (Nomeados/Posicionais)
+            // ⭐ Captura de CallArgs (Nomeados/Posicionais)
             // =================================================================
             java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
             if (!check(TokenType.RPAREN)) {
@@ -1710,8 +1741,8 @@ public class Parser {
             }
             consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos.");
 
-            // Passamos a lista de CallArgs perfeitamente compatível com a AST!
-            return new Expr.New(keyword, className, typeArgs.toString(), arguments);
+            // ⭐ Passamos a Lista Estruturada em vez de uma String cega!
+            return new Expr.New(keyword, className, typeArguments, arguments);
         }
         throw error(peek(), "Expressão inesperada.");
     }

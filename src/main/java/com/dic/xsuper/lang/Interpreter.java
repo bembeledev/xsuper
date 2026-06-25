@@ -7,6 +7,7 @@ import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.poo.XplInterface;
+import com.dic.xsuper.lang.poo.relection.MetaReflectionEngine;
 import com.dic.xsuper.utils.ConsoleTheme;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -37,7 +38,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // =========================================================================
 
     // O Armazém Global de prismas semânticos (NomeDoAlias -> TipoReal):
-    private final java.util.Map<String, TypeNode> typeAliases = new java.util.HashMap<>();
+    public final java.util.Map<String, TypeNode> typeAliases = new java.util.HashMap<>();
 
     // ⭐ CÂMARA CRIOGÉNICA DE MOLDES GENÉRICOS (Monomorfização) ⭐
     private final Map<String, XPLModel> registry_generic_models = new HashMap<>();
@@ -167,21 +168,121 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         });
 
-        // Define o construtor nativo do 'Map' no escopo global!
-        globals.defineConst("Map", new XplCallable() {
-            @Override public int arity() { return 0; } // Construtor vazio new Map()
+        // =====================================================================
+        // ⭐ NÚCLEO NATIVO DE METAPROGRAMAÇÃO E REFLEXÃO ⭐
+        // =====================================================================
+
+        // 1. Descobrir o nome verdadeiro da classe/modelo
+        this.globals.defineConst("reflect_name", new XplCallable() {
+            @Override public int arity() { return 1; }
             @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                // Devolve um HashMap novo e vazio!
-                return new java.util.LinkedHashMap<String, Object>();
+                // ⭐ CORREÇÃO: Usar .expression em vez de .value
+                Object target = interpreter.evaluate(arguments.get(0).expression);
+                XPLModel model = extractModelForReflection(target);
+                return (model != null) ? model.name : "Primitivo/Desconhecido";
             }
-            @Override public String toString() { return "<native class Map>"; }
+        });
+
+        // 2. Extrair a lista de Propriedades (Variáveis) do objeto
+        this.globals.defineConst("reflect_fields", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+                Object target = interpreter.evaluate(arguments.get(0).expression);
+                java.util.List<Object> result = new java.util.ArrayList<>();
+                XPLModel model = extractModelForReflection(target);
+                if (model != null) {
+                    result.addAll(model.fields.keySet());
+                }
+                return result;
+            }
+        });
+
+        // 3. Extrair a lista de Métodos do objeto
+        this.globals.defineConst("reflect_methods", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+                Object target = interpreter.evaluate(arguments.get(0).expression);
+                java.util.List<Object> result = new java.util.ArrayList<>();
+                XPLModel model = extractModelForReflection(target);
+                if (model != null) {
+                    result.addAll(model.methods.keySet());
+                }
+                return result;
+            }
+        });
+
+        // 4. Descobrir se o modelo foi blindado!
+        this.globals.defineConst("reflect_isSealed", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+                Object target = interpreter.evaluate(arguments.get(0).expression);
+                XPLModel model = extractModelForReflection(target);
+                return (model != null) ? model.isSealed : false;
+            }
+        });
+
+        // 5. O Invocador Dinâmico (Estilo JS: Reflect.apply / method.bind)
+        this.globals.defineConst("reflect_invoke", new XplCallable() {
+            @Override public int arity() { return 3; } // (Objeto, "nomeMetodo", [argumentos])
+
+            @Override
+            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
+                // ⭐ CORREÇÃO: Usar .expression nos três parâmetros!
+                Object target = interpreter.evaluate(arguments.get(0).expression);
+                Object methodNameObj = interpreter.evaluate(arguments.get(1).expression);
+                Object argsObj = interpreter.evaluate(arguments.get(2).expression);
+
+                // Validações de Segurança
+                if (!(target instanceof XplInstance)) {
+                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: O alvo não é uma instância de objeto.");
+                }
+                if (!(methodNameObj instanceof String)) {
+                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: O nome do método deve ser uma string.");
+                }
+                if (!(argsObj instanceof java.util.List)) {
+                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: Os argumentos devem ser passados como um array [].");
+                }
+
+                XplInstance instance = (XplInstance) target;
+                String methodName = (String) methodNameObj;
+                java.util.List<Object> rawArgs = (java.util.List<Object>) argsObj;
+
+                // Extrai o método com o "this" já injetado
+                Token fakeToken = new Token(TokenType.IDENTIFIER, methodName, null, 0, 0);
+                Object method;
+                try {
+                    method = instance.get(fakeToken);
+                } catch (RuntimeException e) {
+                    throw new ControlFlow.RuntimeError(fakeToken, "Reflexão Falhou: O método '" + methodName + "' não existe no objeto.");
+                }
+
+                // Embrulha os valores em Expr.Literal e passa para o CallArg
+                java.util.List<Expr.CallArg> argsToPass = new java.util.ArrayList<>();
+                for (Object rawValue : rawArgs) {
+                    argsToPass.add(new Expr.CallArg(null, new Expr.Literal(rawValue)));
+                }
+
+                // Executa a função dinamicamente!
+                if (method instanceof XplCallable callable) {
+                    if (callable.arity() != argsToPass.size() && callable.arity() != -1) {
+                        throw new ControlFlow.RuntimeError(fakeToken,
+                                "Reflexão Falhou: O método '" + methodName + "' exige " + callable.arity() +
+                                        " argumento(s), mas recebeste " + argsToPass.size() + ".");
+                    }
+                    return callable.call(interpreter, argsToPass);
+                } else {
+                    throw new ControlFlow.RuntimeError(fakeToken, "Reflexão Falhou: A propriedade '" + methodName + "' existe, mas não é invocável.");
+                }
+            }
         });
 
         errorInject();
 
         // Injecão do Decorador Base
         decoratorInject();
+
     }
+
 
     private void decoratorInject() {
         XPLModel rootDecModel = new XPLModel("DecoratorRoot", null);
@@ -415,29 +516,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // =========================================================================
     // ⭐ O MONOMORFIZADOR (Impressora 3D de Reificação C++ / Rust) ⭐
     // =========================================================================
+    // =========================================================================
+    // ⭐ O MONOMORFIZADOR (Impressora 3D de Reificação C++ / Rust) ⭐
+    // =========================================================================
     private XPLModel resolveMonomorphizedModel(Expr.New expr) {
         String baseName = expr.className.lexeme;
 
-        // 1. Limpa a formatação da string de tipos (Ex: "<int, string>" vira "int, string")
-        String rawArgs = expr.typeArguments;
-        if (rawArgs.startsWith("<")) rawArgs = rawArgs.substring(1);
-        if (rawArgs.endsWith(">")) rawArgs = rawArgs.substring(0, rawArgs.length() - 1);
-        rawArgs = rawArgs.trim();
+        // =====================================================================
+        // ⭐ 1 e 2. EXTRAÇÃO DIRETA DA AST (Adeus manipulação manual de strings!)
+        // =====================================================================
+        List<TypeNode> typeArgsNodes = expr.typeArguments; // Agora é uma lista nativa!
+        String[] concreteTypes = new String[typeArgsNodes.size()];
 
-        // 2. Extrai os nomes dos tipos concretos solicitados
-        String[] concreteTypes = rawArgs.split(",");
         // =====================================================================
         // ⭐ TRADUTOR DE GENÉRICOS ANINHADOS (JIT Translation) ⭐
-        // Se estamos a invocar 'new MapaKV<string, U>()' DENTRO do Ecossistema,
-        // o Ecossistema tem a cábula para transformar o 'U' em 'string' em milissegundos!
         // =====================================================================
         XPLModel currentContext = null;
         try {
             currentContext = (XPLModel) environment.get("__current_model");
         } catch (Exception ignored) {}
 
-        for (int i = 0; i < concreteTypes.length; i++) {
-            String cType = concreteTypes[i].trim();
+        for (int i = 0; i < typeArgsNodes.size(); i++) {
+            // Converte o TypeNode real numa String baseada no Lexema
+            String cType = stringifyTypeNode(typeArgsNodes.get(i));
+
             // Bate na cábula do contexto atual e traduz instantaneamente:
             if (currentContext != null && currentContext.resolvedGenericMap.containsKey(cType)) {
                 concreteTypes[i] = currentContext.resolvedGenericMap.get(cType);
@@ -486,7 +588,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // --- A) TRANSMUTAR OS CAMPOS DA RAM (Fields) ---
         for (Stmt.FieldDecl oldField : blueprint.fields.values()) {
-            TypeNode mutatedType = transmuteType(oldField.type, translationMap);
+            TypeNode mutatedType = transmuteType(oldField.type, translationMap); // Nota: Usei typeAnnotation como definimos antes
 
             Stmt.FieldDecl newField = new Stmt.FieldDecl(
                     oldField.modifier, oldField.isStatic, oldField.isFinal, oldField.isReadonly, oldField.name, mutatedType
@@ -511,6 +613,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment.defineConst(synthesizedName, runtimeClass);
 
         return clonedModel;
+    }
+
+    // ⭐ MÁQUINA DE REVERSÃO: TypeNode -> String ⭐
+    private String stringifyTypeNode(TypeNode node) {
+        if (node instanceof TypeNode.Simple simple) {
+            return simple.name.lexeme;
+        }
+        else if (node instanceof TypeNode.Generic gen) {
+            StringBuilder sb = new StringBuilder(gen.name.lexeme).append("<");
+            for (int i = 0; i < gen.typeArguments.size(); i++) {
+                sb.append(stringifyTypeNode(gen.typeArguments.get(i)));
+                if (i < gen.typeArguments.size() - 1) sb.append(", ");
+            }
+            sb.append(">");
+            return sb.toString();
+        }
+        else if (node instanceof TypeNode.Optional opt) {
+            return "?" + stringifyTypeNode(opt.innerType); // Se for ?MotorAPI
+        }
+        return "any"; // Fallback de segurança
     }
 
     @Override
@@ -731,6 +853,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Criamos uma ramificação limpa
             activeModel = new XPLModel(variantName, baseModel.superclass);
 
+            //salva o nome da variante
+            baseModel.variantAliases.add(activeModel.name);
+
             // Uma variante É uma implementação base de si mesma!
             activeModel.hasBaseImplementation = true;
 
@@ -746,6 +871,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             for (Stmt.Function method : stmt.methods) {
                 activeModel.addMethod(method);
             }
+
 
             // Regista a nova variante no Registry Interno, sem apagar a Base!
             registry_model.put(variantName, activeModel);
@@ -988,6 +1114,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (currentCompilingModule == null) {
             this.globals.defineConst(stmt.name.lexeme, value); // Rota de fuga para script main solto
         }
+        return null;
+    }
+
+    @Override
+    public Void visitDoWhileStmt(Stmt.DoWhile doWhile) {
+        do {
+            try {
+                execute(doWhile.body);
+            } catch (ControlFlow.BreakException e) {
+                break; // Se o código fizer um 'break', sai do loop
+            } catch (ControlFlow.ContinueException e) {
+                // Se o código fizer um 'continue', salta a execução do bloco
+                // e vai direto para a verificação da condição do while!
+            }
+        } while (isTruthy(evaluate(doWhile.condition))); // A magia do do-while no Java!
+
         return null;
     }
 
@@ -2400,6 +2542,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 "O método opcional '?." + expr.methodName.lexeme + "()' não existe ou não é invocável no objeto alvo.");
     }
 
+    @Override
+    public Object visitMetaAccessExpr(Expr.MetaAccess expr) {
+        // 1. Avalia o objeto base para descobrir quem ele é na RAM
+        Object target = evaluate(expr.object);
+
+        // 2. Delega o trabalho pesado para o Motor de Reflexão Isolado!
+        return MetaReflectionEngine.createMetaCallable(target, expr);
+    }
+
+    @Override
+    public Object visitTernaryExpr(Expr.Ternary expr) {
+        // Avalia a condição primeiro
+        Object condition = evaluate(expr.condition);
+
+        // Usa a tua função auxiliar isTruthy() para decidir o caminho
+        if (isTruthy(condition)) {
+            return evaluate(expr.trueBranch);
+        } else {
+            return evaluate(expr.falseBranch);
+        }
+    }
+
     // =========================================================================
     // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
     // =========================================================================
@@ -2865,5 +3029,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
         return ConsoleTheme.TEXT;
+    }
+
+    // =========================================================================
+    // ⭐ UTILITÁRIO DE METAPROGRAMAÇÃO: EXTRATOR DE ADN
+    // =========================================================================
+    private XPLModel extractModelForReflection(Object target) {
+        if (target instanceof XplInstance) return ((XplInstance) target).klass.model;
+        if (target instanceof XplClass) return ((XplClass) target).model;
+        if (target instanceof XPLModel) return (XPLModel) target;
+        return null;
     }
 }
