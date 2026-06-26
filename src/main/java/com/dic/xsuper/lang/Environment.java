@@ -87,6 +87,24 @@ public class Environment {
         throw new RuntimeException("Erro: Variável não definida '" + name + "'.");
     }
 
+    // 1. Adiciona o dicionário de trancas logo abaixo do teu 'values'
+    public final java.util.Map<String, String> typeRegistry = new java.util.HashMap<>();
+
+    // 2. Adiciona este método para trancar uma variável a um tipo
+    public void lockType(String name, String type) {
+        typeRegistry.put(name, type);
+    }
+
+    // 3. Adiciona este método para o Interpretador perguntar o tipo
+    public String getLockedType(String name) {
+        if (typeRegistry.containsKey(name)) return typeRegistry.get(name);
+
+        // Se não estiver neste escopo, procura nos escopos superiores (pai)!
+        if (enclosing != null) return enclosing.getLockedType(name);
+
+        return "any"; // Se nunca foi trancado, aceita tudo.
+    }
+
     @Override
     public String toString() {
         return "Environment{" +

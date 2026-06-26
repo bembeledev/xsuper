@@ -15,27 +15,43 @@ public class XplInstance {
     public XplInstance(XplClass klass) {
         this.klass = klass;
 
-        // Inicializa a memória ignorando os campos estáticos!
-        for (String fieldName : klass.model.fields.keySet()) {
-            Stmt.FieldDecl field = klass.model.fields.get(fieldName);
+        // ⭐ A PROTEÇÃO DO JIT: Só inicializa propriedades se for uma classe real (não nula) ⭐
+        if (klass != null && klass.model != null) {
+            // Inicializa a memória ignorando os campos estáticos!
+            for (String fieldName : klass.model.fields.keySet()) {
+                Stmt.FieldDecl field = klass.model.fields.get(fieldName);
 
-            if (!field.isStatic) {
-                // Se não for estático, vai buscar o valor default (ou null se não existir)
-                Object defaultValue = klass.model.defaultInstanceFields.getOrDefault(fieldName, null);
-                fields.put(fieldName, defaultValue);
+                if (!field.isStatic) {
+                    // Se não for estático, vai buscar o valor default (ou null se não existir)
+                    Object defaultValue = klass.model.defaultInstanceFields.getOrDefault(fieldName, null);
+                    fields.put(fieldName, defaultValue);
+                }
             }
         }
     }
+    public XplInstance() {}
 
     // Método para LER (Ex: println(animal.nome) ou animal.add())
+
     public Object get(Token name) {
-        // 1. É um Dado? (Property)
-        if (fields.containsKey(name.lexeme)) {
-            return fields.get(name.lexeme);
+
+        if (klass == null) {
+            throw new ControlFlow.RuntimeError(name,
+                    "Erro: Esta é uma instância JIT (MetaBuilder) e não possui métodos de classe XPL.");
         }
 
-        // ⭐ 2. É um Comportamento? (Method) - SUBSTITUIR AQUI ⭐
-        // Antes: Stmt.Function method = klass.model.methods.get(name.lexeme);
+        // 1. É um Dado? (Property ou Método Injetado Dinamicamente)
+        if (fields.containsKey(name.lexeme)) {
+            Object val = fields.get(name.lexeme);
+
+            // ⭐ A CURA DO 'THIS' FANTASMA AQUI TAMBÉM ⭐
+            if (val instanceof XplFunction func) {
+                return func.bind(this);
+            }
+            return val;
+        }
+
+        // ⭐ 2. É um Comportamento? (Method) - DA CLASSE ORIGINAL ⭐
         Stmt.Function method = klass.model.findMethod(name.lexeme);
 
         if (method != null) {

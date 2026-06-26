@@ -30,6 +30,7 @@ public abstract class Stmt {
         R visitExportDeclStmt(ExportDecl exportDecl);
         R visitGlobalDeclStmt(GlobalDecl globalDecl);
         R visitDoWhileStmt(DoWhile doWhile);
+        R visitWhileStmt(While aWhile);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -767,4 +768,26 @@ public abstract class Stmt {
         }
     }
 
+    public static class While extends Stmt {
+        public final Expr condition;
+        public final Block body; // Usamos o Block como tu bem desenhaste!
+
+        public While(Expr condition, Block body) {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWhileStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "While{" +
+                    "condition=" + condition +
+                    ", body=" + body +
+                    '}';
+        }
+    }
 }

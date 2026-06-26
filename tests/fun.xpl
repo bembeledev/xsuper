@@ -93,7 +93,7 @@ try {
     logDefesa = "Contrato Protegido: [" + erro.message + "]";
 }
 
-println(" -> Veredito do Hipervisor: " + logDefesa);
+println(" -> Veredito do Hipervisor: " + logDefesa,"#FF0000");
 
 println("\n==================================================", "#00FFFF");
 println(" 🏆 TESTE V22 CONCLUÍDO! O MOTOR DE FUNÇÕES É REI! 🏆 ", "#00FFFF");

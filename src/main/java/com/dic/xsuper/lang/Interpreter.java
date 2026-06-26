@@ -7,16 +7,13 @@ import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.poo.XplInterface;
-import com.dic.xsuper.lang.poo.relection.MetaReflectionEngine;
+import com.dic.xsuper.lang.poo.relection.*;
 import com.dic.xsuper.utils.ConsoleTheme;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
@@ -26,7 +23,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public final CommandRegistry registry;
     public Path currentDirectory;
     // 2. O ambiente atual aponta para a caixa global logo no início!
-    private Environment environment = globals;
+    public Environment environment = globals;
     // ⭐ O NOSSO REGISTRY GLOBAL ⭐
     // Guarda tanto os modelos-base (Declare) quanto as variantes (Implement as)
     private final Map<String, XPLModel> registry_model = new HashMap<>();
@@ -169,110 +166,125 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         });
 
         // =====================================================================
-        // ⭐ NÚCLEO NATIVO DE METAPROGRAMAÇÃO E REFLEXÃO ⭐
+        // ⭐ CONSTRUTORES DA API FLUIDA JIT (If, For, While, Do, Switch)
         // =====================================================================
 
-        // 1. Descobrir o nome verdadeiro da classe/modelo
-        this.globals.defineConst("reflect_name", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                // ⭐ CORREÇÃO: Usar .expression em vez de .value
-                Object target = interpreter.evaluate(arguments.get(0).expression);
-                XPLModel model = extractModelForReflection(target);
-                return (model != null) ? model.name : "Primitivo/Desconhecido";
+        // =====================================================================
+        // ⭐ CONSTRUTORES DA API FLUIDA JIT (Limpos e Modularizados)
+        // =====================================================================
+
+        globals.defineConst("If", new XplCallable() {
+            @Override public int arity() { return 2; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Expr cond = extractExpression(interpreter.evaluate(args.get(0).expression));
+                Stmt.Block thenBlock = extractToBlock(interpreter.evaluate(args.get(1).expression));
+                // Chama a classe externa que criaste na pasta meta!
+                return new MetaIfBuilder(cond, thenBlock, interpreter);
             }
         });
 
-        // 2. Extrair a lista de Propriedades (Variáveis) do objeto
-        this.globals.defineConst("reflect_fields", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                Object target = interpreter.evaluate(arguments.get(0).expression);
-                java.util.List<Object> result = new java.util.ArrayList<>();
-                XPLModel model = extractModelForReflection(target);
-                if (model != null) {
-                    result.addAll(model.fields.keySet());
-                }
-                return result;
+        globals.defineConst("For", new XplCallable() {
+            @Override public int arity() { return 4; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Stmt init = extractFirstStatement(interpreter.evaluate(args.get(0).expression));
+                Expr cond = extractExpression(interpreter.evaluate(args.get(1).expression));
+                Expr inc = extractExpression(interpreter.evaluate(args.get(2).expression));
+                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(3).expression));
+                // Chama a classe externa!
+                return new MetaForBuilder(init, cond, inc, body, interpreter);
             }
         });
 
-        // 3. Extrair a lista de Métodos do objeto
-        this.globals.defineConst("reflect_methods", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                Object target = interpreter.evaluate(arguments.get(0).expression);
-                java.util.List<Object> result = new java.util.ArrayList<>();
-                XPLModel model = extractModelForReflection(target);
-                if (model != null) {
-                    result.addAll(model.methods.keySet());
-                }
-                return result;
+        // =====================================================================
+        // ⭐ CONSTRUTORES DE LOOPS E SWITCHES (API Fluida)
+        // =====================================================================
+
+        globals.defineConst("While", new XplCallable() {
+            @Override public int arity() { return 2; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Expr cond = extractExpression(interpreter.evaluate(args.get(0).expression));
+                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(1).expression));
+                return new MetaWhileBuilder(cond, body, interpreter);
             }
         });
 
-        // 4. Descobrir se o modelo foi blindado!
-        this.globals.defineConst("reflect_isSealed", new XplCallable() {
+        globals.defineConst("Do", new XplCallable() {
             @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                Object target = interpreter.evaluate(arguments.get(0).expression);
-                XPLModel model = extractModelForReflection(target);
-                return (model != null) ? model.isSealed : false;
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(0).expression));
+                return new MetaDoBuilder(body, interpreter);
             }
         });
 
-        // 5. O Invocador Dinâmico (Estilo JS: Reflect.apply / method.bind)
-        this.globals.defineConst("reflect_invoke", new XplCallable() {
-            @Override public int arity() { return 3; } // (Objeto, "nomeMetodo", [argumentos])
+        globals.defineConst("Switch", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Expr target = extractExpression(interpreter.evaluate(args.get(0).expression));
+                return new MetaSwitchBuilder(target, interpreter);
+            }
+        });
 
-            @Override
-            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                // ⭐ CORREÇÃO: Usar .expression nos três parâmetros!
-                Object target = interpreter.evaluate(arguments.get(0).expression);
-                Object methodNameObj = interpreter.evaluate(arguments.get(1).expression);
-                Object argsObj = interpreter.evaluate(arguments.get(2).expression);
+        globals.defineConst("Match", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                Expr target = extractExpression(interpreter.evaluate(args.get(0).expression));
+                return new MetaMatchBuilder(target, interpreter);
+            }
+        });
 
-                // Validações de Segurança
-                if (!(target instanceof XplInstance)) {
-                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: O alvo não é uma instância de objeto.");
+        // =====================================================================
+        // ⭐ FÁBRICAS DE METAPROGRAMAÇÃO JIT (AST BUILDERS) ⭐
+        // =====================================================================
+
+        // 1. Param("nome", TYPES.INT) -> Constrói um Stmt.Param nativo da linguagem
+        globals.defineConst("Param", new XplCallable() {
+            @Override public int arity() { return 2; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                String nome = (String) interpreter.evaluate(args.get(0).expression);
+                String tipo = (String) interpreter.evaluate(args.get(1).expression);
+                return new Stmt.Param(
+                        new Token(TokenType.IDENTIFIER, nome, null, 0, 0),
+                        new TypeNode.Simple(new Token(TokenType.IDENTIFIER, tipo, null, 0, 0)),
+                        null
+                );
+            }
+        });
+
+        // 2. Func("nome", VISIBILITY.PUB, [Params], TYPES.VOID, corpo) -> Constrói a Função para injetar
+        globals.defineConst("Func", new XplCallable() {
+            @Override public int arity() { return 5; }
+            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                String nome = (String) interpreter.evaluate(args.get(0).expression);
+                String visibilidade = (String) interpreter.evaluate(args.get(1).expression);
+                java.util.List<?> rawParams = (java.util.List<?>) interpreter.evaluate(args.get(2).expression);
+                String retorno = (String) interpreter.evaluate(args.get(3).expression);
+
+                // Extrai o bloco de dentro da Arrow Function () => { ... }
+                Object blocoVal = interpreter.evaluate(args.get(4).expression);
+                java.util.List<Stmt> corpoReal = new java.util.ArrayList<>();
+                if (blocoVal instanceof XplFunction xf) {
+                    corpoReal = xf.declaration.body;
                 }
-                if (!(methodNameObj instanceof String)) {
-                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: O nome do método deve ser uma string.");
-                }
-                if (!(argsObj instanceof java.util.List)) {
-                    throw new ControlFlow.RuntimeError(null, "Reflexão Falhou: Os argumentos devem ser passados como um array [].");
-                }
 
-                XplInstance instance = (XplInstance) target;
-                String methodName = (String) methodNameObj;
-                java.util.List<Object> rawArgs = (java.util.List<Object>) argsObj;
-
-                // Extrai o método com o "this" já injetado
-                Token fakeToken = new Token(TokenType.IDENTIFIER, methodName, null, 0, 0);
-                Object method;
-                try {
-                    method = instance.get(fakeToken);
-                } catch (RuntimeException e) {
-                    throw new ControlFlow.RuntimeError(fakeToken, "Reflexão Falhou: O método '" + methodName + "' não existe no objeto.");
-                }
-
-                // Embrulha os valores em Expr.Literal e passa para o CallArg
-                java.util.List<Expr.CallArg> argsToPass = new java.util.ArrayList<>();
-                for (Object rawValue : rawArgs) {
-                    argsToPass.add(new Expr.CallArg(null, new Expr.Literal(rawValue)));
-                }
-
-                // Executa a função dinamicamente!
-                if (method instanceof XplCallable callable) {
-                    if (callable.arity() != argsToPass.size() && callable.arity() != -1) {
-                        throw new ControlFlow.RuntimeError(fakeToken,
-                                "Reflexão Falhou: O método '" + methodName + "' exige " + callable.arity() +
-                                        " argumento(s), mas recebeste " + argsToPass.size() + ".");
+                // Converte a lista do XPL para a lista do Java
+                java.util.List<Stmt.Param> astParams = new java.util.ArrayList<>();
+                if (rawParams != null) {
+                    for (Object rp : rawParams) {
+                        if (rp instanceof Stmt.Param p) astParams.add(p);
                     }
-                    return callable.call(interpreter, argsToPass);
-                } else {
-                    throw new ControlFlow.RuntimeError(fakeToken, "Reflexão Falhou: A propriedade '" + methodName + "' existe, mas não é invocável.");
                 }
+
+                TokenType visType = visibilidade.equals("pub") ? TokenType.PUBLIC : TokenType.PRIVATE;
+                TypeNode retNode = retorno.equals("void") ? null : new TypeNode.Simple(new Token(TokenType.IDENTIFIER, retorno, null, 0, 0));
+
+                // Devolve a Árvore Sintática da Função pronta a ser injetada pela Reflexão (::injectMethod)
+                return new Stmt.Function(
+                        new Token(visType, visibilidade, null, 0, 0),
+                        false, false,
+                        new Token(TokenType.IDENTIFIER, nome, null, 0, 0),
+                        astParams, retNode, new java.util.ArrayList<>(),
+                        corpoReal, new java.util.ArrayList<>()
+                );
             }
         });
 
@@ -281,8 +293,67 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Injecão do Decorador Base
         decoratorInject();
 
+        native_values();
+
     }
 
+    private void native_values() {
+        // =====================================================================
+        // ⭐ ENUMS NATIVOS DA LINGUAGEM (Matriz Exaustiva de Metaprogramação) ⭐
+        // =====================================================================
+
+        // 1. Tipos de Dados (Cobre todos os aliases do getPrimitiveTokenType)
+        Map<String, Object> typesEnum = new java.util.LinkedHashMap<>();
+        // Numéricos Inteiros
+        typesEnum.put("INT", "long");
+        //typesEnum.put("LONG", "long");
+        //typesEnum.put("SHORT", "short");
+        //typesEnum.put("BYTE", "byte");
+        // Numéricos Decimais
+        typesEnum.put("FLOAT", "double");
+        //typesEnum.put("DOUBLE", "double");
+        //typesEnum.put("NUMBER", "number");
+        // Textuais e Lógicos
+        typesEnum.put("STRING", "string");
+        //typesEnum.put("CHAR", "char");
+        typesEnum.put("BOOL", "bool");
+        //typesEnum.put("BOOLEAN", "boolean");
+        // Estruturas de Dados
+        typesEnum.put("ARRAY", "array");
+        typesEnum.put("LIST", "list");
+        typesEnum.put("OBJECT", "object");
+        typesEnum.put("MAP", "map");
+        //typesEnum.put("DICT", "dict");
+        // Especiais / Vácuo
+        typesEnum.put("VOID", "void");
+        typesEnum.put("ANY", "any");
+
+        globals.defineConst("TYPES", java.util.Collections.unmodifiableMap(typesEnum));
+
+        // 2. Modificadores de Visibilidade
+        Map<String, Object> visibilityEnum = new java.util.LinkedHashMap<>();
+        visibilityEnum.put("PUB", "pub");
+        visibilityEnum.put("PRIV", "priv");
+        visibilityEnum.put("PROT", "prot");
+
+        globals.defineConst("VISIBILITY", java.util.Collections.unmodifiableMap(visibilityEnum));
+
+        // 3. Modificadores de Comportamento (Para Metaprogramação JIT Avançada)
+        Map<String, Object> modifiersEnum = new java.util.LinkedHashMap<>();
+        modifiersEnum.put("STATIC", "static");
+        modifiersEnum.put("FINAL", "final");
+        modifiersEnum.put("READONLY", "readonly");
+        modifiersEnum.put("ABSTRACT", "abstract");
+        modifiersEnum.put("SEALED", "sealed");
+        globals.defineConst("MODIFIERS", java.util.Collections.unmodifiableMap(modifiersEnum));
+
+
+        java.util.Map<String, Object> controlEnum = new java.util.LinkedHashMap<>();
+        controlEnum.put("BREAK", "break");
+        controlEnum.put("CONTINUE", "continue");
+        globals.defineConst("CONTROL", java.util.Collections.unmodifiableMap(controlEnum));
+
+    }
 
     private void decoratorInject() {
         XPLModel rootDecModel = new XPLModel("DecoratorRoot", null);
@@ -325,6 +396,39 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
+    // ⭐ MÁQUINAS DE EXTRAÇÃO DE AST (Para Metaprogramação)
+    // =========================================================================
+
+    public static Stmt.Block extractToBlock(Object val) {
+        if (val instanceof XplFunction xplFunc) {
+            return new Stmt.Block(xplFunc.declaration.body);
+        }
+        throw new ControlFlow.RuntimeError(null, "Falha de Metaprogramação: Esperado um bloco encapsulado (ex: () => { ... }).");
+    }
+
+    public static Expr extractExpression(Object val) {
+        if (val instanceof XplFunction xplFunc) {
+            if (!xplFunc.declaration.body.isEmpty()) {
+                Stmt first = xplFunc.declaration.body.getFirst(); // ou get(0)
+                if (first instanceof Stmt.Return ret) return ret.value;
+                if (first instanceof Stmt.ExpressionStmt exprStmt) return exprStmt.expression;
+            }
+            throw new ControlFlow.RuntimeError(null, "Falha de Metaprogramação: Cápsula vazia.");
+        }
+
+        // ⭐ A MAGIA: Se o utilizador passar um valor direto (ex: Switch("comando") ou If(true)),
+        // nós transformamos esse valor numa AST Literal para o motor conseguir ler em tempo real sem crashar!
+        return new Expr.Literal(val);
+    }
+
+    public static Stmt extractFirstStatement(Object val) {
+        if (val instanceof XplFunction xplFunc && !xplFunc.declaration.body.isEmpty()) {
+            return xplFunc.declaration.body.get(0);
+        }
+        throw new ControlFlow.RuntimeError(null, "Falha de Metaprogramação: Esperada uma cápsula com instrução (ex: () => { let i = 0; }).");
+    }
+
+    // =========================================================================
     // ⭐ DESCASCADOR QUÂNTICO DE TEARDOWN (@Context.End) ⭐
     // =========================================================================
     private void triggerEndHooksRecursively(Object obj) {
@@ -358,10 +462,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (statement == null) continue;
                 execute(statement);
             }
-        } catch (ControlFlow.RuntimeError error) {
-            String path = (error.token.filePath != null) ? error.token.filePath : "Desconhecido";
-            System.err.println(ConsoleTheme.ERROR + path + ":" + error.token.line + ":" + error.token.column + ":\n\t Erro de Execução: " + error.getMessage() + ConsoleTheme.RESET);
-        } finally {
+        }
+        catch (RuntimeException error) {
+            // ⭐ O ESCUDO DO JIT: Protege o relator de erros contra Tokens Fantasmas!
+            if (error instanceof ControlFlow.RuntimeError rtError) {
+                String path = (rtError.token != null && rtError.token.filePath != null) ? rtError.token.filePath : "Nativo/JIT";
+                int line = (rtError.token != null) ? rtError.token.line : 0;
+                int col = (rtError.token != null) ? rtError.token.column : 0;
+                System.err.println(ConsoleTheme.ERROR + path + ":" + line + ":" + col + ":\n\t Erro de Execução: " + rtError.getMessage() + ConsoleTheme.RESET);
+            } else {
+                error.printStackTrace(); // Para erros profundos do Java
+            }
+        }
+        finally {
             // Gatilho global de fim de script
             for (Object obj : globals.values.values()) {
                 triggerEndHooksRecursively(obj);
@@ -369,8 +482,32 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    private void execute(Stmt stmt) {
+    public void execute(Stmt stmt) {
         stmt.accept(this);
+    }
+
+    // =========================================================================
+    // ⭐ MAPA DE CORRESPONDÊNCIA DE TIPOS (INFERÊNCIA DE DADOS) ⭐
+    // =========================================================================
+    public String getXplTypeName(Object value) {
+        if (value == null) return "null";
+
+        // Primitivos Nativos
+        if (value instanceof Long || value instanceof Integer || value instanceof Short || value instanceof Byte) return "int";
+        if (value instanceof Double || value instanceof Float) return "float";
+        if (value instanceof String || value instanceof Character) return "string";
+        if (value instanceof Boolean) return "bool";
+
+        // Estruturas
+        if (value instanceof List) return "array";
+        if (value instanceof Map) return "object";
+
+        // POO XPL
+        if (value instanceof XplInstance inst) return (inst.klass != null) ? inst.klass.model.name : "MetaInstance";
+        if (value instanceof XplClass) return "class";
+        if (value instanceof XplCallable) return "function";
+
+        return "any"; // Fallback quântico
     }
 
     public Object evaluate(Expr expr) {
@@ -486,7 +623,43 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case LET:   environment.defineLet(name, value); break;
             case CONST: environment.defineConst(name, value); break;
         }
+
+        // =================================================================
+        // ⭐ A MAGIA DA INFERÊNCIA E BLOQUEIO DE TIPO (Type Locking) ⭐
+        // =================================================================
+        String lockedType = "any";
+        if (stmt.typeAnnotation != null) {
+            // ROTA A: O utilizador exigiu o tipo explicitamente (let x: string)
+            lockedType = stmt.typeAnnotation.name.lexeme;
+        } else if (value != null) {
+            // ROTA B: O motor infere o tipo olhando para o ADN do primeiro valor!
+            lockedType = getXplTypeName(value);
+        }
+
+        // Tranca a variável no cofre de tipos!
+        environment.lockType(name, lockedType);
+
         return null;
+    }
+
+    // ⭐ POLÍCIA DE FRONTEIRA: Impede que uma variável mude de espécie!
+    private void validateAssignmentType(Token nameToken, Object newValue) {
+        String expectedType = environment.getLockedType(nameToken.lexeme);
+
+        // Se a variável for flexível ("any") ou o novo valor for nulo, deixamos passar!
+        if (expectedType.equals("any") || newValue == null) return;
+
+        String actualType = getXplTypeName(newValue);
+
+        // Fabricamos um TypeNode fantasma para passar pela tua Alfândega Quântica (checkTypeMatch)
+        Token fakeToken = new Token(getPrimitiveTokenType(expectedType), expectedType, null, nameToken.line, nameToken.column);
+        TypeNode fakeTypeNode = new TypeNode.Simple(fakeToken);
+
+        // Aproveitamos a tua função que já sabe lidar com herança de POO e primitivos!
+        if (!checkTypeMatch(newValue, fakeTypeNode)) {
+            throw new ControlFlow.RuntimeError(nameToken,
+                    "Violação de Tipagem Estrita: A variável '" + nameToken.lexeme + "' foi trancada como '" + expectedType + "'. Não podes atribuir um valor do tipo '" + actualType + "'.");
+        }
     }
 
     @Override
@@ -1130,6 +1303,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         } while (isTruthy(evaluate(doWhile.condition))); // A magia do do-while no Java!
 
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        // Enquanto a condição for avaliada como verdadeira...
+        while (isTruthy(evaluate(stmt.condition))) {
+            try {
+                // ... executa o bloco de código contido no While.
+                execute(stmt.body);
+            } catch (ControlFlow.BreakException e) {
+                // ⭐ Suporte a 'break' dentro do loop!
+                break;
+            } catch (ControlFlow.ContinueException e) {
+                // ⭐ Suporte a 'continue' dentro do loop!
+            }
+        }
         return null;
     }
 
@@ -1834,7 +2024,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ---------------------------------------------------------------------
         // ⭐ INTERCEÇÃO: RESOLUÇÃO DE CAMINHOS ABSOLUTOS DE MÓDULOS (Java Style)
         // ---------------------------------------------------------------------
-        Object object = null;
+        Object object;
         try {
             object = evaluate(expr.object);
         } catch (RuntimeException e) {
@@ -1965,32 +2155,44 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
 
             // 1. É uma variável/propriedade?
+            // 1. É uma variável/propriedade ou MetaBuilder JIT?
             if (instance.fields.containsKey(expr.name.lexeme)) {
-                Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
 
-                // 🛑 CHAMA A POLÍCIA ANTES DE LER! 🛑
-                if (field != null) {
-                    checkAccess(expr.name, field, instance.klass.model, false);
+                // ⭐ A VACINA 1: Só verifica regras de acesso se NÃO for um MetaBuilder (klass != null)
+                if (instance.klass != null) {
+                    Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
+                    if (field != null) {
+                        checkAccess(expr.name, field, instance.klass.model, false);
+                    }
+                    if (instance.klass.model.metaGetHook != null) {
+                        Stmt.Function hookFunc = instance.klass.model.findMethod(instance.klass.model.metaGetHook);
+                        new XplFunction(hookFunc, instance.klass.closure, instance.klass.model).bind(instance).call(this, java.util.Collections.emptyList());
+                    }
                 }
 
-                // ⭐ VIGILÂNCIA: Existe gancho @Context.Get?
-                XPLModel model = instance.klass.model;
-                if (model.metaGetHook != null) {
-                    Stmt.Function hookFunc = model.findMethod(model.metaGetHook);
-                    XplFunction hookCallable = new XplFunction(hookFunc, instance.klass.closure, model);
-                    hookCallable.bind(instance).call(this, java.util.Collections.emptyList());
+                // ⭐ A CURA DO 'THIS' FANTASMA ⭐
+                // Se a propriedade da memória for uma Função (injetada dinamicamente),
+                // ligamos (bind) o 'this' à instância atual antes de a entregarmos!
+                Object val = instance.fields.get(expr.name.lexeme);
+                if (val instanceof XplFunction func) {
+                    return func.bind(instance);
                 }
 
-                return instance.fields.get(expr.name.lexeme);
+                return val;
             }
 
-            // 2. É um Comportamento/Método? (Delega para o método nativo que injeta o 'this')
-            Stmt.Function method = instance.klass.model.findMethod(expr.name.lexeme);
-            if (method != null) {
-                return instance.get(expr.name);
+            // 2. É um Comportamento/Método normal?
+            if (instance.klass != null) {
+                Stmt.Function method = instance.klass.model.findMethod(expr.name.lexeme);
+                if (method != null) {
+                    return instance.get(expr.name);
+                }
+                throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + expr.name.lexeme + "' não existe na instância de " + instance.klass.model.name + ".");
             }
 
-            throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + expr.name.lexeme + "' não existe na instância.");
+            // ⭐ Se o código chegar aqui, significa que o motor tentou aceder a uma propriedade
+            // (ex: .ElseIf, .execute) num MetaBuilder e falhou! Isto vai imprimir exatamente o que falhou!
+            throw new ControlFlow.RuntimeError(expr.name, "A propriedade '" + expr.name.lexeme + "' não existe nesta MetaInstance nativa.");
         }
 
         // ⭐ É uma Classe/Fábrica (Acesso Estático)? ⭐
@@ -2021,6 +2223,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         throw new ControlFlow.RuntimeError(expr.name, "Apenas Arrays, Objetos, Strings, Instâncias e Classes possuem propriedades/métodos.");
+
     }
 
     // Transmuta uma árvore de Expr.Get aninhada numa String limpa "com.dic.ui"
@@ -2037,34 +2240,49 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitArrowFunctionExpr(Expr.ArrowFunction expr) {
-        // Guarda o ambiente atual para que a Arrow Function se lembre das variáveis de fora (Closure!)
         Environment closure = this.environment;
 
-        return new XplCallable() {
-            @Override
-            public int arity() { return 1; }
+        // 1. Criar a lista de parâmetros
+        List<Stmt.Param> params = new ArrayList<>();
+        if (expr.parameter != null) {
+            // Por simplicidade, usamos 'any' como tipo
+            TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
+            params.add(new Stmt.Param(expr.parameter, anyType, null));
+        }
 
-            @Override
-            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                Environment arrowEnv = new Environment(closure);
+        // 2. Construir o corpo da função (lista de Statements)
+        List<Stmt> bodyStmts = new ArrayList<>();
 
-                // ⭐ O DESEMPACOTADOR QUÂNTICO DA ARROW FUNCTION ⭐
-                // Cozinhamos a AST crua transformando o CallArg no valor real (1L, "Texto", etc.)
-                Object valorAvaliado = arguments.isEmpty() ? null : interpreter.evaluate(arguments.getFirst().expression);
+        if (expr.body instanceof Expr.Block blockExpr) {
+            // ⭐ A CURA DO JIT (Padrão JS/TS) ⭐
+            // Se o utilizador usou um bloco { }, NÃO injetamos o 'return' fantasma!
+            // Mantemos a pureza absoluta da AST para que os Builders não rebentem.
+            bodyStmts.addAll(blockExpr.statements);
+        } else {
+            // Caso o corpo seja uma expressão simples sem chaves (ex: x => x * 2)
+            // Aí sim, transformamos num return da expressão!
+            bodyStmts.add(new Stmt.Return(
+                    new Token(TokenType.RETURN, "return", null, 0, 0),
+                    expr.body
+            ));
+        }
 
-                arrowEnv.defineLet(expr.parameter.lexeme, valorAvaliado);
+        // 3. Criar um nome sintético para a função (apenas para debug)
+        Token syntheticName = new Token(
+                TokenType.IDENTIFIER,
+                "_arrow_" + System.identityHashCode(expr),
+                null,
+                0, 0
+        );
 
-                Environment previous = interpreter.environment;
-                try {
-                    interpreter.environment = arrowEnv;
-                    return interpreter.evaluate(expr.body);
-                } finally {
-                    interpreter.environment = previous;
-                }
-            }
+        // 4. Construir a declaração da função
+        Stmt.Function funcDecl = new Stmt.Function(
+                null, false, false, syntheticName, params, null,
+                Collections.emptyList(), bodyStmts, Collections.emptyList()
+        );
 
-            @Override public String toString() { return "<arrow fn>"; }
-        };
+        // 5. Retornar um XplFunction que guarda a AST pura
+        return new XplFunction(funcDecl, closure, null);
     }
 
     @Override
@@ -2180,8 +2398,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             // ⭐ DELEGAÇÃO TRANSPARENTE DE ESCRITA (VIA CHAVE OCULTA) ⭐
             if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
-
-                // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'SET' ⭐
                 Object decObj = instance.fields.get("_decoratorInstance");
                 if (decObj instanceof XplInstance dec) {
                     XPLModel decModel = dec.klass.model;
@@ -2192,8 +2408,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         }
                     }
                 }
-
-                // 2. Reencaminha a escrita para o miolo real:
                 String lex = expr.name.lexeme;
                 if (!lex.equals("_val")) {
                     Object wrappedObj = instance.fields.get("_val");
@@ -2203,17 +2417,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 }
             }
 
+            // ⭐ A VACINA DO JIT: Escrita direta para MetaBuilders (sem classe) ⭐
+            if (instance.klass == null) {
+                instance.fields.put(expr.name.lexeme, value);
+                return value;
+            }
+
             Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
             if (field != null) {
                 // 🛑 CHAMA A POLÍCIA ANTES DE ESCREVER! 🛑
                 checkAccess(expr.name, field, instance.klass.model, true);
 
-                // ⭐ VIGILÂNCIA: Existe gancho @Context.Set?
-                XPLModel model = instance.klass.model;
-                if (model.metaSetHook != null) {
-                    Stmt.Function hookFunc = model.findMethod(model.metaSetHook);
-                    XplFunction hookCallable = new XplFunction(hookFunc, instance.klass.closure, model);
-                    hookCallable.bind(instance).call(this, java.util.Collections.emptyList());
+                if (instance.klass.model.metaSetHook != null) {
+                    Stmt.Function hookFunc = instance.klass.model.findMethod(instance.klass.model.metaSetHook);
+                    new XplFunction(hookFunc, instance.klass.closure, instance.klass.model).bind(instance).call(this, java.util.Collections.emptyList());
                 }
 
                 instance.set(expr.name, value);
@@ -2224,7 +2441,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 3. Se não for Classe nem Instância, é um erro estrutural!
         throw new ControlFlow.RuntimeError(expr.name, "Apenas instâncias e classes XPL possuem propriedades modificáveis.");
-    }
+
+      }
 
     @Override
     public Object visitSuperExpr(Expr.Super expr) {
@@ -2301,7 +2519,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return stringify(value);
                 case IDENTIFIER:
                     if (value instanceof XplInstance instance) {
-                        if (instance.klass.model.isSubclassOf(expr.type.name.lexeme)) {
+                        // ⭐ VERIFICAÇÃO ADICIONADA
+                        if (instance.klass != null && instance.klass.model.isSubclassOf(expr.type.name.lexeme)) {
                             return value; // Upcast seguro
                         }
                     }
@@ -2325,11 +2544,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         String targetType = expr.rightType.name.lexeme;
 
         if (expr.operator.type == TokenType.INSTANCE) {
-            // ⭐ INSTANCE: Exige correspondência exata de classe! Sem heranças.
             if (left instanceof XplInstance) {
-                return ((XplInstance) left).klass.model.name.equals(targetType);
+                XplInstance inst = (XplInstance) left;
+                // ⭐ VERIFICAÇÃO ADICIONADA
+                if (inst.klass == null) return false;
+                return inst.klass.model.name.equals(targetType);
             }
-            return false; // Primitivos não são instâncias exactas de classes
+            return false;
         } else {
             // ⭐ TYPE: Validação flexível (aceita primitivos e subclasses)
             if (left == null) return false;
@@ -2357,7 +2578,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case Boolean b -> "bool";
             case List list -> "array";
             case Map map -> "object";
-            case XplInstance xplInstance -> xplInstance.klass.model.name;
+            case XplInstance xplInstance -> {
+                // ⭐ VERIFICAÇÃO ADICIONADA
+                if (xplInstance.klass == null) yield "MetaInstance";
+                yield xplInstance.klass.model.name;
+            }
             case XplClass xplClass -> "class";
             default -> "unknown";
         };
@@ -2564,6 +2789,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
+    @Override
+    public Object visitBlockExpr(Expr.Block expr) {
+        return evaluateBranchAsExpression(new Stmt.Block(expr.statements));
+    }
+
     // =========================================================================
     // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
     // =========================================================================
@@ -2671,6 +2901,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
                 // Se não era um nome Java disfarçado, então é POO Moçambicana pura (Ex: Pessoa):
                 if (obj instanceof XplInstance instance) {
+                    // ⭐ VACINA: MetaBuilders não pertencem a classes XPL!
+                    if (instance.klass == null) return false;
                     XPLModel modelo = instance.klass.model;
                     return modelo.isSubclassOf(customTypeName);
                 }
@@ -2745,6 +2977,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
+
+
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         return environment.get(expr.name.lexeme);
@@ -2753,6 +2987,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
+
+        // ⭐ O POLÍCIA INTERCETA A ATRIBUIÇÃO AQUI! ⭐
+        validateAssignmentType(expr.name, value);
 
         environment.assign(expr.name.lexeme, value);
         return value;
@@ -2874,7 +3111,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Preserva a coordenada exata (linha/coluna) do erro disparado pelo Binder!
             throw erroNativo;
         } catch (RuntimeException erroJava) {
-            throw new ControlFlow.RuntimeError(expr.paren, erroJava.getMessage());
+            // ⭐ A VACINA DO DEBUGGER: Se a mensagem for nula (ex: NullPointerException),
+            // imprime o rasto no terminal para sabermos exatamente onde a bomba rebentou!
+            if (erroJava.getMessage() == null) {
+                erroJava.printStackTrace();
+            }
+            throw new ControlFlow.RuntimeError(expr.paren, "Falha Nativa no Motor Java: " + erroJava);
         }
     }
 
@@ -2963,6 +3205,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
         if (object instanceof XplInstance instance) {
+            // ⭐ VACINA: É um MetaBuilder (Fantasma)?
+            if (instance.klass == null) return "<MetaInstance JIT>";
+
             Stmt.Function toStringMethod = instance.klass.model.findMethod("toString");
 
             if (toStringMethod != null && toStringMethod.params.isEmpty()) {

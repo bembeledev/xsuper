@@ -19,24 +19,16 @@ implement Motor {
 }
 
 
-MotorAPI:getDeclareName();
-MotorAPI:getMethods(/*tudo a ser feito aqui*/);
-MotorAPI:getFields(/*tudo a ser feito aqui*/);
-MotorAPI:CallMethod(/*tudo a ser feito aqui*/);
-MotorAPI:getImplements(/*tudo a ser feito aqui*/);
-MotorAPI:getInterfaces(/*tudo a ser feito aqui*/);
-MotorAPI:getDecorators(/*tudo a ser feito aqui*/);
-MotorAPI:getDecorators(/*tudo a ser feito aqui*/);
-MotorAPI:getDeclareToObject(); // rotornar esse objecto:
-/*
-{
-name:"API_MPS",
-filesds:[{visibity: "pub",type:"string",value: "Ola",isStativ: flase,isQualquericoisa:ture},
-methods:[visbility: privatename: ''soma",parms:[{name:"id",type:iddefault:"doo",},],isArraw:false, mais outras propriedade]]
-//mais outras coisas interfaces, implemtnações, noms alias, etc
-}
-*/
-MotorAPI:getImplementsAliasNames(/*tudo a ser feito aqui*/);
+MotorAPI::getDeclareName();
+MotorAPI::getMethods(/*tudo a ser feito aqui*/);
+MotorAPI::getFields(/*tudo a ser feito aqui*/);
+MotorAPI::CallMethod(/*tudo a ser feito aqui*/);
+MotorAPI::getImplements(/*tudo a ser feito aqui*/);
+MotorAPI::getInterfaces(/*tudo a ser feito aqui*/);
+MotorAPI::getDecorators(/*tudo a ser feito aqui*/);
+MotorAPI::getDecorators(/*tudo a ser feito aqui*/);
+MotorAPI::getDeclareToObject(); // rotornar esse objecto:
+MotorAPI::getImplementsAliasNames(/*tudo a ser feito aqui*/);
 //mais propriedades...
 
 var meuMotor = new MotorAPI();
@@ -57,7 +49,7 @@ var bloc: Block = {if (this.modelo == id) return id**8;}
 method.block(block);
 meuMotor::injectMethod(method);
 meuMotor.power(12);
-meuMotor::injectMethod(Motor:getMethod("saudar"));
+meuMotor::injectMethod(Motor::getMethod("saudar"));
 meuMotor.saudar();
 
 meuMotor::CallMethod(/*coisas assim*/);

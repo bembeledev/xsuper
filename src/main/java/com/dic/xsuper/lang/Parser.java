@@ -739,7 +739,6 @@ public class Parser {
         if (match(TokenType.TRY)) return tryStatement();
         if (match(TokenType.THROW)) return throwStatement();
 
-
         if (match(TokenType.DO)) return doWhileStatement();
         // ESQUELETOS FUTUROS:
         if (match(TokenType.WHILE)) return whileStatement();
@@ -969,6 +968,7 @@ public class Parser {
         if (check(TokenType.LPAREN)){
             return  forCStyleStatement();
         }
+
 
         // Exemplo temporário para não quebrar o código atual:
         return forInStatement();
@@ -1218,6 +1218,16 @@ public class Parser {
 
     private Expr assignment() {
 
+        // ⭐ 1. Detetar Arrow Function SEM parâmetros: () => { ... }
+        if (check(TokenType.LPAREN) && peekNext().type == TokenType.RPAREN && current + 2 < tokens.size() && tokens.get(current + 2).type == TokenType.FAT_ARROW) {
+            // A tua melhoria: Gestão de erros resiliente e consistente!
+            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' no início da Arrow Function.");
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o '(' na Arrow Function vazia.");
+            consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após os parêntesis.");
+            Expr body = parseArrowBody();
+            return new Expr.ArrowFunction(null, body);
+        }
+
         // ⭐ Detetar Arrow Function de 1 parâmetro (Ex: e => e.toUpperCase()) [INTACTO!]
         if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
             Token param = consumeIdentifierSoft( "Esperado nome do parâmetro da Arrow Function.");
@@ -1269,6 +1279,16 @@ public class Parser {
         }
 
         return expr;
+    }
+
+    private Expr parseArrowBody() {
+        if (match(TokenType.LBRACE)) {
+            // Corpo é um bloco { ... }
+            List<Stmt> stmts = block(); // block() consome o '}' internamente
+            return new Expr.Block(stmts);
+        } else {
+            return expression();
+        }
     }
 
     // ⭐ O NOVO DEGRAU DA COALESCÊNCIA ⭐

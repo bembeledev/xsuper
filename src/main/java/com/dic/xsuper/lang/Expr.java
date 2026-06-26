@@ -21,7 +21,7 @@ public abstract class Expr {
         R visitArrowFunctionExpr(ArrowFunction expr);
         R visitObjectLiteralExpr(ObjectLiteral expr);
         R visitNewExpr(New expr);
-        Object visitSetExpr(Set expr);
+        R visitSetExpr(Set expr);
         R visitSuperExpr(Super expr);
         R visitCastExpr(Cast expr);
         R visitTypeCheckExpr(TypeCheck typeCheck);
@@ -36,6 +36,7 @@ public abstract class Expr {
         R visitOptionalCallExpr(OptionalCall optionalCall);
         R visitMetaAccessExpr(MetaAccess metaAccess);
         R visitTernaryExpr(Ternary ternary);
+        R visitBlockExpr(Block block);
     }
 
 
@@ -510,7 +511,7 @@ public abstract class Expr {
     public static class If extends Expr {
         public final Expr condition;
         public final Stmt thenBranch; // Usamos Stmt para suportar tanto Blocos {} como simples Expressões!
-        public final Stmt elseBranch; // Pode ser null
+        public Stmt elseBranch; // Pode ser null
 
         public If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
             this.condition = condition;
@@ -787,6 +788,21 @@ public abstract class Expr {
         }
     }
 
+    public static class Block extends Expr {
+        public final List<Stmt> statements;
+        public Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitBlockExpr(this);
+        }
 
+        @Override
+        public String toString() {
+            return "Block{" +
+                    "statements=" + statements +
+                    '}';
+        }
+    }
 
 }

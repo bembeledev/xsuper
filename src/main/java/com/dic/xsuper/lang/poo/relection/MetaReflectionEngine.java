@@ -244,7 +244,23 @@ public class MetaReflectionEngine {
                     case "CallMethod" -> executeCallMethod(target, interpreter, arguments, expr.name);
 
                     case "injectMethod" -> {
-                        System.out.println("[JIT] -> Motor pronto para injetar código na memória de: " + model.name);
+                        if (arguments.isEmpty()) {
+                            throw new ControlFlow.RuntimeError(expr.name, "injectMethod requer um argumento: a função a injetar.");
+                        }
+                        Object astNode = interpreter.evaluate(arguments.getFirst().expression);
+                        if (!(astNode instanceof Stmt.Function novaFuncao)) {
+                            throw new ControlFlow.RuntimeError(expr.name, "injectMethod espera um argumento do tipo Function (retornado por Func()).");
+                        }
+                        if (target instanceof XplInstance instance) {
+                            if (instance.klass == null) {
+                                throw new ControlFlow.RuntimeError(expr.name, "Não é possível injetar método numa instância JIT (MetaBuilder).");
+                            }
+                            instance.fields.put(novaFuncao.name.lexeme, new XplFunction(novaFuncao, interpreter.environment, instance.klass.model));
+                        } else if (target instanceof XplClass klass) {
+                            klass.model.addMethod(novaFuncao);
+                        } else {
+                            throw new ControlFlow.RuntimeError(expr.name, "injectMethod só pode ser aplicado a instâncias ou classes XPL.");
+                        }
                         yield true;
                     }
                     default -> throw new ControlFlow.RuntimeError(expr.name,

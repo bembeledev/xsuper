@@ -12,7 +12,7 @@ public class Lexer {
     private int start = 0;
     private int current = 0;
     private int line = 1;
-    private int columnStart = 1; // Coluna onde o token atual começou
+    private int columnStart = 1; // Coluna onde o token actual começou
     private int currentColumn = 1;
 
     // Tabela de palavras-chave (Mapeia strings para os teus TokenTypes)

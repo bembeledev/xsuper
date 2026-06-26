@@ -4,19 +4,25 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`.">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/meta_test.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/ref.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/reflect.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica.">
+      <change afterPath="$PROJECT_DIR$/criticas.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaForBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaIfBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/arq.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/meta_adv.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/meta_all.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/TokenType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/fun.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/fun.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/ref.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ref.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +68,7 @@
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
     &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
@@ -338,7 +345,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782383096684</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica.">
+      <option name="closed" value="true" />
+      <created>1782423596725</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1782423596725</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -356,7 +371,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Funcionalidades Padrão" />
     <MESSAGE value="Comandos para Cript, Hisotry,Watch, etc" />
     <MESSAGE value="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'." />
     <MESSAGE value="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings." />
@@ -381,6 +395,7 @@
     <MESSAGE value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
     <MESSAGE value="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança." />
     <MESSAGE value="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`." />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`." />
+    <MESSAGE value="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica." />
   </component>
 </project>
