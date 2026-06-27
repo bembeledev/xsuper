@@ -4,25 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica.">
-      <change afterPath="$PROJECT_DIR$/criticas.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaForBuilder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaIfBuilder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/arq.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/meta_adv.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/meta_all.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat: estabilização final do motor JIT e API Fluida&quot; -m &quot;- Finalização e modularização dos MetaBuilders (If, For, While, Do, Switch, Match) no pacote `com.dic.xsuper.lang.meta`.&#10;- Correção de NullPointerException em instâncias JIT (MetaBuilders sem class).&#10;- Implementação de binding de contexto (this) para métodos injetados dinamicamente em instâncias.&#10;- Implementação de sistema de inferência e bloqueio de tipos (Type Locking) em declarações de variáveis.&#10;- Refinamento do visitArrowFunction (prevenção de return statements automáticos).&#10;- Reforço de segurança no Interpreter para proteção de acesso a campos e métodos.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeConsole.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeFileSystem.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHttp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeMath.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeNetwork.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegex.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaDoBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaMatchBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaSwitchBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaWhileBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/http.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/teste_fs.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/teste_io.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Environment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Expr.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Lexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/XplFunction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/relection/MetaReflectionEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/fun.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/fun.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ref.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ref.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,7 +64,7 @@
     &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,

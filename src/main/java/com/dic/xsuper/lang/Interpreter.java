@@ -295,6 +295,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         native_values();
 
+        // console nativo
+        com.dic.xsuper.lang.natives.NativeConsole.register(this);
+        com.dic.xsuper.lang.natives.NativeFileSystem.register(this);
+        com.dic.xsuper.lang.natives.NativeMath.register(this);
+        com.dic.xsuper.lang.natives.NativeRegex.register(this);
+        com.dic.xsuper.lang.natives.NativeHttp.register(this);      // ⭐ AQUI
+        com.dic.xsuper.lang.natives.NativeUrl.register(this);       // ⭐ AQUI
+        com.dic.xsuper.lang.natives.NativeNetwork.register(this);   // ⭐ AQUI
+
     }
 
     private void native_values() {
@@ -352,6 +361,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         controlEnum.put("BREAK", "break");
         controlEnum.put("CONTINUE", "continue");
         globals.defineConst("CONTROL", java.util.Collections.unmodifiableMap(controlEnum));
+
+
+        // ⭐ CONSTANTES DE REDE E HTTP ⭐
+        java.util.Map<String, String> httpConsts = new java.util.LinkedHashMap<>();
+        httpConsts.put("GET", "GET");
+        httpConsts.put("POST", "POST");
+        httpConsts.put("PUT", "PUT");
+        httpConsts.put("DELETE", "DELETE");
+        httpConsts.put("PATCH", "PATCH");
+        httpConsts.put("HEAD", "HEAD");
+        httpConsts.put("OPTIONS", "OPTIONS");
+        globals.defineConst("HTTP", java.util.Collections.unmodifiableMap(httpConsts));
 
     }
 
@@ -605,11 +626,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 }
 
                 // 3. O GATILHO SOBERANO: @(Context.Init)
-                String initHookName = (decModel.metaInitHook != null) ? decModel.metaInitHook : "aoNascer";
-                Stmt.Function hookFunc = decModel.findMethod(initHookName);
-                if (hookFunc != null) {
-                    XplFunction hookCallable = new XplFunction(hookFunc, decClass.closure, decModel);
-                    hookCallable.bind(decInstance).call(this, java.util.Collections.emptyList());
+                if (decModel.metaInitHook != null) {
+                    Stmt.Function hookFunc = decModel.findMethod(decModel.metaInitHook);
+                    if (hookFunc != null) {
+                        XplFunction hookCallable = new XplFunction(hookFunc, decClass.closure, decModel);
+                        hookCallable.bind(decInstance).call(this, java.util.Collections.emptyList());
+                    }
                 }
 
                 // A variável real passa a ser a própria caixa proxy do Contexto!
@@ -991,7 +1013,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (baseModel.isGenericBlueprint) {
             baseModel.hasBaseImplementation = true;
 
+            // ⭐ A ALFÂNDEGA DE HOOKS (VIA DECORADORES DE MÉTODO) ⭐
             for (Stmt.Function method : stmt.methods) {
+
+                // 1. O método tem algum autocolante @(...) em cima dele?
+                if (method.decorators != null) {
+                    for (Stmt.DecoratorNode dec : method.decorators) {
+                        String hookName = dec.name.lexeme;
+
+                        // 2. Mapeia a anotação para o sistema nervoso central do XPL!
+                        if (hookName.contains("Init")) {
+                            baseModel.metaInitHook = method.name.lexeme;
+                        } else if (hookName.contains("Get")) {
+                            baseModel.metaGetHook = method.name.lexeme;
+                        } else if (hookName.contains("Set")) {
+                            baseModel.metaSetHook = method.name.lexeme;
+                        } else if (hookName.contains("End") || hookName.contains("Morrer")) {
+                            baseModel.metaEndHook = method.name.lexeme;
+                        }
+                    }
+                }
+
+                // 3. Adiciona o método à classe finalmente
                 baseModel.addMethod(method);
             }
             System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
@@ -1010,7 +1053,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             baseModel.hasBaseImplementation = true;
 
             // Injeta os métodos diretamente no ADN do modelo base
+            // ⭐ A ALFÂNDEGA DE HOOKS (VIA DECORADORES DE MÉTODO) ⭐
             for (Stmt.Function method : stmt.methods) {
+
+                // 1. O método tem algum autocolante @(...) em cima dele?
+                if (method.decorators != null) {
+                    for (Stmt.DecoratorNode dec : method.decorators) {
+                        String hookName = dec.name.lexeme;
+
+                        // 2. Mapeia a anotação para o sistema nervoso central do XPL!
+                        if (hookName.contains("Init")) {
+                            baseModel.metaInitHook = method.name.lexeme;
+                        } else if (hookName.contains("Get")) {
+                            baseModel.metaGetHook = method.name.lexeme;
+                        } else if (hookName.contains("Set")) {
+                            baseModel.metaSetHook = method.name.lexeme;
+                        } else if (hookName.contains("End") || hookName.contains("Morrer")) {
+                            baseModel.metaEndHook = method.name.lexeme;
+                        }
+                    }
+                }
+
+                // 3. Adiciona o método à classe finalmente
                 baseModel.addMethod(method);
             }
             if (stmt.isAbstract) {
@@ -1182,10 +1246,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitDecoratorDeclStmt(Stmt.DecoratorDecl stmt) {
         String decName = stmt.name.lexeme;
 
-        // 1. Obtém o modelo real do Gerente ("DecoratorRoot") como OBJETO:
         XPLModel superPai = this.registry_model.get("DecoratorRoot");
-
-        // Instância de segurança (garante que ele existe mesmo que a ordem de boot mude):
         if (superPai == null) {
             superPai = new XPLModel("DecoratorRoot", null);
             superPai.isDecorator = true;
@@ -1194,12 +1255,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         XPLModel modelo = this.registry_model.get(decName);
         if (modelo == null) {
-            // ⭐ A CORREÇÃO: Passamos a instância 'superPai' e não a String!
             modelo = new XPLModel(decName, superPai);
             modelo.isDecorator = true;
             this.registry_model.put(decName, modelo);
         }
 
+        // ⭐ LÊ ESTRITAMENTE OS DADOS (FIELDS) ⭐
         if (stmt.fields != null) {
             for (Stmt.FieldDecl campo : stmt.fields) {
                 modelo.fields.put(campo.name.lexeme, campo);
@@ -3200,7 +3261,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // Converte literais do Java para representação XPL segura no terminal
     // ⭐ A MAGIA DO TO_STRING NATIVO (AGORA RECURSIVO!) ⭐
-    private String stringify(Object object) {
+    public String stringify(Object object) {
         if (object == null) return "null";
 
         // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
