@@ -24,6 +24,8 @@ public class Lexer {
         keywords.put("const", TokenType.CONST);
         keywords.put("fun", TokenType.FUN);
         keywords.put("for", TokenType.FOR);
+        keywords.put("while", TokenType.WHILE);
+        keywords.put("do", TokenType.DO);
         keywords.put("in", TokenType.IN);
         keywords.put("if", TokenType.IF);
         keywords.put("else", TokenType.ELSE);

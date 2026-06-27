@@ -19,14 +19,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // O escopo global que criámos na Fase 1
     // 1. Cria a caixa global
-    public final Environment globals = new Environment();
+    public Environment globals = new Environment();
     public final CommandRegistry registry;
     public Path currentDirectory;
     // 2. O ambiente atual aponta para a caixa global logo no início!
     public Environment environment = globals;
     // ⭐ O NOSSO REGISTRY GLOBAL ⭐
     // Guarda tanto os modelos-base (Declare) quanto as variantes (Implement as)
-    private final Map<String, XPLModel> registry_model = new HashMap<>();
+    private Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
     // =========================================================================
@@ -295,14 +295,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         native_values();
 
-        // console nativo
+        //  funções nativas nativo
         com.dic.xsuper.lang.natives.NativeConsole.register(this);
         com.dic.xsuper.lang.natives.NativeFileSystem.register(this);
         com.dic.xsuper.lang.natives.NativeMath.register(this);
         com.dic.xsuper.lang.natives.NativeRegex.register(this);
-        com.dic.xsuper.lang.natives.NativeHttp.register(this);      // ⭐ AQUI
-        com.dic.xsuper.lang.natives.NativeUrl.register(this);       // ⭐ AQUI
-        com.dic.xsuper.lang.natives.NativeNetwork.register(this);   // ⭐ AQUI
+        com.dic.xsuper.lang.natives.NativeHttp.register(this);
+        com.dic.xsuper.lang.natives.NativeUrl.register(this);
+        com.dic.xsuper.lang.natives.NativeNetwork.register(this);
+        com.dic.xsuper.lang.natives.NativeTask.register(this);
+        // ⭐ CONCORRÊNCIA E DATAFLOW AVANÇADO ⭐
+        com.dic.xsuper.lang.natives.NativeMutex.register(this);    // Injeção de Locks
+        com.dic.xsuper.lang.natives.NativeChannel.register(this);  // Injeção de Canais
 
     }
 
@@ -416,6 +420,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
     }
 
+
+    // ⭐ A CURA DA CONCORRÊNCIA: Fork do Interpretador ⭐
+    // Cria um clone perfeito do motor para ser usado em Threads em Background,
+    // partilhando os registos globais e a memória, mas isolando a Pilha de Execução.
+    public Interpreter fork() {
+        Interpreter threadEngine = new Interpreter(this.registry, this.currentDirectory);
+
+        // 1. Partilhamos as Variáveis Globais e Nativas
+        threadEngine.globals = this.globals;
+
+        // 2. Partilhamos os Modelos de Classes e Decoradores
+        threadEngine.registry_model = this.registry_model;
+
+        // 3. A memória atual fica ligada ao global, mas o XplFunction vai
+        // injetar a Closure (variáveis locais) correta quando a função arrancar!
+        threadEngine.environment = this.globals;
+
+        return threadEngine;
+    }
+
+
+
     // =========================================================================
     // ⭐ MÁQUINAS DE EXTRAÇÃO DE AST (Para Metaprogramação)
     // =========================================================================
@@ -504,6 +530,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     public void execute(Stmt stmt) {
+        // ⭐ VERIFICADOR DE SINAL DE MORTE (CANCELAMENTO) ⭐
+        if (Thread.currentThread().isInterrupted()) {
+            throw new ControlFlow.RuntimeError(null, "Thread XPL foi morta e abortada com sucesso.");
+        }
         stmt.accept(this);
     }
 
@@ -1369,19 +1399,29 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
-        // Enquanto a condição for avaliada como verdadeira...
-        while (isTruthy(evaluate(stmt.condition))) {
+        // ⭐ O CICLO DE VIDA NATIVO DO WHILE LOOP ⭐
+        // Avalia a condição e executa enquanto ela retornar verdadeiro (true)
+        while (executeCondition(stmt.condition)) {
             try {
-                // ... executa o bloco de código contido no While.
                 execute(stmt.body);
-            } catch (ControlFlow.BreakException e) {
-                // ⭐ Suporte a 'break' dentro do loop!
+            } catch (ControlFlow.BreakException b) {
+                // 🛑 comando 'break': Interrompe o loop imediatamente!
                 break;
-            } catch (ControlFlow.ContinueException e) {
-                // ⭐ Suporte a 'continue' dentro do loop!
+            } catch (ControlFlow.ContinueException c) {
+                // 🔄 comando 'continue': Salta o resto do bloco e vai para a próxima iteração!
+                // Não faz nada, o ciclo while nativo do Java vai reavaliar a condição automaticamente.
             }
         }
         return null;
+    }
+
+    // Auxiliar seguro para garantir que a condição avaliada é um Boolean nativo do XPL
+    private boolean executeCondition(Expr condition) {
+        Object value = evaluate(condition);
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        throw new ControlFlow.RuntimeError(null, "A condição do comando 'while' deve resultar num tipo bool.");
     }
 
     // ⭐ AUXILIAR: Procura a exportação em todos os cofres do motor
@@ -2338,7 +2378,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 4. Construir a declaração da função
         Stmt.Function funcDecl = new Stmt.Function(
-                null, false, false, syntheticName, params, null,
+                null, false, false, syntheticName, params, expr.returnType,
                 Collections.emptyList(), bodyStmts, Collections.emptyList()
         );
 

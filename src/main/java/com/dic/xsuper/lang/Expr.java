@@ -334,10 +334,12 @@ public abstract class Expr {
     public static class ArrowFunction extends Expr {
         public final Token parameter; // Por agora suportamos 1 parâmetro: e => ...
         public final Expr body;       // O que ela retorna: e.toUpperCase()
+        public final TypeNode returnType;
 
-        public ArrowFunction(Token parameter, Expr body) {
+        public ArrowFunction(Token parameter, Expr body, TypeNode returnType) {
             this.parameter = parameter;
             this.body = body;
+            this.returnType = returnType;
         }
 
         @Override
@@ -348,6 +350,7 @@ public abstract class Expr {
             return "ArrowFunction{" +
                     "parameter=" + parameter +
                     ", body=" + body +
+                    ", returnType=" + returnType +
                     '}';
         }
     }

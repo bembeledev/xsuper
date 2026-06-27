@@ -770,9 +770,9 @@ public abstract class Stmt {
 
     public static class While extends Stmt {
         public final Expr condition;
-        public final Block body; // Usamos o Block como tu bem desenhaste!
+        public final Stmt body; // Usamos o Block como tu bem desenhaste!
 
-        public While(Expr condition, Block body) {
+        public While(Expr condition, Stmt body) {
             this.condition = condition;
             this.body = body;
         }

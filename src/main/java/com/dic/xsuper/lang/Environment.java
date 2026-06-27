@@ -2,6 +2,7 @@ package com.dic.xsuper.lang;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Environment {
     private final Environment enclosing; // Escopo pai (ex: a função onde o if está dentro)
@@ -11,6 +12,12 @@ public class Environment {
 
     // ⭐ NOVO: Registo de quem entrou por via de 'import'
     private final java.util.Set<String> importedSymbols = new java.util.HashSet<>();
+
+
+    // ⭐ MEMÓRIA BLINDADA CONTRA CONCORRÊNCIA ⭐
+    public final Map<String, Object> valuesConcurrency = new ConcurrentHashMap<>();
+    public final Map<String, String> typeRegistryConcurrency = new ConcurrentHashMap<>();
+
 
     // ⭐ NOVO: Método para registar variáveis importadas
     public void defineImported(String name, Object value) {

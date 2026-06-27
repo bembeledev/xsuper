@@ -1053,10 +1053,25 @@ public class Parser {
         return new Stmt.ForInRange(loopVar,start,end,jump,body);
     }
 
-    // ESQUELETO FUTURO: while (condicao) { ... }
+    // =========================================================================
+// 🏛️ PARSER: ESTRUTURA SINTÁTICA DO WHILE LOOP
+// =========================================================================
     private Stmt whileStatement() {
-        // TODO: Criar nó Stmt.While
-        return null;
+        // 1. Consome o parêntese esquerdo '(' obrigatoriamente
+        consume(TokenType.LPAREN, "Esperado '(' após o comando 'while'.");
+
+        // 2. Extrai a expressão lógica de condição (ex: i < 10)
+        Expr condition = expression();
+
+        // 3. Consome o parêntese direito ')' obrigatoriamente
+        consume(TokenType.RPAREN, "Esperado ')' após a condição do 'while'.");
+
+        // 4. Extrai o corpo do loop (pode ser uma única declaração ou um Bloco { ... })
+        // Usamos statement() para dar suporte tanto a uma linha quanto a blocos estruturados
+        Stmt body = statement();
+
+        // 5. Retorna o nó da árvore pronto a ser executado pelo Interpreter
+        return new Stmt.While(condition, body);
     }
 
 
@@ -1218,23 +1233,43 @@ public class Parser {
 
     private Expr assignment() {
 
-        // ⭐ 1. Detetar Arrow Function SEM parâmetros: () => { ... }
-        if (check(TokenType.LPAREN) && peekNext().type == TokenType.RPAREN && current + 2 < tokens.size() && tokens.get(current + 2).type == TokenType.FAT_ARROW) {
-            // A tua melhoria: Gestão de erros resiliente e consistente!
-            consumeSoft(TokenType.LPAREN, "(", "Esperado '(' no início da Arrow Function.");
-            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o '(' na Arrow Function vazia.");
-            consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após os parêntesis.");
-            Expr body = parseArrowBody();
-            return new Expr.ArrowFunction(null, body);
+        // ⭐ 1. Detetar Arrow Function SEM parâmetros: () => { ... } OU (): tipo => { ... }
+        if (check(TokenType.LPAREN) && peekNext().type == TokenType.RPAREN) {
+
+            // Espreitamos o 3º token de forma segura
+            TokenType thirdToken = (current + 2 < tokens.size()) ? tokens.get(current + 2).type : null;
+
+            // Se o 3º token for a Seta (=>) OU os Dois Pontos (:) indicando tipo, é uma Arrow Function!
+            if (thirdToken == TokenType.FAT_ARROW || thirdToken == TokenType.COLON) {
+
+                consumeSoft(TokenType.LPAREN, "(", "Esperado '(' no início da Arrow Function.");
+                consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o '(' na Arrow Function vazia.");
+
+                // ⭐ A NOVA ALFÂNDEGA DE TIPO ⭐
+                TypeNode returnType = null;
+                if (match(TokenType.COLON)) {
+                    // ⚠️ A CURA: Usamos advance() para capturar qualquer que seja o Token (Keyword ou Identifier)
+                    Token typeToken = advance();
+                    // Segurança: Se o programador se esqueceu do tipo e escreveu (): =>
+                    if (typeToken.type == TokenType.FAT_ARROW) {
+                        throw error(typeToken, "Esperado o tipo de retorno após o ':'."); // Usa a tua função de erro
+                    }
+                    returnType = new TypeNode.Simple(typeToken);
+                }
+                consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após a assinatura da função anónima.");
+                Expr body = parseArrowBody();
+
+                // Passamos o returnType para a AST!
+                return new Expr.ArrowFunction(null, body, returnType);
+            }
         }
 
         // ⭐ Detetar Arrow Function de 1 parâmetro (Ex: e => e.toUpperCase()) [INTACTO!]
         if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
             Token param = consumeIdentifierSoft( "Esperado nome do parâmetro da Arrow Function.");
             consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após o parâmetro.");
-
             Expr body = expression();
-            return new Expr.ArrowFunction(param, body);
+            return new Expr.ArrowFunction(param, body, null);
         }
 
         // ⭐ A PONTE DE ENGENHARIA: Em vez de equality(), chamamos o topo da hierarquia lógica!
