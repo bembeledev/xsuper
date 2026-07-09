@@ -2,7 +2,8 @@ package com.dic.xsuper.lang.ui.tests;
 
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
-import com.dic.xsuper.lang.ui.XplNode;
+import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.XplUiBridge;
 import com.dic.xsuper.lang.ui.document.XplDocument;
 import com.dic.xsuper.lang.ui.document.XplElement;
@@ -139,8 +140,8 @@ public class TestHeadlessEngine {
         });
 
         // Disparar evento
-        com.dic.xsuper.lang.ui.document.XplEvent clickEvent =
-                new com.dic.xsuper.lang.ui.document.XplEvent("click", botao);
+        XplEvent clickEvent =
+                new XplEvent("click", botao);
         botao.dispatchEvent(clickEvent);
 
         System.out.println("\n--- ✅ TESTE CONCLUÍDO COM SUCESSO ---");

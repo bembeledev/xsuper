@@ -1126,9 +1126,13 @@ public class Parser {
     private Stmt expressionStatement() {
         Expr expr = expression();
 
-        // Se a expressão for um If (que já termina limpo em '}'), não exigimos o ';'
-        // ⭐ A REGRA DO RETORNO IMPLÍCITO ⭐
-        if (!(expr instanceof Expr.If)) {
+        // ⭐ A REGRA DO RETORNO IMPLÍCITO EXPANDIDA ⭐
+        // Se a expressão for um bloco que já termina em '}', não exigimos o ';'
+        boolean isBlockExpr = (expr instanceof Expr.If) ||
+                (expr instanceof Expr.Switch) ||
+                (expr instanceof Expr.Match);
+
+        if (!isBlockExpr) {
             if (check(TokenType.SEMICOLON)) {
                 advance(); // Consome o ';' limpo
             } else if (!check(TokenType.RBRACE)) {
@@ -1216,7 +1220,14 @@ public class Parser {
     private Expr inlineIf() {
         Expr expr = assignment(); // Puxa a tua base de precedência normal
 
-        if (match(TokenType.IF)) {
+        // ⭐ A CURA DO BUG EM CASCATA ⭐
+        // Expressões de Bloco (If, Switch, Match) já estão fechadas.
+        // Não podem ser usadas como a base de um 'if' inline!
+        boolean isBlockExpr = (expr instanceof Expr.If) ||
+                (expr instanceof Expr.Switch) ||
+                (expr instanceof Expr.Match);
+
+        if (!isBlockExpr && match(TokenType.IF)) {
             Expr condition = expression();
             consumeSoft(TokenType.ELSE, "else", "Esperado 'else' na expressão 'if' inline (Ex: valor if cond else default).");
             Expr elseExpr = expression();
@@ -1428,9 +1439,6 @@ public class Parser {
         }
         return expr;
     }
-
-
-
 
     private Expr term() {
         Expr expr = factor();

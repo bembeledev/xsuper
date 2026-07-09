@@ -12,8 +12,8 @@ println("typeof c: " + typeof(c)); // Cao
 println("c type Animal? " + (c type Animal)); // true (Herança!)
 println("n type float?  " + (n type float));  // true
 
-// 3. O INSTANCE (Restrito - Exato)
-println("c instance Animal? " + (c instance Animal)); // false (Não é um Animal direto, é um Cão!)
+// 3. O INSTANCE (Restrito - Exacto)
+println("c instance Animal? " + (c instance Animal)); // false (Não é um Animal directo, é um Cão!)
 println("c instance Cao?    " + (c instance Cao));    // true
 
 // 4. O CAST SEGURO (as)

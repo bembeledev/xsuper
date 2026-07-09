@@ -68,7 +68,10 @@ public class HtmlLexer {
                 break;
             case '/': addToken(HtmlTokenType.SLASH); break;
             case '=': addToken(HtmlTokenType.EQUALS); break;
-            case '"': scanString(); break;
+            case '"':
+            case '\'':
+                scanString(c);
+                break;
             case '[': addToken(HtmlTokenType.LBRACKET); break;
             case ']': addToken(HtmlTokenType.RBRACKET); break;
             case '(': addToken(HtmlTokenType.LPAREN); break;
@@ -211,22 +214,21 @@ public class HtmlLexer {
     }
 
     /**
-     * Lê uma string entre aspas (Ex: id="meu-painel").
+     * Lê uma string entre aspas (Ex: id="painel" ou src='foto.png').
      */
-    private void scanString() {
-        while (peek() != '"' && !isAtEnd()) {
+    private void scanString(char quoteType) {
+        while (peek() != quoteType && !isAtEnd()) {
             if (peek() == '\n') line++;
             advance();
         }
 
         if (isAtEnd()) {
-            throw new RuntimeException("Erro Lexical na linha " + line + ": Aspas (\") não fechadas.");
+            throw new RuntimeException("Erro Lexical na linha " + line + ": Aspas (" + quoteType + ") não fechadas.");
         }
 
-        advance(); // Consome as aspas de fecho '"'
+        advance(); // Consome a aspa de fecho
 
         // Extrai o valor LIMPO, sem as aspas à volta!
-        // start + 1 (ignora a aspa inicial), current - 1 (ignora a aspa final)
         String value = source.substring(start + 1, current - 1);
         addToken(HtmlTokenType.STRING, value);
     }

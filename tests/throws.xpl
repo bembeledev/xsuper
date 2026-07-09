@@ -10,7 +10,7 @@ fun lerFicheiro(): string throws IOError {
     return "Dados do disco...";
 }
 
-// 1. ISTO DEVE CRASHAR A COMPILAÇÃO (Nenhuma proteção):
+// 1. ISTO DEVE CRASHAR A COMPILAÇÃO (Nenhuma protecção):
 //let dados = lerFicheiro();
 
 // 2. ISTO É PERMITIDO (A função delega a responsabilidade):
@@ -22,7 +22,7 @@ try {
 
 }
 
-// 3. ISTO É PERMITIDO (Proteção imediata):
+// 3. ISTO É PERMITIDO (Protecção imediata):
 fun processoSeguro() {
     try {
         let d = lerFicheiro();

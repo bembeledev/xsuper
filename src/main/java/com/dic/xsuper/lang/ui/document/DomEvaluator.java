@@ -1,16 +1,23 @@
 package com.dic.xsuper.lang.ui.document;
 
-import com.dic.xsuper.lang.Interpreter;
-import com.dic.xsuper.lang.ui.XplNode;
+import com.dic.xsuper.lang.*;
+import com.dic.xsuper.lang.poo.XplClass;
+import com.dic.xsuper.lang.poo.XplInstance;
+import com.dic.xsuper.lang.ui.SuperUiEngine;
+import com.dic.xsuper.lang.ui.html.HtmlLexer;
+import com.dic.xsuper.lang.ui.html.HtmlParser;
+import com.dic.xsuper.lang.ui.html.HtmlTagUtils;
+import com.dic.xsuper.lang.ui.html.XplNode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class DomEvaluator {
     private final Interpreter interpreter; // O cérebro da tua linguagem!
+    private final SuperUiEngine engine;
 
-    public DomEvaluator(Interpreter interpreter) {
+    public DomEvaluator(Interpreter interpreter, SuperUiEngine engine) {
         this.interpreter = interpreter;
+        this.engine = engine;
     }
 
     /**
@@ -42,14 +49,21 @@ public class DomEvaluator {
             case "@switch":
                 result.addAll(evaluateSwitchBlock(node));
                 break;
-            case "@match":
-                // Ficará idêntico à lógica do switch, mas extraindo o atributo 'pattern'
+            case "@component": {
+                result.addAll(evaluateComponent(node));
                 break;
+            }
+            // ⭐ A CORREÇÃO: TEM DE APANHAR O "#text" PARA EXECUTAR A MAGIA! ⭐
+            case "#text":
             case "text":
-                result.add(cloneNode(node)); // Nós de texto passam direto
+                XplNode textNode = cloneNode(node);
+                // Passa o texto (ex: "{{item}}") pelo tradutor de variáveis!
+                textNode.textContent = resolveBindings(node.textContent);
+                result.add(textNode);
                 break;
+
             default:
-                // Tag HTML normal (div, button, input)
+                // Tag HTML normal (div, button, input, etc...)
                 XplNode dynamicElement = cloneNode(node);
 
                 // 1. Resolver Bindings Dinâmicos (ex: [disabled]="isCarregando")
@@ -69,23 +83,178 @@ public class DomEvaluator {
         return result;
     }
 
-    // =====================================================================
-    // 🧬 RESOLUÇÃO DOS BLOCOS ESTRUTURAIS
-    // =====================================================================
 
+    /**
+     * Processa um nó componente, instanciando a classe XPL correspondente e
+     * substituindo o nó pela árvore renderizada.
+     */
+    // =========================================================================
+    // ⚙️ AVALIADOR DE COMPONENTES
+    // =========================================================================
+
+
+    private List<XplNode> evaluateComponent(XplNode componentNode) {
+        // 1. Obter o nome do componente
+        String componentName = (String) componentNode.attributes.get("componentName");
+        if (componentName == null) {
+            throw new RuntimeException("Nó @component sem nome de componente.");
+        }
+
+        // 2. Obter a classe XPL do componente (a partir da engine)
+        SuperUiEngine engine = this.engine;
+        XplClass componentClass = engine.getComponent(componentName);
+        if (componentClass == null) {
+            throw new RuntimeException("Componente não registado: " + componentName);
+        }
+
+        // 3. Preparar as props (PRESERVANDO OBJETOS!)
+        Map<String, Object> props = new HashMap<>();
+        for (Map.Entry<String, Object> entry : componentNode.attributes.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals("componentName") || key.equals("props")) continue;
+
+            // ⭐ MAGIA: Resolver mantendo a tipagem real do XPL!
+            Object resolvedValue = resolveAttributeValue(entry.getValue().toString());
+            props.put(key, resolvedValue);
+        }
+
+        // 4. O SEGREDO DA ARIDADE (Inteligência do Motor)
+        List<Expr.CallArg> args = new ArrayList<>();
+        // Pergunta à classe se o seu construtor (init) pede argumentos
+        if (componentClass.arity() > 0) {
+            // Se o init pedir o mapa de props, enviamos!
+            args.add(new Expr.CallArg(null, new Expr.Literal(props)));
+        }
+
+        // 5. Instanciar o componente e Injetar Propriedades
+        Object componentInstance;
+        try {
+            componentInstance = componentClass.call(interpreter, args);
+
+            // ⭐ A MAGIA DA INJEÇÃO W3C ⭐
+            if (componentInstance instanceof XplInstance inst) {
+                for (Map.Entry<String, Object> entry : props.entrySet()) {
+                    inst.set(new Token(TokenType.IDENTIFIER, entry.getKey(), null, 0, 0, null), entry.getValue());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao instanciar componente '" + componentName + "': " + e.getMessage(), e);
+        }
+
+        // 6. Chamar o método render() do componente
+        try {
+            if (componentInstance instanceof XplInstance inst) {
+
+                // Procurar o método render
+                Object renderMethod = inst.get(new Token(TokenType.IDENTIFIER, "render", null, 0, 0, null));
+
+                if (renderMethod instanceof XplCallable callable) {
+                    Object result = callable.call(interpreter, Collections.emptyList());
+
+                    if (result instanceof String html) {
+                        HtmlLexer lexer = new HtmlLexer(html);
+                        HtmlParser parser = new HtmlParser(lexer.scanTokens());
+                        XplNode templateRoot = parser.parse(); // Retorna o <root> invisível
+
+                        // 1. O "Polícia do DOM"
+                        HtmlTagUtils.validateForbiddenTags(Set.of("html", "head", "body"), templateRoot);
+
+                        // ⭐ 2. A MAGIA DA PROJEÇÃO DE CONTEÚDO (SLOTS) ⭐
+                        processSlots(templateRoot, componentNode.children);
+
+                        // 3. Desempacotar e Avaliar o <root>!
+                        List<XplNode> evaluatedChildren = new ArrayList<>();
+                        for (XplNode child : templateRoot.children) {
+                            List<XplNode> evaluated = evaluateNode(child);
+                            evaluatedChildren.addAll(evaluated);
+                            for (XplNode node : evaluated) {
+                                bindHostComponent(node, inst);
+                            }
+                        }
+                        return evaluatedChildren;
+                    }
+                } else {
+                    throw new RuntimeException("Componente '" + componentName + "' não tem método 'render'. O XPL precisa do 'pub fun render()'.");
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao renderizar componente '" + componentName + "': " + e.getMessage(), e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    // Carimba recursivamente os nós com o componente que os gerou
+    private void bindHostComponent(XplNode node, XplInstance host) {
+        node.hostComponent = host;
+
+        for (XplNode child : node.children) {
+            bindHostComponent(child, host);
+        }
+    }
+
+    // =========================================================================
+    // 🧪 RESOLVEDOR DE ATRIBUTOS (Preserva Objetos Reais!)
+    // =========================================================================
+    private Object resolveAttributeValue(String text) {
+        if (text == null) return null;
+
+        // Se for EXATAMENTE uma única expressão (ex: "{{pessoa}}") sem texto à volta
+        if (text.startsWith("{{") && text.endsWith("}}") && text.indexOf("{{", 2) == -1) {
+            String expr = text.substring(2, text.length() - 2).trim();
+            // Retorna o OBJETO REAL (Map, List, XplInstance, etc.)
+            return evaluateExpressionXPL(expr);
+        }
+
+        // Se for texto misturado (ex: "Olá {{nome}}!"), resolve como String normal
+        return resolveBindings(text);
+    }
+
+    // =====================================================================
+    // 🧬 RESOLUÇÃO DO @if / @elseif / @else
+    // =====================================================================
     private List<XplNode> evaluateIfBlock(XplNode ifNode) {
         List<XplNode> result = new ArrayList<>();
         String conditionCode = ifNode.attributes.get("condition").toString();
 
-        // Pergunta à memória se a condição é verdadeira
+        // 1. Testa a condição do @if principal
         boolean isTrue = isTruthy(evaluateExpressionXPL(conditionCode));
 
         if (isTrue) {
+            // Se for verdade, pega APENAS nos filhos normais (ignora os blocos @else/elseif)
             for (XplNode child : ifNode.children) {
-                result.addAll(evaluateNode(child));
+                if (!child.tag.equals("@else") && !child.tag.equals("@elseif")) {
+                    result.addAll(evaluateNode(child));
+                }
+            }
+            return result; // Sai imediatamente, não avalia mais nada!
+        }
+
+        // 2. Se o IF falhou, procura pelos @elseif
+        for (XplNode child : ifNode.children) {
+            if (child.tag.equals("@elseif")) {
+                String elseIfCond = child.attributes.get("condition").toString();
+                if (isTruthy(evaluateExpressionXPL(elseIfCond))) {
+                    // Este @elseif é verdadeiro! Avalia os filhos dele.
+                    for (XplNode elseIfChild : child.children) {
+                        result.addAll(evaluateNode(elseIfChild));
+                    }
+                    return result; // Sai após o primeiro verdadeiro!
+                }
             }
         }
-        return result;
+
+        // 3. Se nenhum @if ou @elseif bateu certo, procura a rota de fuga (@else)
+        for (XplNode child : ifNode.children) {
+            if (child.tag.equals("@else")) {
+                for (XplNode elseChild : child.children) {
+                    result.addAll(evaluateNode(elseChild));
+                }
+                return result;
+            }
+        }
+
+        return result; // Retorna vazio se a condição falhou e não havia else
     }
 
     private List<XplNode> evaluateForBlock(XplNode forNode) {
@@ -182,13 +351,93 @@ public class DomEvaluator {
     /**
      * Comunica com o teu Interpretador para resolver strings como "usuario.isLogado()".
      */
+    // =====================================================================
+    // 🧠 A PONTE QUÂNTICA ENTRE O DOM E O XPL
+    // =====================================================================
     private Object evaluateExpressionXPL(String expressao) {
-        // Aqui tu delegarás para o teu Scanner e Parser da linguagem principal!
-        // Ex: Expr expr = new Parser(new Scanner(expressao).scanTokens()).parseExpression();
-        // return interpreter.evaluate(expr);
+        if (expressao == null || expressao.trim().isEmpty()) return null;
 
-        // Placeholder para manter a classe compilável por enquanto
-        return null;
+        try {
+            // ⭐ TRUQUE: Adicionamos um ';' invisível para o teu Parser aceitar a expressão como um Statement!
+            String codigoInjetado = expressao.trim();
+            if (!codigoInjetado.endsWith(";")) {
+                codigoInjetado += ";";
+            }
+
+            com.dic.xsuper.lang.Lexer lexer = new com.dic.xsuper.lang.Lexer(codigoInjetado, "DOM_Binding");
+            List<com.dic.xsuper.lang.Token> tokens = lexer.tokenize();
+
+            com.dic.xsuper.lang.Parser parser = new com.dic.xsuper.lang.Parser(tokens);
+
+            // O teu parser devolve a lista de Statements
+            List<com.dic.xsuper.lang.Stmt> statements = parser.parse();
+
+            if (!statements.isEmpty()) {
+                com.dic.xsuper.lang.Stmt primeiroStmt = statements.getFirst();
+
+                // Se a AST gerou uma ExpressionStmt (ex: 'isLogado == true;')
+                if (primeiroStmt instanceof com.dic.xsuper.lang.Stmt.ExpressionStmt exprStmt) {
+                    // Extraímos a Expr pura e avaliamos no Interpretador!
+                    return interpreter.evaluate(exprStmt.expression);
+                }
+                // Caso a AST tenha gerado um Return (ex: 'return isLogado;')
+                else if (primeiroStmt instanceof com.dic.xsuper.lang.Stmt.Return retStmt) {
+                    return interpreter.evaluate(retStmt.value);
+                }
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            System.err.println("[DomEvaluator] Erro ao avaliar a expressão '" + expressao + "': " + e.getMessage());
+            return null;
+        }
+    }
+    // =========================================================================
+    // 🧩 PROCESSADOR DE SLOTS (Content Projection - W3C Web Components)
+    // =========================================================================
+    private void processSlots(XplNode templateNode, List<XplNode> projectedContent) {
+        if (templateNode == null || templateNode.children.isEmpty()) return;
+
+        List<XplNode> newChildren = new ArrayList<>();
+
+        for (XplNode child : templateNode.children) {
+            if (child.tag.equalsIgnoreCase("slot")) {
+                // É um slot! Vamos procurar o que injetar nele.
+                // Se não tiver nome, é o slot "default"
+                String slotName = child.attributes.containsKey("name") ? child.attributes.get("name").toString() : "default";
+                boolean foundContent = false;
+
+                for (XplNode projectedNode : projectedContent) {
+                    // Descobre para que slot este nó quer ir (se não tiver atributo slot, vai para o default)
+                    String targetSlot = projectedNode.attributes.containsKey("slot") ? projectedNode.attributes.get("slot").toString() : "default";
+
+                    if (slotName.equals(targetSlot)) {
+                        // Clonamos o nó para não poluir a Árvore Estática do Parser!
+                        XplNode nodeToInject = cloneNode(projectedNode);
+
+                        // Removemos o atributo 'slot' para não aparecer no HTML final limpo
+                        nodeToInject.attributes.remove("slot");
+
+                        newChildren.add(nodeToInject);
+                        foundContent = true;
+                    }
+                }
+
+                // Se o utilizador não passou nada para este slot, usamos o Fallback (conteúdo padrão do slot)
+                if (!foundContent) {
+                    processSlots(child, projectedContent); // Processa slots aninhados, se houver
+                    newChildren.addAll(child.children);
+                }
+            } else {
+                // Não é slot. Continua a busca recursiva no template!
+                processSlots(child, projectedContent);
+                newChildren.add(child);
+            }
+        }
+
+        // Atualiza a árvore do template com os novos nós projetados
+        templateNode.children = newChildren;
     }
 
     private boolean isTruthy(Object object) {
@@ -201,5 +450,23 @@ public class DomEvaluator {
         if (a == null && b == null) return true;
         if (a == null) return false;
         return a.equals(b);
+    }
+
+    // 🧪 O motor que transforma "{{item}}" no valor real avaliado pelo XPL
+    private String resolveBindings(String text) {
+        if (text == null || !text.contains("{{")) return text;
+
+        String resolved = text;
+        // Regex para capturar tudo dentro de {{ }}
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\{(.+?)\\}\\}").matcher(text);
+
+        while (m.find()) {
+            String expr = m.group(1).trim(); // Apanha o "item"
+            Object val = evaluateExpressionXPL(expr); // Pede ao Interpretador XPL para dar o valor!
+
+            // Substitui "{{item}}" pelo valor real
+            resolved = resolved.replace(m.group(0), val != null ? String.valueOf(val) : "");
+        }
+        return resolved;
     }
 }

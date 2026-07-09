@@ -1,6 +1,6 @@
 package com.dic.xsuper.lang.ui.tests;
 
-import com.dic.xsuper.lang.ui.XplNode;
+import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.html.HtmlLexer;
 import com.dic.xsuper.lang.ui.html.HtmlParser;
 import com.dic.xsuper.lang.ui.html.HtmlToken;

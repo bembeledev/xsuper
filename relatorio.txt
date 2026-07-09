@@ -1,0 +1,4 @@
+A calcular uso de disco de 'FileManager'...
+   Resumo de Disco:
+   Ficheiros verificados : 215
+   Tamanho Total         : 6,43 MB

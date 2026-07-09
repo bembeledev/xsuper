@@ -19,7 +19,7 @@ public class NativeUrl {
 
         // Extrai o domínio principal de um URL (ex: "https://api.github.com/users" -> "api.github.com")
         define(interpreter, "url_parse_host", 1, args -> {
-            try { return URI.create(args.get(0).toString()).getHost(); }
+            try { return URI.create(args.getFirst().toString()).getHost(); }
             catch (Exception e) { return ""; }
         });
     }

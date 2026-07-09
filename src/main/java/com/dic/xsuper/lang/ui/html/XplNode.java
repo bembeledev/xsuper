@@ -1,8 +1,11 @@
-package com.dic.xsuper.lang.ui;
+package com.dic.xsuper.lang.ui.html;
 
 import com.dic.xsuper.lang.ui.document.XplElement;
 
+import javax.swing.*;
 import java.util.*;
+
+import static com.dic.xsuper.lang.ui.html.HtmlTagUtils.GLOBAL_ATTRIBUTES;
 
 /**
  * A representação Virtual do DOM na memória do XPL.
@@ -16,9 +19,10 @@ public class XplNode {
     // ─── IDENTIFICAÇÃO E HIERARQUIA ──────────────────────────────────────────
 
     public String tag;
-    public String id = "";
-    public String className = "";
+    public String id;
+    public String className;
     public XplNode parent = null;
+    public com.dic.xsuper.lang.poo.XplInstance hostComponent = null;
 
     // ─── MAPAS DE PROPRIEDADES (Atributos, Directivas, Eventos, Bindings) ──
 
@@ -26,6 +30,7 @@ public class XplNode {
     public Map<String, String> directives = new HashMap<>();
     public Map<String, String> events = new HashMap<>();
     public Map<String, String> bindings = new HashMap<>();
+
 
     // ─── ESTILO E ESTADO ─────────────────────────────────────────────────────
 
@@ -52,6 +57,20 @@ public class XplNode {
     public XplNode(String tag, String id) {
         this.tag = tag;
         this.id = id;
+    }
+
+    // Em XplNode.java
+    public static XplNode fromXplElement(XplElement el) {
+        XplNode node = new XplNode(el.tagName);
+        node.id = el.getId();
+        node.className = el.getClassName();
+        node.textContent = el.textContent;
+        node.attributes.putAll(el.attributes);
+        // Copiar filhos
+        for (XplElement child : el.getChildren()) {
+            node.addChild(fromXplElement(child));
+        }
+        return node;
     }
 
     // ─── MANIPULAÇÃO DE FILHOS ───────────────────────────────────────────────
@@ -156,10 +175,10 @@ public class XplNode {
             return getElementById(selector.substring(1));
         } else if (selector.startsWith(".")) {
             List<XplNode> list = getElementsByClassName(selector.substring(1));
-            return list.isEmpty() ? null : list.get(0);
+            return list.isEmpty() ? null : list.getFirst();
         } else {
             List<XplNode> list = getElementsByTagName(selector);
-            return list.isEmpty() ? null : list.get(0);
+            return list.isEmpty() ? null : list.getFirst();
         }
     }
 
@@ -238,8 +257,8 @@ public class XplNode {
 
     public void removeAttribute(String name) {
         attributes.remove(name);
-        if ("id".equals(name)) this.id = "";
-        if ("class".equals(name)) this.className = "";
+        if ("id".equals(name)) this.id = null;
+        if ("class".equals(name)) this.className = null;
     }
 
     // ─── ESTILOS INLINE ──────────────────────────────────────────────────────
@@ -267,6 +286,7 @@ public class XplNode {
         clone.value = this.value;
         clone.disabled = this.disabled;
         clone.hidden = this.hidden;
+        clone.hostComponent = this.hostComponent;
         if (deep) {
             for (XplNode child : children) {
                 clone.addChild(child.cloneNode(true));
@@ -283,13 +303,28 @@ public class XplNode {
      */
     public XplElement toXplElement() {
         XplElement el = new XplElement(tag);
-        el.setId(id);
-        el.setClassName(className);
+
+        if (id != null && !id.isEmpty()) el.setId(id);
+        if (className != null && !className.isEmpty()) el.setClassName(className);
         el.textContent = textContent;
+
+        // ─── Injeção de atributos com validação ──────────────────────────
         for (Map.Entry<String, Object> attr : attributes.entrySet()) {
-            el.setAttribute(attr.getKey(), attr.getValue());
+            String key = attr.getKey();
+            Object value = attr.getValue();
+            // Verifica se o atributo é permitido para esta tag
+            if (isAttributeValidForTag(tag, key)) {
+                el.setAttribute(key, value);
+            } else {
+                // Opcional: logar aviso (apenas em modo debug)
+                System.out.println("[Aviso] Atributo ignorado para <" + tag + ">: " + key);
+            }
         }
-        // Estilos inline (simplificado)
+
+        // ─── Eventos inline ────────────────────────────────────────────────
+        el.inlineEvents.putAll(events);
+
+        // ─── Estilos inline ────────────────────────────────────────────────
         if (!style.isEmpty()) {
             StringBuilder styleStr = new StringBuilder();
             for (Map.Entry<String, Object> entry : style.entrySet()) {
@@ -297,15 +332,24 @@ public class XplNode {
             }
             el.setAttribute("style", styleStr.toString());
         }
-        // Estado
+
+        // ==========================================================
+        // ⭐ A PONTE QUE FALTAVA: Transferir o cérebro para o Nó Real
+        // ==========================================================
+        el.hostComponent = this.hostComponent;
+        el.inlineEvents.putAll(this.events);
+        // ==========================================================
+
+        // ─── Propriedades de estado ──────────────────────────────────────
         if (value != null) el.setAttribute("value", value);
         if (disabled) el.setAttribute("disabled", "true");
         if (hidden) el.setAttribute("hidden", "true");
 
-        // Filhos
+        // ─── Filhos (recursivo) ──────────────────────────────────────────
         for (XplNode child : children) {
             el.appendChild(child.toXplElement());
         }
+
         return el;
     }
 
@@ -313,29 +357,60 @@ public class XplNode {
 
     public Map<String, Object> toXplObject() {
         Map<String, Object> xplObj = new LinkedHashMap<>();
+
+        // ─── Identificação e hierarquia ──────────────────────────────────
         xplObj.put("tag", this.tag);
         xplObj.put("id", this.id);
         xplObj.put("className", this.className);
+        xplObj.put("parentId", (this.parent != null && this.parent.id != null) ? this.parent.id : null);
+
+        // ─── Conteúdo e estado ────────────────────────────────────────────
+        xplObj.put("textContent", this.textContent != null ? this.textContent : "");
         xplObj.put("value", this.value);
         xplObj.put("disabled", this.disabled);
         xplObj.put("hidden", this.hidden);
-        xplObj.put("text", this.textContent);
-        xplObj.put("style", this.style);
-        xplObj.put("attributes", this.attributes);
-        xplObj.put("directives", this.directives);
-        xplObj.put("events", this.events);
-        xplObj.put("bindings", this.bindings);
-        xplObj.put("childCount", this.children.size());
 
-        if (this.parent != null && !this.parent.id.isEmpty()) {
-            xplObj.put("parentId", this.parent.id);
+        // ─── Mapas dinâmicos ──────────────────────────────────────────────
+        xplObj.put("attributes", new LinkedHashMap<>(this.attributes));
+        xplObj.put("style", new LinkedHashMap<>(this.style));
+        xplObj.put("directives", new LinkedHashMap<>(this.directives));
+        xplObj.put("events", new LinkedHashMap<>(this.events));
+        xplObj.put("bindings", new LinkedHashMap<>(this.bindings));
+
+        // ─── Dataset (extraído dos atributos data-*) ─────────────────────
+        Map<String, Object> dataset = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            if (entry.getKey().startsWith("data-")) {
+                dataset.put(entry.getKey().substring(5), entry.getValue());
+            }
+        }
+        xplObj.put("dataset", dataset);
+
+        // ─── Navegação (apenas referências simples, para evitar ciclos) ──
+        if (this.parent != null) {
+            xplObj.put("parentTag", this.parent.tag);
+        }
+        if (!children.isEmpty()) {
+            xplObj.put("firstChildTag", children.getFirst().tag);
+            xplObj.put("lastChildTag", children.getLast().tag);
         }
 
+        // ─── Filhos (recursivo) ───────────────────────────────────────────
         List<Map<String, Object>> xplChildren = new ArrayList<>();
         for (XplNode child : children) {
             xplChildren.add(child.toXplObject());
         }
         xplObj.put("children", xplChildren);
+        xplObj.put("childCount", children.size());
+
+        // ─── Informações adicionais (úteis para depuração) ──────────────
+        if (liveElement != null) {
+            xplObj.put("hasLiveElement", true);
+            xplObj.put("liveElementId", liveElement.getId());
+        } else {
+            xplObj.put("hasLiveElement", false);
+        }
+
         return xplObj;
     }
 
@@ -343,8 +418,38 @@ public class XplNode {
 
     @Override
     public String toString() {
-        String idStr = id.isEmpty() ? "" : " #" + id;
-        String classStr = className.isEmpty() ? "" : " ." + className.replace(" ", ".");
-        return "<" + tag + idStr + classStr + "> (" + children.size() + " filhos)";
+        // Tratamento para nós especiais
+        if ("#text".equals(tag) || "#comment".equals(tag)) {
+            return textContent != null ? textContent : "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('<').append(tag);
+
+        // Exibe todos os atributos que tenham valor definido
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value != null) {
+                String strValue = value.toString();
+                if (!strValue.isEmpty()) {
+                    sb.append(' ').append(key).append('=').append('"').append(strValue).append('"');
+                }
+            }
+        }
+
+        sb.append("> (").append(children.size()).append(" filhos)");
+        return sb.toString();
     }
+
+    // No XplNode.java
+    private boolean isAttributeValidForTag(String tag, String attrName) {
+        // 1. Atributos globais são sempre válidos
+        if (GLOBAL_ATTRIBUTES.contains(attrName)) return true;
+        // 2. Atributos data-* e aria-* são sempre válidos
+        if (attrName.startsWith("data-") || attrName.startsWith("aria-")) return true;
+        // 3. Verifica se o atributo está na lista específica da tag
+        return HtmlTagUtils.isSpecificAttribute(tag, attrName);
+    }
+
 }

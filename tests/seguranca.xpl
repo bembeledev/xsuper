@@ -12,7 +12,7 @@ implement Cofre {
     }
 
     pub fun depositar(valor: float) {
-        // PERMITIDO: A classe tem acesso ao seu próprio readonly e priv!
+        // PERMITIDO: A classe tem acesso ao seu próprio readonly e private!
         this.saldo += valor;
         println("Depositaste " + valor + " " + this.MOEDA);
     }

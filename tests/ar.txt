@@ -1,0 +1,207 @@
+FileManager
+├── .idea
+│   ├── compiler.xml
+│   ├── encodings.xml
+│   ├── jarRepositories.xml
+│   ├── misc.xml
+│   ├── uiDesigner.xml
+│   ├── vcs.xml
+│   └── workspace.xml
+├── src
+│   ├── main
+│   │   ├── java
+│   │   │   └── com
+│   │   │       └── dic
+│   │   │           └── xsuper
+│   │   │               ├── app
+│   │   │               │   └── XplorerApp.java
+│   │   │               ├── commands
+│   │   │               │   ├── standard
+│   │   │               │   │   ├── AliasCmd.java
+│   │   │               │   │   ├── AppendCmd.java
+│   │   │               │   │   ├── CatCmd.java
+│   │   │               │   │   ├── ChangeDirCmd.java
+│   │   │               │   │   ├── ChmodCmd.java
+│   │   │               │   │   ├── ClearCmd.java
+│   │   │               │   │   ├── CopyCmd.java
+│   │   │               │   │   ├── DeleteCmd.java
+│   │   │               │   │   ├── DfCmd.java
+│   │   │               │   │   ├── DiffCmd.java
+│   │   │               │   │   ├── DuCmd.java
+│   │   │               │   │   ├── EditCmd.java
+│   │   │               │   │   ├── EnvCmd.java
+│   │   │               │   │   ├── FindCmd.java
+│   │   │               │   │   ├── FindTextCmd.java
+│   │   │               │   │   ├── GrepCmd.java
+│   │   │               │   │   ├── HistoryCmd.java
+│   │   │               │   │   ├── ListCmd.java
+│   │   │               │   │   ├── LnCmd.java
+│   │   │               │   │   ├── MakeDirCmd.java
+│   │   │               │   │   ├── MoveCmd.java
+│   │   │               │   │   ├── OpenCmd.java
+│   │   │               │   │   ├── PropsCmd.java
+│   │   │               │   │   ├── PwdCmd.java
+│   │   │               │   │   ├── ReadCmd.java
+│   │   │               │   │   ├── RenameCmd.java
+│   │   │               │   │   ├── ReplaceCmd.java
+│   │   │               │   │   ├── SearchCmd.java
+│   │   │               │   │   ├── SortCmd.java
+│   │   │               │   │   ├── SystemCmd.java
+│   │   │               │   │   ├── TailCmd.java
+│   │   │               │   │   ├── TouchCmd.java
+│   │   │               │   │   ├── TreeCmd.java
+│   │   │               │   │   ├── WcCmd.java
+│   │   │               │   │   └── WriteCmd.java
+│   │   │               │   ├── xsuper
+│   │   │               │   │   ├── CloseCmd.java
+│   │   │               │   │   ├── CompressCmd.java
+│   │   │               │   │   ├── ConvertCmd.java
+│   │   │               │   │   ├── CryptCmd.java
+│   │   │               │   │   ├── EncryptCmd.java
+│   │   │               │   │   ├── KillCmd.java
+│   │   │               │   │   ├── PingCmd.java
+│   │   │               │   │   ├── ProcessCmd.java
+│   │   │               │   │   ├── PsCmd.java
+│   │   │               │   │   ├── SearchTextCmd.java
+│   │   │               │   │   ├── TimeCmd.java
+│   │   │               │   │   ├── UnzipCmd.java
+│   │   │               │   │   ├── WatchCmd.java
+│   │   │               │   │   └── ZipCmd.java
+│   │   │               │   └── commands.java
+│   │   │               ├── controller
+│   │   │               │   ├── XFileController.java
+│   │   │               │   └── XFileProperties.java
+│   │   │               ├── core
+│   │   │               │   ├── Command.java
+│   │   │               │   ├── CommandRegistry.java
+│   │   │               │   └── SessionManager.java
+│   │   │               ├── model
+│   │   │               │   ├── FileHelper.java
+│   │   │               │   ├── XFile.java
+│   │   │               │   ├── XFileIO.java
+│   │   │               │   ├── XFileReader.java
+│   │   │               │   ├── XFileRun.java
+│   │   │               │   └── XFileWriter.java
+│   │   │               ├── services
+│   │   │               │   ├── DataFormatService.java
+│   │   │               │   ├── FileSystemService.java
+│   │   │               │   ├── ProcessService.java
+│   │   │               │   └── SecurityService.java
+│   │   │               ├── ui
+│   │   │               │   └── FileExplorerCLI.java
+│   │   │               ├── utils
+│   │   │               │   └── ConsoleTheme.java
+│   │   │               └── Main.java
+│   │   └── resources
+│   └── test
+│       └── java
+├── target
+│   ├── classes
+│   │   └── com
+│   │       └── dic
+│   │           └── xsuper
+│   │               ├── app
+│   │               │   └── XplorerApp.class
+│   │               ├── commands
+│   │               │   ├── standard
+│   │               │   │   ├── AliasCmd.class
+│   │               │   │   ├── AppendCmd.class
+│   │               │   │   ├── CatCmd.class
+│   │               │   │   ├── ChangeDirCmd.class
+│   │               │   │   ├── ChmodCmd.class
+│   │               │   │   ├── ClearCmd.class
+│   │               │   │   ├── CopyCmd.class
+│   │               │   │   ├── DeleteCmd.class
+│   │               │   │   ├── DfCmd.class
+│   │               │   │   ├── DiffCmd.class
+│   │               │   │   ├── DuCmd$1.class
+│   │               │   │   ├── DuCmd.class
+│   │               │   │   ├── EditCmd.class
+│   │               │   │   ├── EnvCmd.class
+│   │               │   │   ├── FindCmd$1.class
+│   │               │   │   ├── FindCmd.class
+│   │               │   │   ├── FindTextCmd.class
+│   │               │   │   ├── GrepCmd.class
+│   │               │   │   ├── HistoryCmd.class
+│   │               │   │   ├── ListCmd.class
+│   │               │   │   ├── LnCmd.class
+│   │               │   │   ├── MakeDirCmd.class
+│   │               │   │   ├── MoveCmd.class
+│   │               │   │   ├── OpenCmd.class
+│   │               │   │   ├── PropsCmd.class
+│   │               │   │   ├── PwdCmd.class
+│   │               │   │   ├── ReadCmd.class
+│   │               │   │   ├── RenameCmd.class
+│   │               │   │   ├── ReplaceCmd.class
+│   │               │   │   ├── SearchCmd.class
+│   │               │   │   ├── SortCmd.class
+│   │               │   │   ├── SystemCmd.class
+│   │               │   │   ├── TailCmd.class
+│   │               │   │   ├── TouchCmd.class
+│   │               │   │   ├── TreeCmd.class
+│   │               │   │   ├── WcCmd.class
+│   │               │   │   └── WriteCmd.class
+│   │               │   ├── xsuper
+│   │               │   │   ├── CloseCmd.class
+│   │               │   │   ├── CompressCmd.class
+│   │               │   │   ├── ConvertCmd.class
+│   │               │   │   ├── CryptCmd.class
+│   │               │   │   ├── EncryptCmd.class
+│   │               │   │   ├── KillCmd.class
+│   │               │   │   ├── PingCmd.class
+│   │               │   │   ├── ProcessCmd.class
+│   │               │   │   ├── PsCmd.class
+│   │               │   │   ├── SearchTextCmd.class
+│   │               │   │   ├── TimeCmd.class
+│   │               │   │   ├── UnzipCmd.class
+│   │               │   │   ├── WatchCmd.class
+│   │               │   │   ├── ZipCmd$1.class
+│   │               │   │   └── ZipCmd.class
+│   │               │   └── commands.class
+│   │               ├── controller
+│   │               │   ├── XFileController$1.class
+│   │               │   ├── XFileController$FileInfo.class
+│   │               │   ├── XFileController.class
+│   │               │   └── XFileProperties.class
+│   │               ├── core
+│   │               │   ├── Command.class
+│   │               │   ├── CommandRegistry$AnsiFilterOutputStream.class
+│   │               │   ├── CommandRegistry.class
+│   │               │   └── SessionManager.class
+│   │               ├── model
+│   │               │   ├── FileHelper.class
+│   │               │   ├── XFile.class
+│   │               │   ├── XFileIO.class
+│   │               │   ├── XFileReader$LineHandler.class
+│   │               │   ├── XFileReader.class
+│   │               │   ├── XFileRun.class
+│   │               │   └── XFileWriter.class
+│   │               ├── services
+│   │               │   ├── DataFormatService.class
+│   │               │   ├── FileSystemService.class
+│   │               │   ├── ProcessService.class
+│   │               │   └── SecurityService.class
+│   │               ├── ui
+│   │               │   └── FileExplorerCLI.class
+│   │               ├── utils
+│   │               │   └── ConsoleTheme.class
+│   │               └── Main.class
+│   ├── generated-sources
+│   │   └── annotations
+│   └── maven-status
+│       └── maven-compiler-plugin
+│           └── compile
+│               └── default-compile
+│                   └── inputFiles.lst
+├── .gitignore
+├── 27 a 34.md
+├── ar.txt
+├── dados_finais.zip
+├── lista_ordenada
+├── lista_ordenada.txt
+├── out.json
+├── output.json
+├── pom.xml
+├── relatorio.txt
+├── saida.csv
+└── teste.super

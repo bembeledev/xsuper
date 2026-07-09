@@ -4,26 +4,51 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): arquitetura de concorrência massiva, isolamento de escopo e tipagem anónima&quot; -m &quot;- Refatoração do `Environment` para `ConcurrentHashMap`, garantindo Thread-Safety absoluto na memória global.&#10;- Implementação do `Interpreter.fork()` para resolver Scope Leaks (Data Races), dando a cada Thread a sua própria pilha de execução partilhando a memória estática.&#10;- Criação dos módulos `NativeMutex` (trancas) e `NativeChannel` (mensageria mpsc) para orquestração e Dataflow entre threads.&#10;- Refatoração do `NativeTask` acoplando botões de cancelamento diretos à `AtomicReference` do ExecutorService, eliminando 'Zombie Threads'.&#10;- Aperfeiçoamento do `Parser` com Lookahead resiliente via `advance()`, permitindo Tipagem Estrita em Arrow Functions (`(): tipo =&gt; { ... }`) ignorando ambiguidades com Keywords.&#10;- Adição da injeção letal e verificação de pulsação (`Thread.currentThread().isInterrupted()`) no ciclo de vida principal da AST (`execute()`).">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplNode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEventListener.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlLexer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlToken.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTokenType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/html.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplMethodGroup.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/TestXplCss.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssParser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssToken.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssTokenType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/css.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/html01.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/core/document.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/core/render.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/main.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/tags/div.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/tags/element.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/tags/test.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/27 a 34.md" beforeDir="false" afterPath="$PROJECT_DIR$/27 a 34.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/XplNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/events/XplEvent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEventListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEventListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlLexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/html.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/html.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/seguranca.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/seguranca.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/teste_io.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/teste_io.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/throws.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/tipos.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tipos.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,30 +82,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Application.Main.executor": "Run",
-    "Application.TestHeadlessEngine.executor": "Run",
-    "Application.TestSuperHTML.executor": "Run",
-    "Application.TestXPL.executor": "Run",
-    "Application.com.dic.xsuper.Main.executor": "Run",
-    "Maven.xsuper-xplorer [clean].executor": "Run",
-    "Maven.xsuper-xplorer [install].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "jdk.selected.JAVA_MODULE": "21",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/ferna/Documents/GitHub/FileManager",
-    "onboarding.tips.debug.path": "C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.fileTypes"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestHeadlessEngine.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestSuperHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXplCss.executor&quot;: &quot;Run&quot;,
+    &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
       <recent name="com.dic.xsuper.lang.ui.document" />
@@ -90,25 +116,13 @@
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\lib" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests\src" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.TestHeadlessEngine">
-    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.Main" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Application.com.dic.xsuper.Main">
     <configuration name="TestHeadlessEngine" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.tests.TestHeadlessEngine" />
       <module name="FileManager" />
@@ -127,7 +141,7 @@
       <module name="FileManager" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.lang.ui.document.*" />
+          <option name="PATTERN" value="com.dic.xsuper.lang.ui.events.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -141,6 +155,19 @@
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.dic.xsuper.lang.helpers.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestXplCss" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.css.TestXplCss" />
+      <module name="FileManager" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.lang.ui.css.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -163,11 +190,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.TestHeadlessEngine" />
         <item itemvalue="Application.com.dic.xsuper.Main" />
+        <item itemvalue="Application.TestXplCss" />
+        <item itemvalue="Application.TestHeadlessEngine" />
         <item itemvalue="Application.TestSuperHTML" />
         <item itemvalue="Application.TestXPL" />
-        <item itemvalue="Application.Main" />
       </list>
     </recent_temporary>
   </component>
@@ -404,7 +431,23 @@
       <option name="project" value="LOCAL" />
       <updated>1782582630722</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)">
+      <option name="closed" value="true" />
+      <created>1782681178091</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1782681178091</updated>
+    </task>
+    <task id="LOCAL-00030" summary="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)">
+      <option name="closed" value="true" />
+      <created>1782681202592</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1782681202592</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -422,7 +465,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings." />
     <MESSAGE value="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base." />
     <MESSAGE value="feat(poo): implementar suporte à palavra-chave 'super' para herança e polimorfismo&#10;&#10;- Adiciona reconhecimento do token `SUPER` no Lexer e suporte sintático para `super.metodo()` no Parser (`Expr.Super`).&#10;- Implementa rastreamento genético (`getOwnerOfMethod`) no `XPLModel` para identificar a classe exata de origem de cada método.&#10;- Modifica `XplFunction`, `XplInstance` e `XplClass` para injetarem e preservarem o contexto da classe atual (`__current_model`) em tempo de execução.&#10;- Adiciona `visitSuperExpr` no Interpretador para resolver e invocar métodos da superclasse dinamicamente, mantendo o escopo e encapsulamento da instância atual (`this`).&#10;- Habilita a reutilização de construtores (`init`) e delegação de comportamentos entre classes pai e filho, evitando duplicação de lógica." />
     <MESSAGE value="feat(poo): implementar estado estático e inicialização limpa com bloco 'default'&#10;&#10;- Adiciona suporte no Lexer e Parser para as palavras-chave `static` e `default`.&#10;- Permite a inicialização limpa de estado padrão e estático dentro do `implement`, mantendo a pureza estrutural de tipos no `declare`.&#10;- Atualiza `XPLModel` para atuar como um Singleton global que gere memória viva através de `staticFields` e `defaultInstanceFields`.&#10;- Modifica a fábrica `XplInstance` para popular automaticamente novas instâncias utilizando os valores de fallback do bloco `default`.&#10;- Altera o Interpretador (`visitGetExpr` e `visitSetExpr`) para suportar a resolução, leitura, escrita e invocação de propriedades e métodos estáticos sem necessidade de instanciação (ex: `Classe.metodo()`)." />
@@ -447,6 +489,7 @@
     <MESSAGE value="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica." />
     <MESSAGE value="feat: implementação do ecossistema de funções nativas (I/O, Math, Regex e Rede)&quot; -m &quot;- Criação do pacote `com.dic.xsuper.lang.natives` para isolamento de chamadas de sistema.&#10;- Implementação da classe `NativeConsole` para leitura e manipulação robusta de I/O via terminal (read/prompt).&#10;- Implementação da classe `NativeFileSystem` para operações atómicas de disco (I/O de ficheiros, metadados e listagem).&#10;- Implementação da classe `NativeMath` encapsulando operações matemáticas de alta precisão e algoritmos de utilidade (clamp, lerp).&#10;- Implementação da classe `NativeRegex` com sistema de cache estático (`patternCache`) para otimização de performance em varrimento de strings.&#10;- Implementação dos módulos `NativeHttp`, `NativeUrl` e `NativeNetwork` suportando requisições REST com retorno de estruturas bivalentes (Map) e verificação de diagnóstico de rede (ping/dns).&#10;- Adicionado o mapa global de constantes imutáveis `HTTPREQUEST` no núcleo do interpretador." />
     <MESSAGE value="feat(core): arquitetura de concorrência massiva, isolamento de escopo e tipagem anónima&quot; -m &quot;- Refatoração do `Environment` para `ConcurrentHashMap`, garantindo Thread-Safety absoluto na memória global.&#10;- Implementação do `Interpreter.fork()` para resolver Scope Leaks (Data Races), dando a cada Thread a sua própria pilha de execução partilhando a memória estática.&#10;- Criação dos módulos `NativeMutex` (trancas) e `NativeChannel` (mensageria mpsc) para orquestração e Dataflow entre threads.&#10;- Refatoração do `NativeTask` acoplando botões de cancelamento diretos à `AtomicReference` do ExecutorService, eliminando 'Zombie Threads'.&#10;- Aperfeiçoamento do `Parser` com Lookahead resiliente via `advance()`, permitindo Tipagem Estrita em Arrow Functions (`(): tipo =&gt; { ... }`) ignorando ambiguidades com Keywords.&#10;- Adição da injeção letal e verificação de pulsação (`Thread.currentThread().isInterrupted()`) no ciclo de vida principal da AST (`execute()`)." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(core): arquitetura de concorrência massiva, isolamento de escopo e tipagem anónima&quot; -m &quot;- Refatoração do `Environment` para `ConcurrentHashMap`, garantindo Thread-Safety absoluto na memória global.&#10;- Implementação do `Interpreter.fork()` para resolver Scope Leaks (Data Races), dando a cada Thread a sua própria pilha de execução partilhando a memória estática.&#10;- Criação dos módulos `NativeMutex` (trancas) e `NativeChannel` (mensageria mpsc) para orquestração e Dataflow entre threads.&#10;- Refatoração do `NativeTask` acoplando botões de cancelamento diretos à `AtomicReference` do ExecutorService, eliminando 'Zombie Threads'.&#10;- Aperfeiçoamento do `Parser` com Lookahead resiliente via `advance()`, permitindo Tipagem Estrita em Arrow Functions (`(): tipo =&gt; { ... }`) ignorando ambiguidades com Keywords.&#10;- Adição da injeção letal e verificação de pulsação (`Thread.currentThread().isInterrupted()`) no ciclo de vida principal da AST (`execute()`)." />
+    <MESSAGE value="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)" />
   </component>
 </project>

@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.ui;
 
+import com.dic.xsuper.lang.ui.html.XplNode;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Button;

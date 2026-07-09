@@ -1,5 +1,7 @@
 package com.dic.xsuper.lang.ui.document;
 
+import com.dic.xsuper.lang.ui.events.XplEvent;
+
 /**
  * Interface funcional para ouvintes de eventos.
  * Equivalente a EventListener no DOM (e ao tipo função em JavaScript).

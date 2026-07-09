@@ -20,7 +20,7 @@ public class NativeChannel {
                 chan.fields.put("send", new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter i, List<com.dic.xsuper.lang.Expr.CallArg> a) {
-                        Object val = i.evaluate(a.get(0).expression);
+                        Object val = i.evaluate(a.getFirst().expression);
                         queue.offer(val);
                         return true;
                     }

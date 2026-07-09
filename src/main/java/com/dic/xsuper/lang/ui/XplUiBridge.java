@@ -1,5 +1,7 @@
 package com.dic.xsuper.lang.ui;
 
+import com.dic.xsuper.lang.ui.html.XplNode;
+
 /**
  * A Ponte de Comunicação: O contrato agnóstico entre a SuperUiEngine (Cérebro)
  * e o Renderizador Gráfico (Músculos - ex: JavaFX).

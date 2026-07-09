@@ -2,7 +2,7 @@ println("=========================================");
 println(" 🖥️ SISTEMA DE REGISTO DE UTILIZADORES 🖥️ ");
 println("=========================================");
 
-// 1. Usar o Prompt direto
+// 1. Usar o Prompt directo
 var nome = prompt("Qual é o teu nome Mestre? ");
 
 // 2. Usar o Prompt com conversão automática de tipo

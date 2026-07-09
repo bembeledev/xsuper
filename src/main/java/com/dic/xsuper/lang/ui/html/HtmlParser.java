@@ -1,25 +1,30 @@
 package com.dic.xsuper.lang.ui.html;
-import com.dic.xsuper.lang.ui.XplNode;
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.dic.xsuper.lang.ui.html.HtmlTagUtils.EMPTY_TAGS;
 
 public class HtmlParser {
     private final List<HtmlToken> tokens;
     private int current = 0;
+
+    // ⭐ ESTADO DO DOCUMENTO ⭐
+    private boolean htmlFound = false;
+    private boolean headFound = false;
+    private boolean bodyFound = false;
 
     public HtmlParser(List<HtmlToken> tokens) {
         this.tokens = tokens;
     }
 
     // O ponto de entrada. Retorna o nó RAIZ (ex: um <body> ou <main> invisível que guarda tudo)
+    // O ponto de entrada. Retorna apenas um Fragmento Invisível (<root>)
     public XplNode parse() {
         XplNode root = new XplNode("root");
         while (!isAtEnd()) {
-            if (check(HtmlTokenType.TEXT)) {
-                root.textContent += advance().lexeme;
-            } else if (check(HtmlTokenType.LT)) {
-                root.addChild(parseElement());
-            } else {
-                advance(); // Ignora tokens perdidos no nível superior
+            XplNode child = parseNode(); // Usa o teu excelente orquestrador!
+            if (child != null) {
+                root.addChild(child);
             }
         }
         return root;
@@ -30,7 +35,30 @@ public class HtmlParser {
         consume(HtmlTokenType.LT, "Esperado '<' para iniciar a tag.");
 
         HtmlToken tagToken = consume(HtmlTokenType.IDENTIFIER, "Esperado nome da tag após '<'.");
-        XplNode node = new XplNode(tagToken.lexeme);
+        String tagName = tagToken.lexeme;
+        XplNode node;
+
+        // ⭐ LÓGICA DE VALIDAÇÃO ESTRICTA ⭐
+        if (tagName.equals("html")) {
+            if (htmlFound) throw new RuntimeException("Erro: Tag <html> já foi declarada neste documento.");
+            htmlFound = true;
+        } else if (tagName.equals("head")) {
+            if (headFound) throw new RuntimeException("Erro: Tag <head> já foi declarada neste documento.");
+            headFound = true;
+        } else if (tagName.equals("body")) {
+            if (bodyFound) throw new RuntimeException("Erro: Tag <body> já foi declarada neste documento.");
+            bodyFound = true;
+        }
+
+        if (HtmlTagUtils.isNativeTag(tagName)) {
+            node = new XplNode(tagName);
+        } else if (HtmlTagUtils.isValidCustomTagName(tagName)) {
+            node = new XplNode("@component");
+            node.attributes.put("componentName", tagName);
+        } else {
+            throw new RuntimeException("Tag personalizada inválida: '" + tagName +
+                    "'. Deve usar PascalCase (ex: MeuBotao) ou kebab-case (ex: meu-botao).");
+        }
 
         // 1. EXTRAIR PROPRIEDADES (Atributos, Eventos, Bindings)
         while (!check(HtmlTokenType.GT) && !check(HtmlTokenType.SLASH) && !isAtEnd()) {
@@ -78,6 +106,8 @@ public class HtmlParser {
 
         consume(HtmlTokenType.GT, "Esperado '>' para fechar a abertura da tag.");
 
+        List<XplNode> children = new ArrayList<>();
+
         // 3. LER CONTEÚDO INTERNO E FILHOS (RECURSÃO ATUALIZADA!)
         while (!isAtEnd()) {
             // Se encontrámos '</', significa que a NOSSA tag está a fechar!
@@ -87,18 +117,41 @@ public class HtmlParser {
 
             // ⭐ CHAMAMOS O ORQUESTRADOR EM VEZ DE APENAS PARSE ELEMENT ⭐
             XplNode child = parseNode();
-            if (child != null && (!child.tag.equals("text") || !child.textContent.isEmpty())) {
+            if (child != null && (!child.tag.equals("#text") || (child.textContent != null && !child.textContent.isEmpty()))) {
+                children.add(child);
+            }
+        }
+        // ⭐ Validar se a tag permite filhos
+        if (EMPTY_TAGS.contains(node.tag)) {
+            if (!children.isEmpty()) {
+                System.err.println("[Aviso] A tag <" + node.tag + "> não suporta elementos filhos. Os filhos serão ignorados.");
+                // Não adicionar os filhos ao nó
+            }
+        } else {
+            // Adicionar filhos ao nó
+            for (XplNode child : children) {
                 node.addChild(child);
             }
         }
 
-        // 4. FECHAR A TAG (Ex: </div>)
+        // Para tags que são sempre vazias, ignorar qualquer texto
+        if (EMPTY_TAGS.contains(node.tag) && !node.textContent.isEmpty()) {
+            System.err.println("[Aviso] A tag <" + node.tag + "> não suporta texto. O texto '" + node.textContent + "' será ignorado.");
+            node.textContent = "";
+        }
+
+        // 4. FECHAR A TAG (Ex: </div> ou </Element>)
         consume(HtmlTokenType.LT, "Esperado '<' para fechar a tag.");
         consume(HtmlTokenType.SLASH, "Esperado '/' no fecho da tag.");
         HtmlToken closeTag = consume(HtmlTokenType.IDENTIFIER, "Esperado nome da tag no fecho.");
 
-        if (!closeTag.lexeme.equals(node.tag)) {
-            throw new RuntimeException("Erro na linha " + closeTag.line + ": Fecho de tag incorreto. Esperado '</" + node.tag + ">', mas encontrou '</" + closeTag.lexeme + ">'.");
+        // ⭐ A CORREÇÃO DE MESTRE: Qual é o verdadeiro nome esperado? ⭐
+        String expectedCloseTag = node.tag.equals("@component") ?
+                node.attributes.get("componentName").toString() :
+                node.tag;
+
+        if (!closeTag.lexeme.equals(expectedCloseTag)) {
+            throw new RuntimeException("Erro na linha " + closeTag.line + ": Fecho de tag incorreto. Esperado '</" + expectedCloseTag + ">', mas encontrou '</" + closeTag.lexeme + ">'.");
         }
 
         consume(HtmlTokenType.GT, "Esperado '>' para finalizar a tag.");
@@ -106,31 +159,75 @@ public class HtmlParser {
         return node;
     }
 
-    // =====================================================================
-    // ⭐ O ORQUESTRADOR CENTRAL (Substitui o antigo conteúdo do while)
-    // =====================================================================
 
-    // 2. O ORQUESTRADOR CENTRAL (A triagem que faltava)
+    // =====================================================================
+    // ⭐ O ORQUESTRADOR CENTRAL (A triagem inteligente)
+    // =====================================================================
     private XplNode parseNode() {
         if (isAtEnd()) return null;
 
-        // Triagem baseada no tipo de token
+        // 1. É uma diretiva estrutural?
         if (check(HtmlTokenType.AT_IF)) return parseIfBlock();
         if (check(HtmlTokenType.AT_FOR)) return parseForBlock();
         if (check(HtmlTokenType.AT_SWITCH)) return parseSwitchBlock();
         if (check(HtmlTokenType.AT_MATCH)) return parseMatchBlock();
-        if (check(HtmlTokenType.LT)) return parseElement();
 
-        // Se for texto ou parênteses isolados (restos de condições do @if)
-        if (check(HtmlTokenType.TEXT) || check(HtmlTokenType.LPAREN) || check(HtmlTokenType.RPAREN)) {
-            XplNode textNode = new XplNode("text");
-            textNode.textContent = advance().lexeme;
-            return textNode;
+        // 2. É uma nova Tag HTML? (ex: <div>)
+        if (check(HtmlTokenType.LT)) {
+            // Se for o fecho de uma tag (ex: </div>), saímos para o pai lidar com isso!
+            if (checkNext(HtmlTokenType.SLASH)) {
+                return null;
+            }
+            return parseElement();
         }
 
-        // Se não soubermos o que é, avançamos para não bloquear
-        advance();
-        return null;
+        // 3. É um '}' solitário a fechar um bloco @for ou @if?
+        if (check(HtmlTokenType.RBRACE)) {
+            return null; // Deixa o parseBlockContent fechar o bloco
+        }
+
+        // 4. Se não é nada do que está acima, SÓ PODE SER TEXTO (incluindo {{ bindings }})!
+        return parseTextNode();
+    }
+
+    // =====================================================================
+    // 📝 O CAPTURADOR DE TEXTO (Apanha tudo até encontrar uma Tag ou Diretiva)
+    // =====================================================================
+    private XplNode parseTextNode() {
+        XplNode textNode = new XplNode("#text");
+        StringBuilder sb = new StringBuilder();
+
+        // Consome tokens até bater numa parede (Tag, Diretiva ou Fim de Bloco)
+        while (!isAtEnd()) {
+            HtmlTokenType type = peek().type;
+
+            // Bateu numa parede? (Início de tag ou diretiva)
+            if (type == HtmlTokenType.LT || type == HtmlTokenType.AT_IF ||
+                    type == HtmlTokenType.AT_FOR || type == HtmlTokenType.AT_SWITCH ||
+                    type == HtmlTokenType.AT_MATCH || type == HtmlTokenType.AT_EMPTY ||
+                    type == HtmlTokenType.AT_ELSE || type == HtmlTokenType.AT_ELSEIF) {
+                break;
+            }
+
+            // O nosso Lexer pode ver as chavetas como blocos. Temos de tratar disso:
+            if (type == HtmlTokenType.RBRACE) {
+                // Se o próximo também é '}', então é um fecho de binding '}}'!
+                if (checkNext(HtmlTokenType.RBRACE)) {
+                    sb.append(advance().lexeme);
+                    sb.append(advance().lexeme);
+                    continue; // Continua a ler o resto do texto
+                } else {
+                    // É um '}' solitário. Significa que um bloco @for ou @if acabou.
+                    break;
+                }
+            }
+
+            // Vai acumulando o texto (identificadores, espaços, '{', etc)
+            sb.append(advance().lexeme);
+        }
+
+        textNode.textContent = sb.toString().trim();
+        return textNode;
     }
 
     // =====================================================================
@@ -184,27 +281,47 @@ public class HtmlParser {
     // =====================================================================
     // 🧬 BLOCO ESTRUTURAL 1: O @if (Padrão Angular 17+)
     // =====================================================================
+    // =====================================================================
+    // 🧬 BLOCO ESTRUTURAL 1: O @if (Com suporte a @else if e @else)
+    // =====================================================================
     private XplNode parseIfBlock() {
         consume(HtmlTokenType.AT_IF, "Esperado @if.");
         consume(HtmlTokenType.LPAREN, "Esperado '(' após @if.");
 
-        // Captura a condição respeitando parênteses aninhados
-        StringBuilder condition = new StringBuilder();
-        int depth = 1;
-        while (depth > 0 && !isAtEnd()) {
-            if (check(HtmlTokenType.RPAREN) && depth == 1) break;
-            HtmlToken token = advance();
-            if (token.type == HtmlTokenType.LPAREN) depth++;
-            else if (token.type == HtmlTokenType.RPAREN) depth--;
-            condition.append(token.lexeme);
-        }
+        String condition = captureExpression();
         consume(HtmlTokenType.RPAREN, "Esperado ')' após a condição do @if.");
 
         XplNode ifNode = new XplNode("@if");
-        ifNode.attributes.put("condition", condition.toString().trim());
+        ifNode.attributes.put("condition", condition);
 
-        // ⭐ CORREÇÃO: O helper trata das chavetas { e } sozinho!
+        // Parse do bloco { ... } principal
         parseBlockContent(ifNode);
+
+        // ⭐ NOVO: Suporte encadeado para @else if e @else ⭐
+        while (check(HtmlTokenType.AT_ELSE) || check(HtmlTokenType.AT_ELSEIF)) {
+
+            // Se for @else if (ou equivalente no teu lexer)
+            if (check(HtmlTokenType.AT_ELSEIF)) {
+                consume(HtmlTokenType.AT_ELSEIF, "Esperado @else if.");
+                consume(HtmlTokenType.LPAREN, "Esperado '('.");
+                String elseIfCond = captureExpression();
+                consume(HtmlTokenType.RPAREN, "Esperado ')'.");
+
+                XplNode elseIfNode = new XplNode("@elseif");
+                elseIfNode.attributes.put("condition", elseIfCond);
+                parseBlockContent(elseIfNode);
+                ifNode.addChild(elseIfNode); // Guarda dentro do nó IF principal
+            }
+            // Se for apenas @else
+            else if (check(HtmlTokenType.AT_ELSE)) {
+                consume(HtmlTokenType.AT_ELSE, "Esperado @else.");
+
+                XplNode elseNode = new XplNode("@else");
+                parseBlockContent(elseNode);
+                ifNode.addChild(elseNode); // Guarda dentro do nó IF principal
+                break; // O @else simples fecha obrigatoriamente a cadeia!
+            }
+        }
 
         return ifNode;
     }
@@ -343,4 +460,6 @@ public class HtmlParser {
         if (check(type)) return advance();
         throw new RuntimeException("Erro Lexical (Linha " + peek().line + "): " + message);
     }
+
+
 }

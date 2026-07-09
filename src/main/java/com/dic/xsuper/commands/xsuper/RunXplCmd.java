@@ -7,6 +7,7 @@ import com.dic.xsuper.lang.Parser;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.Token;
 import com.dic.xsuper.lang.Stmt;
+import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.nio.file.Files;
@@ -74,6 +75,25 @@ public class RunXplCmd implements Command {
             } else {
                 System.out.println(ConsoleTheme.TEXT + ">> 5. A iniciar Interpretador..." + ConsoleTheme.RESET);
                 Interpreter interpreter = new Interpreter(this.registry, currentDirectory);
+
+                // ─── ADICIONA ESTAS LINHAS ──────────────────────────────────────────────
+                // 2. Cria uma ponte silenciosa (Headless Bridge) para o terminal não crashar
+                com.dic.xsuper.lang.ui.XplUiBridge headlessBridge = new com.dic.xsuper.lang.ui.XplUiBridge() {
+                    @Override public void renderView(XplNode root) {}
+                    @Override public void updateProperty(String id, String prop, Object val) {
+                        System.out.println("   🎨 [Terminal UI] " + id + " mudou " + prop + " para " + val);
+                    }
+                    @Override public void setEngineCallback(EngineCallback callback) {}
+                    @Override public void reportError(String message) {
+                        System.err.println("Erro UI: " + message);
+                    }
+                };
+
+                // 3. Instancia a Engine passando o interpretador que vai correr o ficheiro.
+                // Isto vai automaticamente injetar '__ui_engine', 'document' e 'ui' nas globais!
+                                com.dic.xsuper.lang.ui.SuperUiEngine uiEngine = new com.dic.xsuper.lang.ui.SuperUiEngine(interpreter, headlessBridge);
+                // ────────────────────────────────────────────────────────────────────────
+
                 interpreter.interpret(statements);
                 System.out.println(ConsoleTheme.SUCCESS + ">> 6. Execução concluída com sucesso!" + ConsoleTheme.RESET);
                 return interpreter.currentDirectory;

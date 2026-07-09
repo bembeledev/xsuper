@@ -8,6 +8,7 @@ import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.poo.XplInterface;
 import com.dic.xsuper.lang.poo.relection.*;
+import com.dic.xsuper.lang.ui.document.XplNativeObject;
 import com.dic.xsuper.utils.ConsoleTheme;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -26,7 +27,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Environment environment = globals;
     // ⭐ O NOSSO REGISTRY GLOBAL ⭐
     // Guarda tanto os modelos-base (Declare) quanto as variantes (Implement as)
-    private Map<String, XPLModel> registry_model = new HashMap<>();
+    public Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
     // =========================================================================
@@ -96,11 +97,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
 
                 // ⭐ 1. O FOGÃO: Cozinhamos os nós da AST transformando-os em matéria real!
-                java.util.List<Object> argsCozinhados = new java.util.ArrayList<>();
-                for (Expr.CallArg arg : arguments) {
+                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter,arguments);
+                /*for (Expr.CallArg arg : arguments) {
                     // É ESTA INVOCACÃO QUE FAZ A SOMA DO "Nome: " + m.nome ACONTECER:
                     argsCozinhados.add(interpreter.evaluate(arg.expression));
-                }
+                }*/
 
                 if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
                     throw new RuntimeException("println espera 1 ou 2 argumentos.");
@@ -124,16 +125,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             @Override
             public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
 
-                java.util.List<Object> argsCozinhados = new java.util.ArrayList<>();
-                for (Expr.CallArg arg : arguments) {
+                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter,arguments);
+                /*for (Expr.CallArg arg : arguments) {
                     argsCozinhados.add(interpreter.evaluate(arg.expression));
-                }
-
+                }*/
                 if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
                     throw new RuntimeException("print espera 1 ou 2 argumentos.");
                 }
 
-                String texto = interpreter.stringify(argsCozinhados.get(0));
+                String texto = interpreter.stringify(argsCozinhados.getFirst());
                 System.out.print(texto);
                 System.out.flush();
                 return null;
@@ -295,6 +295,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         native_values();
 
+        xpluiengine();
+
         //  funções nativas nativo
         com.dic.xsuper.lang.natives.NativeConsole.register(this);
         com.dic.xsuper.lang.natives.NativeFileSystem.register(this);
@@ -418,6 +420,47 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         this.registry_model.put("Error", baseErrorModel);
         this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
+    }
+
+    private void xpluiengine() {
+        // =========================================================================
+        // ⭐ O GÉNESIS DA CLASSE 'XplElement' NATIVA (Pai dos Componentes) ⭐
+        // =========================================================================
+        XPLModel baseElementModel = new XPLModel("XplElement", null);
+        baseElementModel.hasBaseImplementation = true; // É nativo, não precisa de código XPL!
+
+        // Criamos os tokens de visibilidade para construir a AST nativa
+        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
+
+        // (Opcional) Podemos injetar propriedades nativas base que todos os elementos terão.
+        // Exemplo: 'pub id: string'
+        Token idToken = new Token(TokenType.IDENTIFIER, "id", null, 0, 0);
+        baseElementModel.addField(new Stmt.FieldDecl(
+                pubToken,
+                false, false, false,
+                idToken,
+                new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0))
+        ));
+
+        // 1. Registar o Modelo na AST para o Resolver / Type-Checker aprovar o 'extends'
+        this.registry_model.put("XplElement", baseElementModel);
+
+        // 2. Registar a Classe na memória Runtime para permitir instanciar e herdar
+        this.environment.defineConst("XplElement", new XplClass(baseElementModel, this.environment));
+
+
+        // =========================================================================
+        // ⭐ A INJEÇÃO DO OBJETO GLOBAL '__ui_engine' ⭐
+        // =========================================================================
+        // Precisamos que o __ui_engine exista no compilador para não dar "Variável indefinida"
+
+        // Se tens uma classe wrapper nativa em Java para o teu UI Engine (que interceta o loadView),
+        // tu injetas a instância dela aqui. Exemplo genérico:
+
+        // Object nativeUiEngineInstance = ... (a tua instância do SuperUiEngine ou wrapper XplInstance)
+        // this.environment.defineConst("__ui_engine", nativeUiEngineInstance);
+
+        // Nota: O compilador só precisa que a variável exista no environment global!
     }
 
 
@@ -2035,7 +2078,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         };
 
         // 2. Incrementa o valor
-        Object newValue = null;
+        Object newValue;
         if (currentValue instanceof Double) {
             double val = (double) currentValue;
             newValue = (expr.operator.type == TokenType.PLUS_PLUS) ? val + 1.0 : val - 1.0;
@@ -2145,6 +2188,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         // ---------------------------------------------------------------------
 
+
+
+        // =========================================================================
+        // ⭐ A PONTE DINÂMICA NATIVA (A MÁGICA DOS MÉTODOS) ⭐
+        // =========================================================================
+
+
+
+
+
+        if (object instanceof com.dic.xsuper.lang.ui.document.XplNativeObject nativeObj) {
+
+            // 1. Tenta ler uma propriedade direta (ex: document.body)
+            Object propValue = nativeObj.getProperty(expr.name.lexeme);
+            if (propValue != null) {
+                return propValue;
+            }
+
+        }
+
         // 2. É uma Lista (Array)? Delega para ArrayMethods
         if (object instanceof List) {
             try {
@@ -2217,6 +2280,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Verificamos de forma segura se a propriedade oculta existe e é verdadeira
             if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
 
+
+                // 🚀0. INJEÇÃO NATIVA: O Método toObject() (Apenas como Fallback!) 🚀
+                if (expr.name.lexeme.equals("toObject") && !instance.fields.containsKey("toObject")) {
+                    // Devolve uma função nativa anónima para ser executada ()
+                    return new XplCallable() {
+                        @Override
+                        public int arity() { return 0; }
+
+                        @Override
+                        public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                            java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
+                            return java.util.Collections.unmodifiableMap(snapshot);
+                        }
+                    };
+                }
+
+
+
                 // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'GET' ⭐
                 Object decObj = instance.fields.get("_decoratorInstance");
                 if (decObj instanceof XplInstance dec) {
@@ -2239,6 +2320,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 }
             }
 
+
             // 🚀0. INJEÇÃO NATIVA: O Método toObject() 🚀
             if (expr.name.lexeme.equals("toObject")) {
                 // Devolve uma função nativa anónima para ser executada ()
@@ -2255,7 +2337,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 };
             }
 
-            // 1. É uma variável/propriedade?
             // 1. É uma variável/propriedade ou MetaBuilder JIT?
             if (instance.fields.containsKey(expr.name.lexeme)) {
 
@@ -3202,6 +3283,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (!(callee instanceof XplCallable function)) {
             throw new ControlFlow.RuntimeError(expr.paren, "Isto não é uma função ou classe instanciável e não pode ser chamado.");
         }
+
+        // Dentro do teu método Interpreter.visitCallExpr (ou similar)
+        Object object = evaluate(expr.callee); // Aqui o objecto é o teu XplElement
+
+
 
         // ⭐ PASSE DIRETO PURO (TRUE LAZY BINDING) ⭐
         // Entregamos a fila de Expr.CallArg crua diretamente à função ou classe!

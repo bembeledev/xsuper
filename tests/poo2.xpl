@@ -19,7 +19,7 @@ declare Animal {
 }
 
 // ==========================================
-// 3. A ALMA (O Comportamento Base e Abstrato)
+// 3. A ALMA (O Comportamento Base e Abstracto)
 // ==========================================
 abstract implement Animal {
 
@@ -39,7 +39,7 @@ abstract implement Animal {
 }
 
 // ==========================================
-// 4. A VARIANTE DIRETA (Cumpre a Alma)
+// 4. A VARIANTE DIRECTA (Cumpre a Alma)
 // ==========================================
 abstract implement Animal as Fish {
     // Sobrescreve o método (Opcional, mas permitido na POO)
@@ -47,7 +47,7 @@ abstract implement Animal as Fish {
         return this.id * 2; // Peixes envelhecem diferente!
     }
 
-    // ⭐ OBRIGATÓRIO: Cumpre a regra abstrata do Pai
+    // ⭐ OBRIGATÓRIO: Cumpre a regra abstracta do Pai
     pub fun acasalamento(): string {
         return "O peixe liberta ovos na água.";
     }
@@ -73,7 +73,7 @@ implement Mamifero {
 // ==========================================
 implement Mamifero as Mam1 for CRUD {
 
-    // ⭐ OBRIGATÓRIO 1: Cumpre a regra abstrata herdada do Animal
+    // ⭐ OBRIGATÓRIO 1: Cumpre a regra abstracta herdada do Animal
     pub fun acasalamento(): string {
         return "O mamífero reproduz-se de forma vivípara na " + this.localizacao;
     }
@@ -90,8 +90,8 @@ implement Mamifero as Mam1 for CRUD {
         return "Sucesso na eliminação"; // Retorna string!
     }
 
-    pub fun getId() { // Não tem retorno (void), exatamente como a interface
-        println("O ID atual é: " + this.id);
+    pub fun getId() { // Não tem retorno (void), exactamente como a interface
+        println("O ID actual é: " + this.id);
     }
 }
 
@@ -100,7 +100,7 @@ implement Mamifero as Mam1 for CRUD {
 // ==========================================
 println("--- TESTE DE EXECUÇÃO ---", "#FFFF00");
 
-//var erro = new Fish(); // A GUILHOTINA IA CORTAR ISTO! (Base abstrata)
+//var erro = new Fish(); // A GUILHOTINA IA CORTAR ISTO! (Base abstracta)
 //println(erro);
 
 var leao = new Mam1("",12);
@@ -111,14 +111,14 @@ leao.localizacao = "Savana Africana";
 leao.add("Leão Rei");
 leao.getId();
 
-// Executa método exigido pela Abstração do Animal
+// Executa método exigido pela Abstracção do Animal
 var reprod = leao.acasalamento();
 println(reprod);
 
 // Executa método herdado da Implementação Base do Animal
 leao.verIdade();
 
-var mam = new Mamifero("Tato",21,"Oil");
+var mam = new Mamifero("Tacto",21,"Oil");
 mam.verIdade();
 
-println(">> Execução concluída com sucesso da Arquitetura XPL!", "#00FF00");
+println(">> Execução concluída com sucesso da Arquitectura XPL!", "#00FF00");
