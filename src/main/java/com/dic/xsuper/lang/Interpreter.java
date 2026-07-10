@@ -3,6 +3,7 @@ import com.dic.xsuper.core.CommandRegistry;
 import com.dic.xsuper.lang.helpers.ArrayMethods;
 import com.dic.xsuper.lang.helpers.ObjectMethods;
 import com.dic.xsuper.lang.helpers.StringMethods;
+import com.dic.xsuper.lang.natives.NativeRegistry;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
@@ -297,18 +298,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         xpluiengine();
 
-        //  funções nativas nativo
-        com.dic.xsuper.lang.natives.NativeConsole.register(this);
-        com.dic.xsuper.lang.natives.NativeFileSystem.register(this);
-        com.dic.xsuper.lang.natives.NativeMath.register(this);
-        com.dic.xsuper.lang.natives.NativeRegex.register(this);
-        com.dic.xsuper.lang.natives.NativeHttp.register(this);
-        com.dic.xsuper.lang.natives.NativeUrl.register(this);
-        com.dic.xsuper.lang.natives.NativeNetwork.register(this);
-        com.dic.xsuper.lang.natives.NativeTask.register(this);
-        // ⭐ CONCORRÊNCIA E DATAFLOW AVANÇADO ⭐
-        com.dic.xsuper.lang.natives.NativeMutex.register(this);    // Injeção de Locks
-        com.dic.xsuper.lang.natives.NativeChannel.register(this);  // Injeção de Canais
+        //registo de funções nativas
+        NativeRegistry.InjectRegistry(this);
 
     }
 

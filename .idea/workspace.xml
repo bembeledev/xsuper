@@ -4,51 +4,33 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplMethodGroup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/TestXplCss.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssParser.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssToken.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssTokenType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/css.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/html01.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/core/document.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/core/render.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/main.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/tags/div.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/tags/element.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/tags/test.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoAdvanced.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoExtended.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHardware.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeInterop.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeOS.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegistry.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeSecurity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeStream.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/crypto.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/crypto_adv.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/hardware.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/hardware_adv.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/interop.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/os.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/security.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/stream.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/27 a 34.md" beforeDir="false" afterPath="$PROJECT_DIR$/27 a 34.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XPLModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/poo/XplInstance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/XplNode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/events/XplEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEventListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplEventListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlLexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/html.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/html.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/seguranca.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/seguranca.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/teste_io.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/teste_io.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/throws.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tipos.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tipos.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/poo/XPLModel.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/poo/XPLModel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplNativeObject.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplNativeObject.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$2.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

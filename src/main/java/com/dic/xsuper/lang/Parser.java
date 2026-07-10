@@ -1081,8 +1081,15 @@ public class Parser {
 
         if (!check(TokenType.RBRACE)) {
             do {
-                // A chave pode ser um Identificador ou uma String Literal
-                Expr key = expression();
+                Expr key;
+                // 💡 A MAGIA: Se a chave for uma palavra sem aspas (Identificador),
+                // transformamos diretamente numa String Literal!
+                if (check(TokenType.IDENTIFIER)) {
+                    key = new Expr.Literal(advance().lexeme);
+                } else {
+                    key = expression();
+                }
+
                 consumeSoft(TokenType.COLON, ":", "Esperado ':' após a chave do objeto.");
                 Expr value = expression();
 
@@ -1138,6 +1145,11 @@ public class Parser {
             } else if (!check(TokenType.RBRACE)) {
                 // Só atira erro se faltar o ';' E não for a última respiração antes de fechar a chaveta '}'!
                 throw error(peek(), "Esperado ';' após a expressão.");
+            }
+        }else {
+            // PERDÃO SINTÁTICO: Consome o ';' silenciosamente se ele existir a seguir a um bloco!
+            if (check(TokenType.SEMICOLON)) {
+                advance();
             }
         }
 
