@@ -20,8 +20,9 @@ public class NativeRegistry {
         NativeCryptoExtended.register(interpreter);  // Injeção de Security
         NativeCryptoAdvanced.register(interpreter);  // Injeção de Security
         NativeStream.register(interpreter);  // Injeção de Stream
-        NativeInterop.register(interpreter);  // Injeção de Stream
-        NativeHardware.register(interpreter);  // Injeção de Stream
-        NativeOS.register(interpreter);  // Injeção de Stream
+        NativeInterop.register(interpreter);  // Injeção de Interpolação
+        NativeHardware.register(interpreter);  // Injeção de Comunicação do o Hardware
+        NativeOS.register(interpreter);  // Injeção de Comunicação com o Sistema Operacional
+        NativeDatabase.register(interpreter);  // Injeção de Banco de Dados
     }
 }

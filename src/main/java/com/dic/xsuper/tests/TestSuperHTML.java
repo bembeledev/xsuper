@@ -1,4 +1,4 @@
-package com.dic.xsuper.lang.ui.tests;
+package com.dic.xsuper.tests;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.html.HtmlLexer;

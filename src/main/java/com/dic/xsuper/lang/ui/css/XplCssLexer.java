@@ -189,27 +189,25 @@ public class XplCssLexer {
         while (isAlphaNumeric(peek()) || peek() == '-') advance();
         String text = source.substring(start + 1, current); // sem o '@'
 
-        XplCssTokenType type;
-        switch (text) {
-            case "if": type = XplCssTokenType.AT_IF; break;
-            case "elseif": type = XplCssTokenType.AT_ELSEIF; break;
-            case "else": type = XplCssTokenType.AT_ELSE; break;
-            case "for": type = XplCssTokenType.AT_FOR; break;
-            case "switch": type = XplCssTokenType.AT_SWITCH; break;
-            case "case": type = XplCssTokenType.AT_CASE; break;
-            case "default": type = XplCssTokenType.AT_DEFAULT; break;
-            case "match": type = XplCssTokenType.AT_MATCH; break;
-            case "arm": type = XplCssTokenType.AT_ARM; break;
-            case "none": type = XplCssTokenType.AT_NONE; break;
-            case "empty": type = XplCssTokenType.AT_EMPTY; break;
+        XplCssTokenType type = switch (text) {
+            case "if" -> XplCssTokenType.AT_IF;
+            case "elseif" -> XplCssTokenType.AT_ELSEIF;
+            case "else" -> XplCssTokenType.AT_ELSE;
+            case "for" -> XplCssTokenType.AT_FOR;
+            case "switch" -> XplCssTokenType.AT_SWITCH;
+            case "case" -> XplCssTokenType.AT_CASE;
+            case "default" -> XplCssTokenType.AT_DEFAULT;
+            case "match" -> XplCssTokenType.AT_MATCH;
+            case "arm" -> XplCssTokenType.AT_ARM;
+            case "none" -> XplCssTokenType.AT_NONE;
+            case "empty" -> XplCssTokenType.AT_EMPTY;
             // Suporte a futuras diretivas CSS nativas
-            case "media": type = XplCssTokenType.AT_MEDIA; break;
-            case "keyframes": type = XplCssTokenType.AT_KEYFRAMES; break;
-            case "import": type = XplCssTokenType.AT_IMPORT; break;
-            case "extend": type = XplCssTokenType.AT_EXTEND; break;
-            default:
-                throw new RuntimeException("Diretiva CSS desconhecida na linha " + line + ": @" + text);
-        }
+            case "media" -> XplCssTokenType.AT_MEDIA;
+            case "keyframes" -> XplCssTokenType.AT_KEYFRAMES;
+            case "import" -> XplCssTokenType.AT_IMPORT;
+            case "extend" -> XplCssTokenType.AT_EXTEND;
+            default -> throw new RuntimeException("Diretiva CSS desconhecida na linha " + line + ": @" + text);
+        };
         addToken(type);
     }
 

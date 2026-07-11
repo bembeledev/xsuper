@@ -4,33 +4,167 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoAdvanced.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoExtended.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHardware.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeInterop.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeOS.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegistry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeSecurity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeStream.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/crypto.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/crypto_adv.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/hardware.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/hardware_adv.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/interop.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/os.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/security.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/stream.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(ui): motor de renderização HTML → JavaFX completo e moderno&#10;&#10;🖌️ Sistema de UI Nativo&#10;- Implementa a ponte HTML → JavaFX com suporte a tags nativas&#10;- Tags estruturais: div, main, section, article, header, footer, nav, aside, ul, li, form, table, etc.&#10;- Tags de texto: h1-h6, p, span, label, b, strong, i, em, a (hyperlink), img&#10;- Tags de formulário: todos os tipos de input (text, password, email, tel, url, search, number, range, color, date, datetime-local, time, month, week, checkbox, radio, file, hidden, submit, reset, button, image)&#10;- Select com suporte a optgroup e option (single e múltiplo)&#10;- Textarea com atributos rows, cols, placeholder, disabled, readonly&#10;- Botões com estilos personalizados (ButtonTag, ButtonInputTag, SubmitInputTag, ResetInputTag, ImageInputTag)&#10;&#10;🎨 Sistema de Estilos (CSS)&#10;- Resolvedor de estilos (StyleResolver) com suporte a CSS inline&#10;- Unidades CSS: px, em, rem, %, vw, vh, etc.&#10;- Propriedades: padding, margin, border, border-radius, background-color, color, font-*, text-align, text-decoration, text-shadow, box-shadow, opacity, line-height, white-space&#10;- Gradientes lineares, radiais, cónicos e personalizados (via Bouncy Castle)&#10;- Cores com suporte a nomes web, hex, rgb/rgba (XplColor)&#10;&#10;📐 Motor de Layout&#10;- Suporte a display: block, flex, grid, inline, inline-block, table, table-row, table-cell&#10;- ContainerTag delega para LayoutEngine (VBox, HBox, GridPane, CustomLayoutPane)&#10;- Lógica de margens adaptativa (setMargin para VBox/HBox/GridPane)&#10;- Lógica de padding e espaçamento entre elementos&#10;&#10;⚙️ Arquitetura Orientada a Objetos&#10;- NativeTag como classe base com métodos de ciclo de vida (build, createNode, applyCommonStyles, addChildren, bindEvents)&#10;- FormControlTag centraliza atributos comuns de formulário (disabled, readonly, required, name, value, placeholder)&#10;- TagFactory com mapeamento dinâmico para todas as tags&#10;- ResolvedStyles e CssContext para gestão de estilos computados&#10;&#10;🖥️ Integração JavaFX&#10;- Aplicação de estilos via CSS nativo do JavaFX (fxNode.setStyle)&#10;- Utilização de componentes nativos: TextField, PasswordField, DatePicker, ColorPicker, ComboBox, ListView, Slider, Spinner, CheckBox, RadioButton, Button, Label, Hyperlink, TextArea, etc.&#10;- Suporte a eventos nativos (clique, mudança de valor, etc.) com despacho para o motor XPL&#10;&#10;🎨 Temas e Estilização&#10;- Suporte a temas globais via CSS (AtlantaFX, MaterialFX, Transit)&#10;- Classes CSS para elementos (className) permitindo estilização moderna (Tailwind-like, Material Design)&#10;- Estilos inline com alta prioridade (substituem a skin padrão do JavaFX)&#10;&#10;🧪 Testes e Exemplos&#10;- TestAllInputs, TestSelect, TestUIRender para validar todos os tipos de input e layouts&#10;- Exemplo de formulário completo com todos os campos&#10;- Validação de estilos e comportamento responsivo&#10;&#10;📦 Dependências&#10;- Bouncy Castle (gradientes e criptografia)&#10;- (opcional) AtlantaFX, JMetro, MaterialFX para temas modernos&#10;&#10;🚀 Estado atual&#10;- Motor de UI funcional para aplicações desktop com sintaxe declarativa HTML/CSS&#10;- 100% integrado com a linguagem XPL (através de NativeTag e TagFactory)&#10;- Pronto para extensão com novas tags (audio, video, canvas, dialog, etc.)">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeDatabase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeMongoDB.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/EventBus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/IEventBus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/IInputManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplEventListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplEventType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventAdapter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventBind.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplInputManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplInputProcessor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplKeyCode.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/BlockLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/BorderLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/ContentsLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/FlexLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/FlowLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/GridLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/InlineBlockLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/InlineGridLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/InlineLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/LayerLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/LayoutEngine.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/LayoutManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/NoneLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/StackLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/TableLayout.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/BorderContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/ContentsContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/CustomLayoutPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/FlexColumnPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/FlexRowPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/FlowContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/GridContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/InlineBlockContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/InlineContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/InlineGridContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/LayerContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/StackContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/layout/panes/TableContainerPane.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/Border.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/BoxShadow.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/Margin.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/Padding.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/ResolvedStyles.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/StyleResolver.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/borderunit/BorderColor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/borderunit/BorderRadius.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/borderunit/BorderSide.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/borderunit/BorderWidth.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/cssunit/BoxSideSet.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/cssunit/CssContext.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/cssunit/CssParser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/cssunit/CssUnit.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/cssunit/CssValue.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/gradient/Gradient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/gradient/GradientParser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/gradient/GradientStop.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/gradient/GradientType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/size/BoxSize.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/size/Dimension.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/size/LayoutBox.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/style/ComputedStyles.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/style/UserAgentStyles.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/style/XplBorderStyle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/style/XplColor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/AnchorTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/ButtonTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/ContainerTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/DivTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/FigcaptionTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/FigureTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/ImageTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/LabelTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/NativeTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TagFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TextareaTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/WebTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/ButtonInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/CheckboxInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/ColorInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/EmailInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/FileInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/FormControlTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/HiddenInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/ImageInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/NumberInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/PasswordInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/RadioInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/RangeInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/ResetInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/SearchInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/SubmitInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/TelInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/TextInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/UrlInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/date/DateInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/date/DateTimeLocalInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/date/MonthInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/date/TimeInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/date/WeekInputTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/select/OptgroupTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/select/OptionTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/controls/select/SelectTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/interactive/DetailsTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/interactive/SummaryTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/interactive/TabTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/interactive/TabsTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/list/LiTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/list/ListTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/list/OlTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/list/UlTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/media/AudioTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/media/MediaControlBase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/media/VideoTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/table/TableCellTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/table/TableGroupTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/table/TableRowTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/table/TableTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/ComprehensiveEngineTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/DetailsExample.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/ListExamples.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/MediaExamples.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/OverflowExample.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/RunApp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TabExample.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TabExampleModern.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestLists.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestSelect.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIInputRender.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRender.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRender02.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRenderMaster.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUITableRender.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUITextRender.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/database.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/mongodb.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/dependency-reduced-pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplNativeObject.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/poo/XPLModel.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/poo/XPLModel.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplNativeObject.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplNativeObject.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegistry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestHeadlessEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tests/TestSuperHTML.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestSuperHTML.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/ui/FileExplorerCLI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/FileExplorerCLI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/JavaFxRenderer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/JavaFxRenderer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssLexer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssLexer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestHeadlessEngine.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/tests/TestSuperHTML.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/ui/FileExplorerCLI.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/original-xsuper-xplorer.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/xsuper-xplorer.jar" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,6 +175,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Interface" />
+        <option value="FxmlFile" />
         <option value="Class" />
       </list>
     </option>
@@ -68,33 +203,45 @@
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.RunApp.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestHeadlessEngine.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestSelect.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestSuperHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIInputRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRender02.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRenderMaster.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUITableRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUITextRender.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestXplCss.executor&quot;: &quot;Run&quot;,
     &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [package].executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/xsuper/lang/ui&quot;,
     &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
+      <recent name="com.dic.xsuper.lang.ui.layout" />
       <recent name="com.dic.xsuper.lang.ui.document" />
       <recent name="com.dic.xsuper.lang.ui" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui\properties" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
@@ -104,60 +251,8 @@
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.com.dic.xsuper.Main">
-    <configuration name="TestHeadlessEngine" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.tests.TestHeadlessEngine" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.lang.ui.tests.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TestSuperHTML" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.tests.TestSuperHTML" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.lang.ui.events.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TestXPL" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.TestXPL" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.lang.helpers.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TestXplCss" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.css.TestXplCss" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.lang.ui.css.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="com.dic.xsuper.Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Application.RunApp">
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.Main" />
       <module name="FileManager" />
       <extension name="coverage">
@@ -170,13 +265,76 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="RunApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.RunApp" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.web " />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestSelect" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.TestSelect" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.web " />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestUIInputRender" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.TestUIInputRender" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.web " />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TestUIRenderMaster" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.TestUIRenderMaster" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.web " />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Application.Main" />
+      <item itemvalue="Application.RunApp" />
+      <item itemvalue="Application.TestSelect" />
+      <item itemvalue="Application.TestUIInputRender" />
+      <item itemvalue="Application.TestUIRenderMaster" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.com.dic.xsuper.Main" />
-        <item itemvalue="Application.TestXplCss" />
-        <item itemvalue="Application.TestHeadlessEngine" />
-        <item itemvalue="Application.TestSuperHTML" />
-        <item itemvalue="Application.TestXPL" />
+        <item itemvalue="Application.RunApp" />
+        <item itemvalue="Application.Main" />
+        <item itemvalue="Application.TestSelect" />
+        <item itemvalue="Application.TestUIRenderMaster" />
+        <item itemvalue="Application.TestUIInputRender" />
       </list>
     </recent_temporary>
   </component>
@@ -429,7 +587,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782681202592</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="feat(natives): implementa módulos de sistema, hardware, interoperabilidade e segurança avançada&#10;&#10;🔄 Módulos Nativos Adicionados / Expandidos:&#10;&#10;1. NativeOS (maduro e robusto)&#10;   - Detecção automática do SO (Windows, Linux, macOS, Android, iOS, Unknown)&#10;   - Providers específicos com fallback&#10;   - Informações: nome, versão, arquitetura, hostname, username, PID&#10;   - Hardware básico: CPUs, memória total/livre, discos, interfaces de rede&#10;   - Variáveis de ambiente (getenv, getenv_all)&#10;   - Execução de processos com controlo total (cwd, env, timeout, stdin)&#10;   - Utilitários: sleep, exit, caminhos do sistema&#10;&#10;2. NativeHardware (informações detalhadas do hardware)&#10;   - CPU: modelo, vendor, núcleos físicos/lógicos, frequências, cache, uso, temperatura&#10;   - Memória: total, usada, livre, máxima, uso percentual&#10;   - Discos: path, tamanhos, tipo (SSD/HDD), modelo&#10;   - Rede: interfaces, MAC, MTU, IPs, velocidade (fallback)&#10;   - Sistema: fabricante, modelo, serial, BIOS (vendor, versão, data)&#10;   - GPU: nome, memória, driver&#10;   - Bateria: carga e estado (para laptops)&#10;&#10;3. NativeInterop (interoperabilidade industrial)&#10;   - Eval: execução de scripts (Python, Node, Ruby, PHP, etc.) com suporte a charset e timeout&#10;   - Spawn: processos com I/O bidirecional e controlo total (cwd, env, charset, timeout, stream)&#10;   - Streaming assíncrono via canais (stdout/stderr direcionados para canais XPL)&#10;   - Gestão de ciclo de vida: PID, wait, terminate (SIGTERM), kill (SIGKILL)&#10;   - Placeholder para FFI (JNA/FFM – futura expansão)&#10;&#10;4. NativeStream (manipulação eficiente de ficheiros)&#10;   - file_open_stream(path, mode) com modos r/w/rw&#10;   - Leitura/escrita em chunks (read, write)&#10;   - Leitura linha a linha (readLine)&#10;   - Posicionamento (seek, tell)&#10;   - Propriedades: size, path, mode&#10;   - Utilitários: file_read_all, file_write_all&#10;&#10;5. NativeSecurity (criptografia e segurança)&#10;   - Hashes: MD5, SHA-1/224/256/384/512, SHA3-224/256/384/512, BLAKE2b/s&#10;   - HMAC: MD5, SHA256, SHA512&#10;   - AES-CBC com IV, ChaCha20 (via Bouncy Castle)&#10;   - RSA: geração, encriptação, desencriptação, assinatura, verificação&#10;   - ECDSA: geração, assinatura, verificação (suporte a secp256r1, secp384r1, secp521r1)&#10;   - KDF: PBKDF2, Argon2id (via Bouncy Castle)&#10;   - Codificações: Base64, Base58, Hex&#10;   - RNG: bytes, inteiros, UUID&#10;   - Comparação segura (tempo constante)&#10;&#10;6. NativeCryptoExtended (criptografia avançada)&#10;   - ECDSA com curvas personalizadas&#10;   - Encriptação híbrida (AES-256 + RSA)&#10;   - Certificados X.509 (auto-assinados e validação)&#10;   - JWT: HS256, RS256, ES256 (com parsing JSON nativo)&#10;   - CSR (Certificate Signing Requests)&#10;   - PKCS#12: criar e extrair (keystores)&#10;   - SSH Ed25519 (geração de par de chaves)&#10;&#10;🔧 Melhorias no Core:&#10;   - Interface XplNativeObject uniformizada (invokeMethod, getProperty)&#10;   - Suporte a objetos nativos no visitGetExpr (delegação para getProperty)&#10;   - Registro automático de módulos no Interpreter&#10;&#10;📦 Dependências Adicionadas:&#10;   - Bouncy Castle (bcprov-jdk18on, bcpkix-jdk18on, bcutil-jdk18on)&#10;   - Jackson (databind, annotations, core) – para JSON (embora substituído por parser manual)&#10;&#10;🧪 Testes:&#10;   - Testes de validação para todos os módulos (os.xpl, hardware.xpl, interop.xpl, security.xpl, crypto_adv.xpl)&#10;   - Exemplos de uso com canais, tarefas assíncronas e streaming&#10;&#10;✨ Estabilidade:&#10;   - Tratamento robusto de exceções e fallbacks para diferentes SOs&#10;   - Gestão de recursos (close, flush, destruição de processos)&#10;   - Sem dependências de bibliotecas externas para funcionalidades básicas (JSON, Base58, etc.)&#10;&#10;🚀 Estado Atual:&#10;   - O XPL possui agora um ecossistema nativo rico, permitindo:&#10;        * Interagir com o SO e hardware em tempo real&#10;        * Executar scripts de outras linguagens&#10;        * Criptografar, assinar e verificar dados&#10;        * Gerir streams de ficheiros eficientemente&#10;        * Criar certificados e JWT&#10;   - A linguagem está preparada para aplicações enterprise, automação, segurança e desenvolvimento de sistemas.">
+      <option name="closed" value="true" />
+      <created>1783725681195</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1783725681195</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -440,15 +606,25 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base." />
-    <MESSAGE value="feat(poo): implementar suporte à palavra-chave 'super' para herança e polimorfismo&#10;&#10;- Adiciona reconhecimento do token `SUPER` no Lexer e suporte sintático para `super.metodo()` no Parser (`Expr.Super`).&#10;- Implementa rastreamento genético (`getOwnerOfMethod`) no `XPLModel` para identificar a classe exata de origem de cada método.&#10;- Modifica `XplFunction`, `XplInstance` e `XplClass` para injetarem e preservarem o contexto da classe atual (`__current_model`) em tempo de execução.&#10;- Adiciona `visitSuperExpr` no Interpretador para resolver e invocar métodos da superclasse dinamicamente, mantendo o escopo e encapsulamento da instância atual (`this`).&#10;- Habilita a reutilização de construtores (`init`) e delegação de comportamentos entre classes pai e filho, evitando duplicação de lógica." />
     <MESSAGE value="feat(poo): implementar estado estático e inicialização limpa com bloco 'default'&#10;&#10;- Adiciona suporte no Lexer e Parser para as palavras-chave `static` e `default`.&#10;- Permite a inicialização limpa de estado padrão e estático dentro do `implement`, mantendo a pureza estrutural de tipos no `declare`.&#10;- Atualiza `XPLModel` para atuar como um Singleton global que gere memória viva através de `staticFields` e `defaultInstanceFields`.&#10;- Modifica a fábrica `XplInstance` para popular automaticamente novas instâncias utilizando os valores de fallback do bloco `default`.&#10;- Altera o Interpretador (`visitGetExpr` e `visitSetExpr`) para suportar a resolução, leitura, escrita e invocação de propriedades e métodos estáticos sem necessidade de instanciação (ex: `Classe.metodo()`)." />
     <MESSAGE value="feat(core): implementar tratamento de erros robusto (try/catch/finally/throw)&#10;&#10;- Adiciona tokens `TRY`, `CATCH`, `FINALLY` e `THROW` ao Lexer.&#10;- Cria nós sintáticos `Stmt.Try` e `Stmt.Throw` na AST para gerir a captura e o lançamento de exceções.&#10;- Implementa a classe `ControlFlow.ThrowException` de alta performance (sem stacktrace) para transportar erros no motor Java.&#10;- Modifica o Interpretador para capturar tanto erros manuais (`throw`) como falhas nativas (`RuntimeError`).&#10;- Injeta dinamicamente a variável de erro no escopo local do `catch` e garante a execução imutável do bloco `finally`.&#10;- Torna a execução do XPL resiliente a falhas críticas (ex: divisão por zero), evitando o colapso do motor." />
     <MESSAGE value="feat(core): implementar multi-catch polimórfico, refatorar AST para mutações complexas e blindar interpretador&#10;&#10;1. Tratamento de Erros Avançado (Try/Catch/Throw/Finally):&#10;- Implementa suporte a múltiplos blocos `catch` tipados com resolução polimórfica (usando `isSubclassOf`), permitindo capturar heranças de exceções (ex: `catch(e: NumberError)`).&#10;- Adiciona o mecanismo de &quot;Injeção Nativa POO&quot;, que converte e embrulha automaticamente falhas críticas do motor (`RuntimeError`) em instâncias de classes XPL (se `declare Error` existir).&#10;- Garante o isolamento de escopo para variáveis de erro e a execução imutável do bloco `finally`.&#10;&#10;2. Evolução da Árvore Sintática (AST) e Parser:&#10;- Refatora os nós `Update` (`++`, `--`) e `CompoundAssign` (`+=`, `*=`) para aceitarem expressões como alvo (`Expr target`), permitindo mutações diretas em propriedades (`Objeto.prop++`) e arrays (`arr[0] += 5`).&#10;- Substitui a chamada `match(TokenType.FUN)` por `check()` no Parser para evitar o consumo prematuro de tokens, corrigindo a declaração de callbacks e Higher-Order Functions (`reduce`, `forEach`).&#10;&#10;3. Blindagem de Execução e Correção de Tipos (Interpreter):&#10;- Ajusta a precedência nos operadores `+` e `+=` (`visitBinaryExpr` e `visitCompoundAssignExpr`) para dar prioridade absoluta à concatenação de Strings sobre a adição matemática.&#10;- Elimina o bug de conversão implícita do operador ternário do Java no `visitForInRangeStmt`, preservando números inteiros como `long` e evitando casts silenciosos para `double`.&#10;- Adiciona inferência inteligente de direção nos Range Loops (atribui automaticamente um jump de `-1.0` em loops decrescentes sem salto explícito)." />
@@ -472,6 +648,8 @@
     <MESSAGE value="feat: implementação do ecossistema de funções nativas (I/O, Math, Regex e Rede)&quot; -m &quot;- Criação do pacote `com.dic.xsuper.lang.natives` para isolamento de chamadas de sistema.&#10;- Implementação da classe `NativeConsole` para leitura e manipulação robusta de I/O via terminal (read/prompt).&#10;- Implementação da classe `NativeFileSystem` para operações atómicas de disco (I/O de ficheiros, metadados e listagem).&#10;- Implementação da classe `NativeMath` encapsulando operações matemáticas de alta precisão e algoritmos de utilidade (clamp, lerp).&#10;- Implementação da classe `NativeRegex` com sistema de cache estático (`patternCache`) para otimização de performance em varrimento de strings.&#10;- Implementação dos módulos `NativeHttp`, `NativeUrl` e `NativeNetwork` suportando requisições REST com retorno de estruturas bivalentes (Map) e verificação de diagnóstico de rede (ping/dns).&#10;- Adicionado o mapa global de constantes imutáveis `HTTPREQUEST` no núcleo do interpretador." />
     <MESSAGE value="feat(core): arquitetura de concorrência massiva, isolamento de escopo e tipagem anónima&quot; -m &quot;- Refatoração do `Environment` para `ConcurrentHashMap`, garantindo Thread-Safety absoluto na memória global.&#10;- Implementação do `Interpreter.fork()` para resolver Scope Leaks (Data Races), dando a cada Thread a sua própria pilha de execução partilhando a memória estática.&#10;- Criação dos módulos `NativeMutex` (trancas) e `NativeChannel` (mensageria mpsc) para orquestração e Dataflow entre threads.&#10;- Refatoração do `NativeTask` acoplando botões de cancelamento diretos à `AtomicReference` do ExecutorService, eliminando 'Zombie Threads'.&#10;- Aperfeiçoamento do `Parser` com Lookahead resiliente via `advance()`, permitindo Tipagem Estrita em Arrow Functions (`(): tipo =&gt; { ... }`) ignorando ambiguidades com Keywords.&#10;- Adição da injeção letal e verificação de pulsação (`Thread.currentThread().isInterrupted()`) no ciclo de vida principal da AST (`execute()`)." />
     <MESSAGE value="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)" />
+    <MESSAGE value="feat(natives): implementa módulos de sistema, hardware, interoperabilidade e segurança avançada&#10;&#10; Módulos Nativos Adicionados / Expandidos:&#10;&#10;1. NativeOS (maduro e robusto)&#10;   - Detecção automática do SO (Windows, Linux, macOS, Android, iOS, Unknown)&#10;   - Providers específicos com fallback&#10;   - Informações: nome, versão, arquitetura, hostname, username, PID&#10;   - Hardware básico: CPUs, memória total/livre, discos, interfaces de rede&#10;   - Variáveis de ambiente (getenv, getenv_all)&#10;   - Execução de processos com controlo total (cwd, env, timeout, stdin)&#10;   - Utilitários: sleep, exit, caminhos do sistema&#10;&#10;2. NativeHardware (informações detalhadas do hardware)&#10;   - CPU: modelo, vendor, núcleos físicos/lógicos, frequências, cache, uso, temperatura&#10;   - Memória: total, usada, livre, máxima, uso percentual&#10;   - Discos: path, tamanhos, tipo (SSD/HDD), modelo&#10;   - Rede: interfaces, MAC, MTU, IPs, velocidade (fallback)&#10;   - Sistema: fabricante, modelo, serial, BIOS (vendor, versão, data)&#10;   - GPU: nome, memória, driver&#10;   - Bateria: carga e estado (para laptops)&#10;&#10;3. NativeInterop (interoperabilidade industrial)&#10;   - Eval: execução de scripts (Python, Node, Ruby, PHP, etc.) com suporte a charset e timeout&#10;   - Spawn: processos com I/O bidirecional e controlo total (cwd, env, charset, timeout, stream)&#10;   - Streaming assíncrono via canais (stdout/stderr direcionados para canais XPL)&#10;   - Gestão de ciclo de vida: PID, wait, terminate (SIGTERM), kill (SIGKILL)&#10;   - Placeholder para FFI (JNA/FFM – futura expansão)&#10;&#10;4. NativeStream (manipulação eficiente de ficheiros)&#10;   - file_open_stream(path, mode) com modos r/w/rw&#10;   - Leitura/escrita em chunks (read, write)&#10;   - Leitura linha a linha (readLine)&#10;   - Posicionamento (seek, tell)&#10;   - Propriedades: size, path, mode&#10;   - Utilitários: file_read_all, file_write_all&#10;&#10;5. NativeSecurity (criptografia e segurança)&#10;   - Hashes: MD5, SHA-1/224/256/384/512, SHA3-224/256/384/512, BLAKE2b/s&#10;   - HMAC: MD5, SHA256, SHA512&#10;   - AES-CBC com IV, ChaCha20 (via Bouncy Castle)&#10;   - RSA: geração, encriptação, desencriptação, assinatura, verificação&#10;   - ECDSA: geração, assinatura, verificação (suporte a secp256r1, secp384r1, secp521r1)&#10;   - KDF: PBKDF2, Argon2id (via Bouncy Castle)&#10;   - Codificações: Base64, Base58, Hex&#10;   - RNG: bytes, inteiros, UUID&#10;   - Comparação segura (tempo constante)&#10;&#10;6. NativeCryptoExtended (criptografia avançada)&#10;   - ECDSA com curvas personalizadas&#10;   - Encriptação híbrida (AES-256 + RSA)&#10;   - Certificados X.509 (auto-assinados e validação)&#10;   - JWT: HS256, RS256, ES256 (com parsing JSON nativo)&#10;   - CSR (Certificate Signing Requests)&#10;   - PKCS#12: criar e extrair (keystores)&#10;   - SSH Ed25519 (geração de par de chaves)&#10;&#10; Melhorias no Core:&#10;   - Interface XplNativeObject uniformizada (invokeMethod, getProperty)&#10;   - Suporte a objetos nativos no visitGetExpr (delegação para getProperty)&#10;   - Registro automático de módulos no Interpreter&#10;&#10; Dependências Adicionadas:&#10;   - Bouncy Castle (bcprov-jdk18on, bcpkix-jdk18on, bcutil-jdk18on)&#10;   - Jackson (databind, annotations, core) – para JSON (embora substituído por parser manual)&#10;&#10; Testes:&#10;   - Testes de validação para todos os módulos (os.xpl, hardware.xpl, interop.xpl, security.xpl, crypto_adv.xpl)&#10;   - Exemplos de uso com canais, tarefas assíncronas e streaming&#10;&#10;✨ Estabilidade:&#10;   - Tratamento robusto de exceções e fallbacks para diferentes SOs&#10;   - Gestão de recursos (close, flush, destruição de processos)&#10;   - Sem dependências de bibliotecas externas para funcionalidades básicas (JSON, Base58, etc.)&#10;&#10; Estado Atual:&#10;   - O XPL possui agora um ecossistema nativo rico, permitindo:&#10;        * Interagir com o SO e hardware em tempo real&#10;        * Executar scripts de outras linguagens&#10;        * Criptografar, assinar e verificar dados&#10;        * Gerir streams de ficheiros eficientemente&#10;        * Criar certificados e JWT&#10;   - A linguagem está preparada para aplicações enterprise, automação, segurança e desenvolvimento de sistemas." />
+    <MESSAGE value="feat(ui): motor de renderização HTML → JavaFX completo e moderno&#10;&#10;️ Sistema de UI Nativo&#10;- Implementa a ponte HTML → JavaFX com suporte a tags nativas&#10;- Tags estruturais: div, main, section, article, header, footer, nav, aside, ul, li, form, table, etc.&#10;- Tags de texto: h1-h6, p, span, label, b, strong, i, em, a (hyperlink), img&#10;- Tags de formulário: todos os tipos de input (text, password, email, tel, url, search, number, range, color, date, datetime-local, time, month, week, checkbox, radio, file, hidden, submit, reset, button, image)&#10;- Select com suporte a optgroup e option (single e múltiplo)&#10;- Textarea com atributos rows, cols, placeholder, disabled, readonly&#10;- Botões com estilos personalizados (ButtonTag, ButtonInputTag, SubmitInputTag, ResetInputTag, ImageInputTag)&#10;&#10; Sistema de Estilos (CSS)&#10;- Resolvedor de estilos (StyleResolver) com suporte a CSS inline&#10;- Unidades CSS: px, em, rem, %, vw, vh, etc.&#10;- Propriedades: padding, margin, border, border-radius, background-color, color, font-*, text-align, text-decoration, text-shadow, box-shadow, opacity, line-height, white-space&#10;- Gradientes lineares, radiais, cónicos e personalizados (via Bouncy Castle)&#10;- Cores com suporte a nomes web, hex, rgb/rgba (XplColor)&#10;&#10; Motor de Layout&#10;- Suporte a display: block, flex, grid, inline, inline-block, table, table-row, table-cell&#10;- ContainerTag delega para LayoutEngine (VBox, HBox, GridPane, CustomLayoutPane)&#10;- Lógica de margens adaptativa (setMargin para VBox/HBox/GridPane)&#10;- Lógica de padding e espaçamento entre elementos&#10;&#10;⚙️ Arquitetura Orientada a Objetos&#10;- NativeTag como classe base com métodos de ciclo de vida (build, createNode, applyCommonStyles, addChildren, bindEvents)&#10;- FormControlTag centraliza atributos comuns de formulário (disabled, readonly, required, name, value, placeholder)&#10;- TagFactory com mapeamento dinâmico para todas as tags&#10;- ResolvedStyles e CssContext para gestão de estilos computados&#10;&#10;️ Integração JavaFX&#10;- Aplicação de estilos via CSS nativo do JavaFX (fxNode.setStyle)&#10;- Utilização de componentes nativos: TextField, PasswordField, DatePicker, ColorPicker, ComboBox, ListView, Slider, Spinner, CheckBox, RadioButton, Button, Label, Hyperlink, TextArea, etc.&#10;- Suporte a eventos nativos (clique, mudança de valor, etc.) com despacho para o motor XPL&#10;&#10; Temas e Estilização&#10;- Suporte a temas globais via CSS (AtlantaFX, MaterialFX, Transit)&#10;- Classes CSS para elementos (className) permitindo estilização moderna (Tailwind-like, Material Design)&#10;- Estilos inline com alta prioridade (substituem a skin padrão do JavaFX)&#10;&#10; Testes e Exemplos&#10;- TestAllInputs, TestSelect, TestUIRender para validar todos os tipos de input e layouts&#10;- Exemplo de formulário completo com todos os campos&#10;- Validação de estilos e comportamento responsivo&#10;&#10; Dependências&#10;- Bouncy Castle (gradientes e criptografia)&#10;- (opcional) AtlantaFX, JMetro, MaterialFX para temas modernos&#10;&#10; Estado atual&#10;- Motor de UI funcional para aplicações desktop com sintaxe declarativa HTML/CSS&#10;- 100% integrado com a linguagem XPL (através de NativeTag e TagFactory)&#10;- Pronto para extensão com novas tags (audio, video, canvas, dialog, etc.)" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(ui): motor de renderização HTML → JavaFX completo e moderno&#10;&#10;️ Sistema de UI Nativo&#10;- Implementa a ponte HTML → JavaFX com suporte a tags nativas&#10;- Tags estruturais: div, main, section, article, header, footer, nav, aside, ul, li, form, table, etc.&#10;- Tags de texto: h1-h6, p, span, label, b, strong, i, em, a (hyperlink), img&#10;- Tags de formulário: todos os tipos de input (text, password, email, tel, url, search, number, range, color, date, datetime-local, time, month, week, checkbox, radio, file, hidden, submit, reset, button, image)&#10;- Select com suporte a optgroup e option (single e múltiplo)&#10;- Textarea com atributos rows, cols, placeholder, disabled, readonly&#10;- Botões com estilos personalizados (ButtonTag, ButtonInputTag, SubmitInputTag, ResetInputTag, ImageInputTag)&#10;&#10; Sistema de Estilos (CSS)&#10;- Resolvedor de estilos (StyleResolver) com suporte a CSS inline&#10;- Unidades CSS: px, em, rem, %, vw, vh, etc.&#10;- Propriedades: padding, margin, border, border-radius, background-color, color, font-*, text-align, text-decoration, text-shadow, box-shadow, opacity, line-height, white-space&#10;- Gradientes lineares, radiais, cónicos e personalizados (via Bouncy Castle)&#10;- Cores com suporte a nomes web, hex, rgb/rgba (XplColor)&#10;&#10; Motor de Layout&#10;- Suporte a display: block, flex, grid, inline, inline-block, table, table-row, table-cell&#10;- ContainerTag delega para LayoutEngine (VBox, HBox, GridPane, CustomLayoutPane)&#10;- Lógica de margens adaptativa (setMargin para VBox/HBox/GridPane)&#10;- Lógica de padding e espaçamento entre elementos&#10;&#10;⚙️ Arquitetura Orientada a Objetos&#10;- NativeTag como classe base com métodos de ciclo de vida (build, createNode, applyCommonStyles, addChildren, bindEvents)&#10;- FormControlTag centraliza atributos comuns de formulário (disabled, readonly, required, name, value, placeholder)&#10;- TagFactory com mapeamento dinâmico para todas as tags&#10;- ResolvedStyles e CssContext para gestão de estilos computados&#10;&#10;️ Integração JavaFX&#10;- Aplicação de estilos via CSS nativo do JavaFX (fxNode.setStyle)&#10;- Utilização de componentes nativos: TextField, PasswordField, DatePicker, ColorPicker, ComboBox, ListView, Slider, Spinner, CheckBox, RadioButton, Button, Label, Hyperlink, TextArea, etc.&#10;- Suporte a eventos nativos (clique, mudança de valor, etc.) com despacho para o motor XPL&#10;&#10; Temas e Estilização&#10;- Suporte a temas globais via CSS (AtlantaFX, MaterialFX, Transit)&#10;- Classes CSS para elementos (className) permitindo estilização moderna (Tailwind-like, Material Design)&#10;- Estilos inline com alta prioridade (substituem a skin padrão do JavaFX)&#10;&#10; Testes e Exemplos&#10;- TestAllInputs, TestSelect, TestUIRender para validar todos os tipos de input e layouts&#10;- Exemplo de formulário completo com todos os campos&#10;- Validação de estilos e comportamento responsivo&#10;&#10; Dependências&#10;- Bouncy Castle (gradientes e criptografia)&#10;- (opcional) AtlantaFX, JMetro, MaterialFX para temas modernos&#10;&#10; Estado atual&#10;- Motor de UI funcional para aplicações desktop com sintaxe declarativa HTML/CSS&#10;- 100% integrado com a linguagem XPL (através de NativeTag e TagFactory)&#10;- Pronto para extensão com novas tags (audio, video, canvas, dialog, etc.)" />
   </component>
 </project>

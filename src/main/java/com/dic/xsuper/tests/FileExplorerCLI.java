@@ -1,4 +1,4 @@
-package com.dic.xsuper.ui;
+package com.dic.xsuper.tests;
 import com.dic.xsuper.controller.XFileController;
 import com.dic.xsuper.controller.XFileProperties;
 import com.dic.xsuper.model.XFileIO;

@@ -1,0 +1,69 @@
+package com.dic.xsuper.lang.ui.layout.panes;
+
+import com.dic.xsuper.lang.ui.tags.NativeTag;
+import com.dic.xsuper.lang.ui.properties.cssunit.CssContext;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import java.util.List;
+import java.util.Map;
+
+public class FlexRowPane extends HBox implements CustomLayoutPane {
+
+    private final Map<String, String> style;
+
+    public FlexRowPane(Map<String, String> style, double spacing) {
+        super(spacing);
+        this.style = style != null ? style : Map.of();
+        setupAlignment();
+    }
+
+    private void setupAlignment() {
+        String align = style.getOrDefault("align-items", "center").toLowerCase().trim();
+        if (align.equals("center")) setAlignment(Pos.CENTER_LEFT);
+        else if (align.equals("flex-end")) setAlignment(Pos.BOTTOM_LEFT);
+        else if (align.equals("flex-start")) setAlignment(Pos.TOP_LEFT);
+        else setAlignment(Pos.CENTER_LEFT);
+    }
+
+    @Override
+    public void populateChildren(List<NativeTag> children, CssContext context) {
+        String justify = style.getOrDefault("justify-content", "").toLowerCase().trim();
+        boolean spaceBetween = justify.equals("space-between");
+        int size = children.size();
+
+        for (int i = 0; i < size; i++) {
+            NativeTag child = children.get(i);
+            Node fxChild = child.build();
+
+            if ("100%".equals(child.getRawStyles().get("width"))) {
+                HBox.setHgrow(fxChild, Priority.ALWAYS);
+            }
+
+            getChildren().add(fxChild);
+
+            if (spaceBetween && i < size - 1) {
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+                getChildren().add(spacer);
+            }
+
+            applyMargins(fxChild, child, context);
+        }
+    }
+
+    private void applyMargins(Node targetNode, NativeTag child, CssContext context) {
+        if (!child.getResolvedStyles().margin.isZero()) {
+            Insets m = new Insets(
+                    child.getResolvedStyles().margin.getTopPixels(context),
+                    child.getResolvedStyles().margin.getRightPixels(context),
+                    child.getResolvedStyles().margin.getBottomPixels(context),
+                    child.getResolvedStyles().margin.getLeftPixels(context)
+            );
+            HBox.setMargin(targetNode, m);
+        }
+    }
+}

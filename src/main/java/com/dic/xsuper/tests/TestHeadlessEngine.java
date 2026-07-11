@@ -1,4 +1,4 @@
-package com.dic.xsuper.lang.ui.tests;
+package com.dic.xsuper.tests;
 
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
