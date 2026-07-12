@@ -67,6 +67,8 @@ public abstract class NativeTag {
         fxNode = createNode();
         applyCommonStyles();
         applyTagSpecificStyles();
+        // Usamos new HashMap<> para compatibilidade entre Map<String, String> e Map<String, Object>
+        StyleTransformUtils.applyTransforms(fxNode, new HashMap<>(this.style));
         addChildren();
         bindEvents();
         // 🌐 PADRÃO DA WEB: Qualquer nó vira scroll se tiver "overflow: auto" ou "scroll"

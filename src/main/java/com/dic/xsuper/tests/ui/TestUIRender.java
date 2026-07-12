@@ -48,4 +48,35 @@ public class TestUIRender  {
         root.addChild(child1);
         return root;
     }
+
+    public static XplNode createTransformTestTree() {
+        XplNode root = new XplNode("div");
+        root.attributes.put("style", "padding: 50px; display: flex; gap: 30px; border: 2px dashed #007bff;");
+
+        // 1. Botão com translação individual e escala
+        XplNode child1 = new XplNode("button");
+        child1.attributes.put("style", "padding: 12px; background: #28a745; color: white; border-radius: 5px;");
+        child1.style.put("translate-x", "40px");
+        child1.style.put("translate-y", "20px");
+        child1.style.put("scale", "1.2");
+        child1.textContent = "Translate & Scale";
+
+        // 2. Div com rotação individual
+        XplNode child2 = new XplNode("div");
+        child2.attributes.put("style", "padding: 20px; background: #ffc107; color: black; border-radius: 5px;");
+        child2.style.put("rotate", "25deg");
+        child2.textContent = "Rotacionado (25deg)";
+
+        // 3. Div com string unificada 'transform' em cadeia (suporte 3D)
+        XplNode child3 = new XplNode("div");
+        child3.attributes.put("style", "padding: 20px; background: #dc3545; color: white; border-radius: 5px;");
+        child3.style.put("transform", "translate3d(15px, 25px, 0px) rotate3d(1, 1, 0, 30deg) scale(1.1)");
+        child3.textContent = "Transform 3D Composto";
+
+        root.addChild(child1);
+        root.addChild(child2);
+        root.addChild(child3);
+
+        return root;
+    }
 }
