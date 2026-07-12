@@ -1,8 +1,6 @@
 package com.dic.xsuper.tests.ui;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.tags.NativeTag;
-import com.dic.xsuper.lang.ui.tags.TagFactory;
 
 public class ComprehensiveEngineTest {
 

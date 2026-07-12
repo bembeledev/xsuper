@@ -5,7 +5,7 @@ import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.document.*;
-import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
 
 import java.util.*;
@@ -68,7 +68,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             XPLModel documentModel = com.dic.xsuper.lang.ui.document.XplDocument.buildNativeModel();
             XPLModel engineModel = com.dic.xsuper.lang.ui.SuperUiEngine.buildNativeModel();
 
-            XPLModel eventModel = com.dic.xsuper.lang.ui.events.XplEvent.buildNativeModel();
+            XPLModel eventModel = XplEvent.buildNativeModel();
 
 
 

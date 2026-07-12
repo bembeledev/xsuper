@@ -1,6 +1,6 @@
 package com.dic.xsuper.lang.ui.document;
 
-import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEvent;
 
 /**
  * Interface funcional para ouvintes de eventos.

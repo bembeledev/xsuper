@@ -14,6 +14,7 @@ import com.dic.xsuper.lang.ui.tags.list.OlTag;
 import com.dic.xsuper.lang.ui.tags.list.UlTag;
 import com.dic.xsuper.lang.ui.tags.media.AudioTag;
 import com.dic.xsuper.lang.ui.tags.media.VideoTag;
+import com.dic.xsuper.lang.ui.tags.navigation.*;
 import com.dic.xsuper.lang.ui.tags.table.TableCellTag;
 import com.dic.xsuper.lang.ui.tags.table.TableGroupTag;
 import com.dic.xsuper.lang.ui.tags.table.TableRowTag;
@@ -27,7 +28,7 @@ public class TagFactory {
 
         return switch (tag) {
             // ⭐ Contentores W3C Universais (Agora incluem ul, li e form)
-            case "div", "main", "section", "article", "header", "footer", "nav", "aside", "form" -> new ContainerTag(node);
+            case "div", "main", "section", "article", "header", "footer", "aside" -> new ContainerTag(node);
 
             // ⭐ NÓS DE TEXTO PURO (Gerados pelo HtmlParser)
             case "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "label", "text", "#text", "b", "strong", "i", "em" -> new LabelTag(node);
@@ -95,6 +96,14 @@ public class TagFactory {
             case "figure" -> new FigureTag(node);
             case "figcaption" -> new FigcaptionTag(node);
             case "web", "iframe" -> new WebTag(node); // Funciona como iframe!
+            // No TagFactory.java:
+            case "form" -> new FormTag(node);
+
+            case "nav" -> new NavTag(node);
+            case "menu" -> new MenuTag(node);
+            case "menuitem" -> new MenuItemTag(node);
+            case "menubar" -> new MenubarTag(node);
+            case "contextmenu" -> new ContextMenuTag(node);
 
             default -> new ContainerTag(node);
         };

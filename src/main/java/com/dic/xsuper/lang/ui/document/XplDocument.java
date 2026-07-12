@@ -4,7 +4,7 @@ import com.dic.xsuper.lang.*;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
-import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEvent;
 
 import java.util.*;
 
@@ -1939,7 +1939,7 @@ public class XplDocument extends XplInstance implements XplNativeObject {
      * Cria um evento genérico (simplificado).
      */
     public XplEvent createEvent(String eventType) {
-        return new XplEvent(eventType, null);
+        return new XplEvent(eventType);
     }
 
     /**

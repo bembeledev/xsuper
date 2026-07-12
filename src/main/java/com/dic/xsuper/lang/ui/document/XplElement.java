@@ -4,7 +4,7 @@ import com.dic.xsuper.lang.*;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
-import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEvent;
 
 import java.util.*;
 import java.util.stream.Collectors;

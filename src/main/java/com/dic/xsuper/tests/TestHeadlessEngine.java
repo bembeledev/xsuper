@@ -2,7 +2,7 @@ package com.dic.xsuper.tests;
 
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
-import com.dic.xsuper.lang.ui.events.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.XplUiBridge;
 import com.dic.xsuper.lang.ui.document.XplDocument;
