@@ -63,13 +63,15 @@ public class HtmlParser {
         // 1. EXTRAIR PROPRIEDADES (Atributos, Eventos, Bindings)
         while (!check(HtmlTokenType.GT) && !check(HtmlTokenType.SLASH) && !isAtEnd()) {
 
-            // É um EVENTO? (click)="funcao"
+            // ⭐ EVENTO SINTAXE ANGULAR: (click)="funcao"
             if (match(HtmlTokenType.LPAREN)) {
                 String eventName = consume(HtmlTokenType.IDENTIFIER, "Esperado nome do evento.").lexeme;
                 consume(HtmlTokenType.RPAREN, "Esperado ')' após o nome do evento.");
                 consume(HtmlTokenType.EQUALS, "Esperado '=' após o evento.");
                 String action = consume(HtmlTokenType.STRING, "Esperado ação do evento em aspas.").literal.toString();
-                node.events.put(eventName, action);
+
+                // Guarda diretamente (ex: "click")
+                node.events.put(eventName.toLowerCase(), action);
             }
             // É um DATA BINDING? [value]="var"
             else if (match(HtmlTokenType.LBRACKET)) {
@@ -79,16 +81,28 @@ public class HtmlParser {
                 String varName = consume(HtmlTokenType.STRING, "Esperado variável do binding em aspas.").literal.toString();
                 node.bindings.put(bindName, varName);
             }
-            // É um ATRIBUTO NORMAL? id="painel"
+            // ⭐ ATRIBUTO NORMAL OU EVENTO W3C: id="painel" ou onclick="funcao"
             else if (check(HtmlTokenType.IDENTIFIER)) {
                 String attrName = advance().lexeme;
                 if (match(HtmlTokenType.EQUALS)) {
                     String attrValue = consume(HtmlTokenType.STRING, "Esperado valor do atributo.").literal.toString();
 
+                    // UNIFICAÇÃO AQUI: Se for sintaxe web (começa com "on")
+                    if (attrName.toLowerCase().startsWith("on") && attrName.length() > 2) {
+                        // Tira o "on" (ex: "onclick" vira "click") e junta-se aos eventos do Angular!
+                        String eventName = attrName.substring(2).toLowerCase();
+                        node.events.put(eventName, attrValue);
+                    }
                     // Atalhos JS-like para a raiz do Node
-                    if (attrName.equals("id")) node.id = attrValue;
-                    else if (attrName.equals("class")) node.className = attrValue;
-                    else node.attributes.put(attrName, attrValue);
+                    else if (attrName.equals("id")) {
+                        node.id = attrValue;
+                    }
+                    else if (attrName.equals("class")) {
+                        node.className = attrValue;
+                    }
+                    else {
+                        node.attributes.put(attrName, attrValue);
+                    }
                 } else {
                     node.attributes.put(attrName, "true"); // Atributos booleanos (ex: disabled)
                 }

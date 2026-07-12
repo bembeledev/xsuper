@@ -19,6 +19,9 @@ import java.util.*;
 public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
 
+    // Variável para guardar o motor que está a rodar
+    private static SuperUiEngine instance;
+
     public static  XplClass EVENT_CLASS; ;
     // 1. As Plantas (Classes) Nativas Globais
     public static XplClass ELEMENT_CLASS;
@@ -28,7 +31,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     // ─── Pilares da Engine ──────────────────────────────────────────────────
 
-    private final Interpreter interpreter;    // O cérebro (Lógica e Memória XPL)
+    private  final Interpreter interpreter;    // O cérebro (Lógica e Memória XPL)
+
     private final XplUiBridge rendererBridge; // A ponte para o Pintor (JavaFX)
     private final DomEvaluator evaluator;     // O purificador de árvores (@if, @for)
 
@@ -54,6 +58,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     // ─── Construtor ─────────────────────────────────────────────────────────
     public SuperUiEngine(Interpreter interpreter, XplUiBridge rendererBridge) {
+        instance = this;
         this.interpreter = interpreter;
         this.rendererBridge = rendererBridge;
         this.evaluator = new DomEvaluator(interpreter, this);
@@ -126,6 +131,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             this.interpreter.globals.defineConst("document", this.document);
             this.interpreter.globals.defineConst("ui", this.document);
         }
+    }
+
+    public static SuperUiEngine getInstance() {
+        return instance;
     }
 
     // ─── Ponto de entrada: Carregar a View ──────────────────────────────────
@@ -314,6 +323,53 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         renderCycle();
     }
 
+    /**
+     * Executa código XPL diretamente a partir de atributos HTML inline (ex: onclick="salvar()").
+     */
+    public void dispatchInlineEvent(String scriptCallback, XplEvent eventInstance) {
+        System.out.println("[Engine] A executar evento inline: " + scriptCallback);
+
+        try {
+            // 1. Injetamos temporariamente o objeto 'event' na memória global do XPL.
+            interpreter.globals.defineVar("event", eventInstance);
+
+            // 2. TRUQUE DO LEXER/PARSER: Preparamos a string para o teu compilador!
+            String codigoInjetado = scriptCallback.trim();
+            if (!codigoInjetado.endsWith(";")) {
+                codigoInjetado += ";"; // Garante que é um Statement válido no XPL
+            }
+
+            // Gerar Tokens
+            com.dic.xsuper.lang.Lexer lexer = new com.dic.xsuper.lang.Lexer(codigoInjetado, "Inline_Event");
+            java.util.List<com.dic.xsuper.lang.Token> tokens = lexer.tokenize();
+
+            // Gerar AST
+            com.dic.xsuper.lang.Parser parser = new com.dic.xsuper.lang.Parser(tokens);
+            java.util.List<com.dic.xsuper.lang.Stmt> statements = parser.parse();
+
+            // 3. Executar os Statements!
+            for (com.dic.xsuper.lang.Stmt stmt : statements) {
+                // Se a tua string foi uma expressão (ex: "salvar()"), o parser gerou um ExpressionStmt
+                if (stmt instanceof com.dic.xsuper.lang.Stmt.ExpressionStmt exprStmt) {
+                    interpreter.evaluate(exprStmt.expression);
+                }
+                // Se tiver blocos lógicos ou for genérico, usas o execute do teu Interpreter
+                else {
+                    interpreter.execute(stmt); // (Ajusta este nome se o teu método de correr Stmts for diferente)
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("[Engine] Erro ao compilar/executar o evento inline: " + scriptCallback);
+            e.printStackTrace();
+        } finally {
+            // 4. Independentemente de sucesso ou erro, limpamos a variável mágica
+           interpreter.globals.remove("event");
+
+            // 5. A MAGIA REATIVA: Atualiza a interface gráfica se os dados mudaram!
+            renderCycle();
+        }
+    }
     // ─── Registar funções XPL como ouvintes de eventos ──────────────────────
 
     /**

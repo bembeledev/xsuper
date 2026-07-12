@@ -67,6 +67,7 @@ public class Environment {
         isConstant.put(name, true);
     }
 
+
     public void assign(String name, Object value) {
         if (values.containsKey(name)) {
             if (isConstant.get(name)) {
@@ -92,6 +93,24 @@ public class Environment {
             return enclosing.get(name);
         }
         throw new RuntimeException("Erro: Variável não definida '" + name + "'.");
+    }
+
+    /**
+     * Remove completamente uma variável do escopo atual.
+     * Útil para limpar variáveis temporárias injetadas pelo motor (ex: 'event').
+     */
+    public void remove(String name) {
+        // 1. Remove o valor principal
+        values.remove(name);
+
+        // 2. Remove o registo de constante (para evitar bloqueios futuros se a variável for recriada)
+        isConstant.remove(name);
+
+        // 3. Remove as trancas de tipo, caso a variável tenha sido tipada
+        typeRegistry.remove(name);
+
+        // 4. Se por acaso foi importada, limpa também esse carimbo
+        importedSymbols.remove(name);
     }
 
     // 1. Adiciona o dicionário de trancas logo abaixo do teu 'values'

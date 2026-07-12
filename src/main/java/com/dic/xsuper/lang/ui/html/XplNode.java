@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.ui.html;
 
+import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.document.XplElement;
 
 import javax.swing.*;
@@ -22,7 +23,7 @@ public class XplNode {
     public String id;
     public String className;
     public XplNode parent = null;
-    public com.dic.xsuper.lang.poo.XplInstance hostComponent = null;
+    public XplInstance hostComponent = null;
 
     // ─── MAPAS DE PROPRIEDADES (Atributos, Directivas, Eventos, Bindings) ──
 

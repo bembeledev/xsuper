@@ -1,5 +1,8 @@
 package com.dic.xsuper.lang.ui.tags;
 
+import com.dic.xsuper.lang.ui.event.AttachJavaFxListener;
+import com.dic.xsuper.lang.ui.event.XplEvent;
+import com.dic.xsuper.lang.ui.event.XplEventType;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.layout.panes.CustomLayoutPane;
 import com.dic.xsuper.lang.ui.properties.*;
@@ -7,11 +10,20 @@ import com.dic.xsuper.lang.ui.properties.borderunit.BorderSide;
 import com.dic.xsuper.lang.ui.properties.cssunit.CssContext;
 import com.dic.xsuper.lang.ui.properties.gradient.Gradient;
 import com.dic.xsuper.lang.ui.properties.gradient.GradientStop;
+
+import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.KeyEvent;
+import com.dic.xsuper.lang.ui.SuperUiEngine;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
 
 import java.util.*;
 
@@ -176,12 +188,30 @@ public abstract class NativeTag {
         }
     }
 
+
+    /**
+     * Motor de interceção otimizado. Lê DIRETAMENTE da nova gaveta de eventos.
+     */
     protected void bindEvents() {
-        if (fxNode == null || events.isEmpty()) return;
-        for (Map.Entry<String, String> entry : events.entrySet()) {
-            fxNode.getProperties().put("xpl_event_" + entry.getKey(), entry.getValue());
+        // Sai imediatamente se não houver eventos para poupar memória e processamento
+        if (fxNode == null || sourceNode.events == null || sourceNode.events.isEmpty()) return;
+
+        // Itera apenas sobre a gaveta exclusiva de eventos (click, keydown, etc.)
+        for (Map.Entry<String, String> entry : sourceNode.events.entrySet()) {
+            String eventName = entry.getKey();           // Ex: "click"
+            String scriptCallback = entry.getValue();    // Ex: "submeterDados(event)"
+
+            // Converte a string limpa para o teu enum W3C
+            XplEventType eventType = XplEventType.fromString(eventName);
+
+            if (eventType != null) {
+                AttachJavaFxListener.attachJavaFxListener(this.sourceNode,fxNode, eventType, scriptCallback);
+            } else {
+                System.err.println("[NativeTag] Aviso: Evento W3C não suportado -> " + eventName);
+            }
         }
     }
+
 
     protected void applyCommonStyles() {
         if (fxNode == null) return;

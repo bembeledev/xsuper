@@ -9,7 +9,7 @@ classes/
 *.zip
 *.tar.gz
 *.rar
-*.class
+
 # ─── Logs ──────────────────────────────────────────────────────────────────
 *.log
 logs/
@@ -45,12 +45,11 @@ mvnw.cmd
 # ─── Gradle ──────────────────────────────────────────────────────────────
 .gradle/
 gradle/
-build/
 gradle.properties
 gradlew
 gradlew.bat
 
-# ─── Ficheiros de saída (testes, relatórios, dados) ──────────────────
+# ─── Ficheiros de saída (testes, relatórios, dados) ──────────────────────
 *.tmp
 *.temp
 *.out
@@ -81,11 +80,9 @@ gradlew.bat
 .DS_Store
 Thumbs.db
 desktop.ini
-*.log
 *.bak
 *.orig
 *.old
-*.tmp
 
 # ─── Ficheiros de configuração local ─────────────────────────────────────
 application.properties
@@ -104,3 +101,46 @@ tests/
 out/
 temp/
 data/
+
+# ─── Pastas de dependências (evitar subir bibliotecas) ──────────────────
+lib/
+libs/
+deps/
+*.dylib
+*.so
+*.dll
+
+# ─── Relatórios e cobertura de testes ────────────────────────────────────
+coverage/
+test-output/
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+
+# ─── Ficheiros de compilação nativa ──────────────────────────────────────
+*.obj
+*.o
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+
+# ─── Bases de dados (evitar ficheiros grandes) ──────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+*.mv.db
+*.trace.db
+
+# ─── Ficheiros de backup do sistema ──────────────────────────────────────
+*~
+*.swp
+*.swo
+*.lock
+
+# ─── Ficheiros de configuração de ambiente ──────────────────────────────
+.env
+.env.*
+!.env.example

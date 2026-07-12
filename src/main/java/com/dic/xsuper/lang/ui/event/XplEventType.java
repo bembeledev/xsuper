@@ -136,6 +136,7 @@ public enum XplEventType {
     READYSTATE_CHANGE("readystatechange"),
     /** Erro (ex: carregamento de imagem) */
     ERROR("error"),
+    ABORT("abort"),
 
     // =====================================================================
     // 8. EVENTOS DE TELA CHEIA
@@ -315,7 +316,10 @@ public enum XplEventType {
     /** Elemento está prestes a ser destruído */
     BEFORE_DESTROY("beforedestroy"),
     /** Elemento foi destruído */
-    DESTROYED("destroyed");
+    DESTROYED("destroyed"),
+    VISIBILITYCHANGE("visibilitychange"),
+    TOGGLE("toggle"),
+    DOMCONTENTLOADED("domcontentloaded");
 
     // =====================================================================
     // ATRIBUTO E CONSTRUTOR

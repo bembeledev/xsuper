@@ -3,39 +3,11 @@ package com.dic.xsuper.tests.ui;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import com.dic.xsuper.lang.ui.tags.TagFactory;
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
 
-public class TestUIRender extends Application {
 
-    public static void main(String[] args) {
-        // Teste lógico (sem UI)
-        testStyleResolution();
+public class TestUIRender  {
 
-        // Teste visual (JavaFX)
-        launch(args);
-    }
-
-    @Override
-    public void start(Stage primaryStage) {
-        // Cria uma árvore XplNode simulada
-        XplNode root = createSampleTree();
-
-        // Converte para NativeTag
-        NativeTag rootTag = TagFactory.create(root);
-        javafx.scene.Node fxRoot = rootTag.build();
-
-        // Mostra numa janela
-        StackPane pane = new StackPane(fxRoot);
-        Scene scene = new Scene(pane, 600, 400);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Teste UI - HTML para JavaFX");
-        primaryStage.show();
-    }
-
-    private static void testStyleResolution() {
+    public static void testStyleResolution() {
         System.out.println("--- Teste de Resolução de Estilos ---");
 
         // Simula um nó div com estilo inline
@@ -46,31 +18,34 @@ public class TestUIRender extends Application {
         node.textContent = "Olá mundo!";
 
         NativeTag tag = TagFactory.create(node);
-        // Acessamos os resolvedStyles via reflexão ou método público (adicionar getter)
-        // Como exemplo, usamos a instância diretamente (assumindo que os campos são públicos ou têm getters)
-        // Vamos imprimir as propriedades
         System.out.println("Tag criada: " + tag.getClass().getSimpleName());
-        System.out.println("Padding: " + tag.getResolvedStyles().padding);  // Método fictício
-        System.out.println("Background: " + tag.getResolvedStyles().margin);
-        System.out.println("Border: " + tag.getResolvedStyles().border);
+        System.out.println("ID Atribuído: " + tag.getId());
     }
 
-    private static XplNode createSampleTree() {
+    public static XplNode createSampleTree() {
         XplNode root = new XplNode("div");
         root.attributes.put("style", "padding: 20px; display: flex; gap: 10px; border: 2px solid #ff0000;");
 
+        // Botão com evento de clique na gaveta correta 'events'
         XplNode child1 = new XplNode("button");
         child1.attributes.put("style", "padding: 10px; background: #007bff; color: white; border-radius: 5px;");
-        child1.textContent = "Clique";
 
+
+
+        child1.events.put("click", "println(event.detail);"); // ⭐ Usar .events.put com a chave limpa "click"
+        child1.textContent = "Clique com Evento";
+
+        // Input de texto com evento de teclado na gaveta 'events'
         XplNode child2 = new XplNode("input");
         child2.attributes.put("style", "padding: 1px; border: 6px solid #ccc;");
-        child2.attributes.put("placeholder", "Digite...");
+        child2.attributes.put("placeholder", "Digite algo...");
+        child2.events.put("input", "println(event.detail.value);"); // ⭐ Usar .events.put com a chave limpa "keydown"
+        child2.events.put("resize", "println(event.detail);"); // ⭐ Usar .events.put com a chave limpa "keydown"
+        //child2.events.put("mouseenter", "println(event.currentTarget);"); // ⭐ Usar .events.put com a chave limpa "keydown"
+        //child2.events.put("focus", "println(event);"); // ⭐ Usar .events.put com a chave limpa "keydown"
 
         root.addChild(child2);
         root.addChild(child1);
         return root;
     }
-
-
 }
