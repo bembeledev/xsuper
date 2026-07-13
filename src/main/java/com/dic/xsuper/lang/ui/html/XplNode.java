@@ -1,6 +1,8 @@
 package com.dic.xsuper.lang.ui.html;
 
 import com.dic.xsuper.lang.poo.XplInstance;
+import com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation;
+import com.dic.xsuper.lang.ui.animation.XplTransition;
 import com.dic.xsuper.lang.ui.document.XplElement;
 
 import javax.swing.*;
@@ -25,12 +27,20 @@ public class XplNode {
     public XplNode parent = null;
     public XplInstance hostComponent = null;
 
+    // ⭐ A ÂNCORA NATIVA: Guarda o nó JavaFX (ou web) que pertence a esta tag!
+    public Object nativeNode;
+
     // ─── MAPAS DE PROPRIEDADES (Atributos, Directivas, Eventos, Bindings) ──
 
     public Map<String, Object> attributes = new HashMap<>();
     public Map<String, String> directives = new HashMap<>();
     public Map<String, String> events = new HashMap<>();
     public Map<String, String> bindings = new HashMap<>();
+
+
+    // ─── MAPAS DE TRANSIÇÔES E KEYFRAMES ──
+    public Map<String, XplTransition> transitions = new HashMap<>();
+    public Map<String, XplKeyframeAnimation> keyframeAnimations = new HashMap<>();
 
 
     // ─── ESTILO E ESTADO ─────────────────────────────────────────────────────

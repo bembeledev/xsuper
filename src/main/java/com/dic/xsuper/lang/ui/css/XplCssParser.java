@@ -240,6 +240,18 @@ public class XplCssParser {
                 XplNode propNode = new XplNode("property");
                 propNode.attributes.put("name", propName);
 
+                // ⭐ Se for 'transition', guardamos diretamente no nó pai (a regra atual)
+                if ("transition".equals(propName)) {
+                    // Lemos o valor até ';' e criamos um nó literal ou expressão
+                    while (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
+                        propNode.addChild(parseValue());
+                    }
+                    parent.addChild(propNode);
+                    match(XplCssTokenType.SEMICOLON);
+                    continue;
+                }
+
+
                 // ⭐ NOVO: Um valor CSS pode ser uma mistura! Lemos TUDO até o ';'
                 while (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
                     if (match(XplCssTokenType.AT_IF)) {

@@ -6,6 +6,8 @@ import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.css.*;
+import com.dic.xsuper.lang.ui.css.media.JavaFxMediaListener;
+import com.dic.xsuper.lang.ui.css.media.XplMediaNode;
 import com.dic.xsuper.lang.ui.document.*;
 import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
@@ -66,6 +68,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     private final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
 
+    // Instância global do Listener
+    private final JavaFxMediaListener mediaListener = new JavaFxMediaListener();
 
     private static XPLModel nativeModel;
 
@@ -150,25 +154,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         }
     }
 
-    public static void injectStylesAndRender(XplNode uiRoot, String cssRawCode, Map<String, Object> xplContext) {
-
-        // 1. Parser e Evaluator
-        XplNode rawCssAst = new XplCssParser(new XplCssLexer(cssRawCode).scanTokens()).parse();
-        XplNode flatCssAst = XplCssEvaluator.evaluate(rawCssAst, xplContext);
-
-        // 2. Extrair Tema Global
-        XplCssResolver resolver = new XplCssResolver();
-        resolver.extractRootVariables(flatCssAst);
-
-        // 3. FASE 1 - INJEÇÃO GLOBAL (Estilos base vindos do ficheiro CSS)
-        XplCssMatcher.applyStyles(uiRoot, flatCssAst, resolver);
-
-        // 4. FASE 2 - INJEÇÃO INLINE (Sobrescreve a base global se houver estilo direto no XPL)
-        XplCssMatcher.applyInlineStyles(uiRoot, resolver);
-
-        // 5. Entregar ao construtor nativo
-        System.out.println("Motor CSS carregado. Cascata resolvida.");
-    }
 
     // ─── Ponto de entrada: Carregar Estilos (CSS) ───────────────────────────
     public void loadStyles(String... styles) {
@@ -200,6 +185,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         XplCssLexer lexer = new XplCssLexer(combinedCss.toString());
         XplNode rawCssAst = new XplCssParser(lexer.scanTokens()).parse();
         XplNode flatCssAst = XplCssEvaluator.evaluate(rawCssAst, xplContext);
+
+        // ⭐ NOVO: Alimentar o JavaFxMediaListener com os dados!
+        extractMediaQueries(flatCssAst);
 
         // 4. Extrair Tema Global (:root)
         XplCssResolver resolver = new XplCssResolver();
@@ -373,6 +361,80 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
 
 
+    // =========================================================================
+    // 📱 EXTRATOR DE MEDIA QUERIES
+    // =========================================================================
+
+    private void extractMediaQueries(XplNode flatCssAst) {
+        if (flatCssAst == null || flatCssAst.children == null) return;
+
+        // Limpa media queries antigas (evita duplicação em múltiplos renderCycles)
+        // Se ainda não tens o método clear() no JavaFxMediaListener, podes criar lá!
+        // this.mediaListener.clear();
+
+        for (XplNode node : flatCssAst.children) {
+            if ("@media".equalsIgnoreCase(node.tag) || "media_block".equalsIgnoreCase(node.tag)) {
+
+                String condition = node.attributes.getOrDefault("condition", "").toString();
+                if (condition.isEmpty() && node.attributes.containsKey("selector")) {
+                    condition = node.attributes.get("selector").toString();
+                }
+
+                Map<String, Map<String, String>> rules = new HashMap<>();
+
+                for (XplNode ruleNode : node.children) {
+                    if ("rule".equalsIgnoreCase(ruleNode.tag)) {
+                        String selector = ruleNode.attributes.getOrDefault("selector", "").toString();
+                        Map<String, String> properties = new HashMap<>();
+
+                        for (XplNode propNode : ruleNode.children) {
+                            if ("property".equalsIgnoreCase(propNode.tag) || "variable".equalsIgnoreCase(propNode.tag)) {
+                                String propName = propNode.attributes.getOrDefault("name", "").toString();
+
+                                // ⭐ A MAGIA ACONTECE AQUI: Extração invencível!
+                                String propValue = extractDeepValue(propNode);
+
+                                properties.put(propName, propValue);
+                            }
+                        }
+                        rules.put(selector, properties);
+                    }
+                }
+
+                XplMediaNode mediaNode = new XplMediaNode(condition, rules);
+                this.mediaListener.addMediaNode(mediaNode);
+
+                System.out.println("[Engine] 📡 Media Query registada: " + condition + " -> " + rules);
+            }
+        }
+    }
+
+
+    // 🧲 EXTRATOR PROFUNDO (Garante que nenhum valor de CSS escapa)
+    private String extractDeepValue(XplNode node) {
+        if (node == null) return "";
+
+        // 1. Tenta encontrar nos atributos diretos
+        if (node.attributes.containsKey("value")) return node.attributes.get("value").toString().trim();
+        if (node.attributes.containsKey("data")) return node.attributes.get("data").toString().trim();
+
+        // 2. Tenta encontrar no texto do nó
+        if (node.textContent != null && !node.textContent.trim().isEmpty()) return node.textContent.trim();
+
+        // 3. Se estiver aninhado em nós filhos (ex: <property><value>15px</value></property>)
+        StringBuilder sb = new StringBuilder();
+        if (node.children != null) {
+            for (XplNode child : node.children) {
+                String childValue = extractDeepValue(child);
+                if (!childValue.isEmpty()) {
+                    sb.append(childValue).append(" ");
+                }
+            }
+        }
+        return sb.toString().trim();
+    }
+
+
     // ─── Ciclo de Reactividade (O Loop da Magia) ─────────────────────────────
 
     /**
@@ -411,6 +473,16 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         if (rendererBridge != null) {
             rendererBridge.renderView(this.activeDom);
         }
+
+        // Se a cena já existir, reaplicar media queries
+        /*if (rendererBridge != null && rendererBridge.getScene() != null) {
+            Scene scene = rendererBridge.getScene();
+            if (scene != null) {
+                // Reavalia as media queries com a largura atual
+                mediaListener.reattach(scene); // ou apenas reaplicar
+            }
+        }*/
+
     }
 
     // =========================================================================
@@ -510,6 +582,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             renderCycle();
         }
     }
+
+
     // ─── Registar funções XPL como ouvintes de eventos ──────────────────────
 
     /**
@@ -662,6 +736,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             scroll.setFitToWidth(true);
 
             Scene scene = new javafx.scene.Scene(scroll, width, height);
+
+            // ⭐ A TUA LÓGICA EM AÇÃO:
+            // O listener "agarra-se" à Scene e altera apenas quem precisa!
+            mediaListener.attachToScene(scene);
             stage.setTitle(title);
             stage.setScene(scene);
 
