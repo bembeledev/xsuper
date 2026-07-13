@@ -36,7 +36,18 @@ public class XplCssLexer {
             case '[': addToken(XplCssTokenType.LBRACKET); break;
             case ']': addToken(XplCssTokenType.RBRACKET); break;
             case ',': addToken(XplCssTokenType.COMMA); break;
-            case ':': addToken(XplCssTokenType.COLON); isValueMode = true; break;
+            case ':':
+                // Deteta QUALQUER pseudo-classe dinamicamente (:root, :hover, ::before)
+                if (isAlpha(peek()) || peek() == ':') {
+                    int startPseudo = current - 1; // inclui o primeiro ':'
+                    if (peek() == ':') advance();  // Consome o segundo ':' se for "::"
+                    while (isAlphaNumeric(peek()) || peek() == '-') advance();
+                    addToken(XplCssTokenType.PSEUDO_CLASS, source.substring(startPseudo, current));
+                } else {
+                    addToken(XplCssTokenType.COLON);
+                    isValueMode = true; // ⭐ RECUPERADO! Crucial para não confundir seletores com valores
+                }
+                break;
             case ';': addToken(XplCssTokenType.SEMICOLON); isValueMode = false; break;
             case '.':
             case '#':
@@ -84,8 +95,14 @@ public class XplCssLexer {
                 }
                 break;
             case '-':
-                if (match('-')) {
-                    addToken(XplCssTokenType.MINUS_MINUS);
+                if (peek() == '-') {
+                    // Consome o segundo '-'
+                    // Consome o nome da variável (inclui hífens, underscores, alfanuméricos)
+                    do {
+                        advance();
+                    } while (isAlphaNumeric(peek()) || peek() == '-' || peek() == '_');
+                    String text = source.substring(start, current);
+                    addToken(XplCssTokenType.VAR_NAME, text);
                 } else if (match('=')) {
                     addToken(XplCssTokenType.MINUS_ASSIGN);
                 } else {
@@ -150,14 +167,39 @@ public class XplCssLexer {
     // ---- Métodos auxiliares ----
 
 
-    // ⭐ 4. ADICIONA ESTES 2 NOVOS MÉTODOS MÁGICOS NO FUNDO DA CLASSE:
     private void scanWord() {
-        while (isAlphaNumeric(peek()) || peek() == '-' || peek() == '_') {
+        // ⭐ 1. DETETAR VARIÁVEL CSS (--variavel)
+        if (source.startsWith("--", start)) {
+            while (isAlphaNumeric(peek()) || peek() == '-' || peek() == '_') {
+                advance();
+            }
+            String text = source.substring(start, current);
+            addToken(XplCssTokenType.VAR_NAME, text);
+            return;
+        }
+
+        // ⭐ 2. DETETAR FUNÇÃO var(
+        if (source.startsWith("var(", start)) {
+            current += 3; // consome "var("
+            addToken(XplCssTokenType.VAR_FUNC);
+            // O nome da variável virá a seguir (será capturado como IDENTIFIER ou VAR_NAME)
+            return;
+        }
+
+        // ⭐ DETETAR FUNÇÃO calc(
+        if (source.startsWith("calc(", start)) {
+            current += 4; // consome "calc("
+            addToken(XplCssTokenType.CALC_FUNC);
+            return;
+        }
+
+        // ⭐ 3. CASO NORMAL (palavra, seletor ou propriedade)
+        while (isAlphaNumeric(peek()) || peek() == '-' || peek() == '_' || peek() == '.') {
             advance();
         }
         String text = source.substring(start, current);
 
-        // Se estamos em modo valor (após ':'), é IDENTIFIER (variável)
+        // Se estamos em modo valor (após ':'), é IDENTIFIER (variável de valor)
         if (isValueMode) {
             addToken(XplCssTokenType.IDENTIFIER, text);
             return;
@@ -169,12 +211,10 @@ public class XplCssLexer {
         if (temp < source.length() && source.charAt(temp) == ':') {
             addToken(XplCssTokenType.PROPERTY, text);
         } else {
-            // Se começar com '.' ou '#', é seletor; mas o scanIdentifier já pode incluir esses
-            // Para simplificar, consideramos SELECTOR
+            // Se começar com '.' ou '#', é seletor; caso contrário, também SELECTOR
             addToken(XplCssTokenType.SELECTOR, text);
         }
     }
-
     // O "Raio-X": Verifica se a declaração termina num Bloco ou num Ponto e Vírgula
     private boolean isHeadingTowardsBrace(int fromIndex) {
         for (int i = fromIndex; i < source.length(); i++) {

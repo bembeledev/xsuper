@@ -55,6 +55,10 @@ __ui_engine.defineTag("Perfil", Perfil);
 __ui_engine.defineTag("Avatar", Avatar);
 __ui_engine.loadView(html);
 println(document.getInnerHTML());
+__ui_engine.renderCycle();
+    // BAM! A janela aparece aqui.
+    // O JavaFX arranca, o renderizador é injetado, e a vista já mastigada é pintada.
+__ui_engine.showWindow("Aplicação Desktop Nativa", 800, 600);
 
 // Dispara o clique no Avatar para testar!
 var act = document.getElementById("img").toObject();

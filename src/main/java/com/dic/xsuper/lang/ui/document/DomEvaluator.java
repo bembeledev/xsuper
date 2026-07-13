@@ -277,7 +277,7 @@ public class DomEvaluator {
             for (Object item : iterable) {
                 hasItems = true;
                 // ⭐ MAGIA DE ESCOPO: Injetamos a variável temporária no ambiente
-                interpreter.environment.defineVar(varName, item);
+                interpreter.environment.defineLet(varName, item);
 
                 for (XplNode child : forNode.children) {
                     if (!child.tag.equals("@empty")) {

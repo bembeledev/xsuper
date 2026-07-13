@@ -39,15 +39,19 @@ public class HtmlParser {
         XplNode node;
 
         // ⭐ LÓGICA DE VALIDAÇÃO ESTRICTA ⭐
-        if (tagName.equals("html")) {
-            if (htmlFound) throw new RuntimeException("Erro: Tag <html> já foi declarada neste documento.");
-            htmlFound = true;
-        } else if (tagName.equals("head")) {
-            if (headFound) throw new RuntimeException("Erro: Tag <head> já foi declarada neste documento.");
-            headFound = true;
-        } else if (tagName.equals("body")) {
-            if (bodyFound) throw new RuntimeException("Erro: Tag <body> já foi declarada neste documento.");
-            bodyFound = true;
+        switch (tagName) {
+            case "html" -> {
+                if (htmlFound) throw new RuntimeException("Erro: Tag <html> já foi declarada neste documento.");
+                htmlFound = true;
+            }
+            case "head" -> {
+                if (headFound) throw new RuntimeException("Erro: Tag <head> já foi declarada neste documento.");
+                headFound = true;
+            }
+            case "body" -> {
+                if (bodyFound) throw new RuntimeException("Erro: Tag <body> já foi declarada neste documento.");
+                bodyFound = true;
+            }
         }
 
         if (HtmlTagUtils.isNativeTag(tagName)) {

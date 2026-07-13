@@ -35,7 +35,7 @@ public class XplNode {
 
     // ─── ESTILO E ESTADO ─────────────────────────────────────────────────────
 
-    public Map<String, Object> style = new HashMap<>();
+    public Map<String, String> style = new HashMap<>();
     public Object value = null;
     public boolean disabled = false;
     public boolean hidden = false;
@@ -264,7 +264,7 @@ public class XplNode {
 
     // ─── ESTILOS INLINE ──────────────────────────────────────────────────────
 
-    public void setStyle(String property, Object value) {
+    public void setStyle(String property, String value) {
         style.put(property, value);
     }
 
@@ -328,7 +328,7 @@ public class XplNode {
         // ─── Estilos inline ────────────────────────────────────────────────
         if (!style.isEmpty()) {
             StringBuilder styleStr = new StringBuilder();
-            for (Map.Entry<String, Object> entry : style.entrySet()) {
+            for (Map.Entry<String, String> entry : style.entrySet()) {
                 styleStr.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
             }
             el.setAttribute("style", styleStr.toString());

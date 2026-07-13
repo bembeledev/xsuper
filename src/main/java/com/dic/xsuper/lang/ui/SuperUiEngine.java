@@ -1,12 +1,18 @@
 package com.dic.xsuper.lang.ui;
 
 import com.dic.xsuper.lang.*;
+import com.dic.xsuper.lang.debug.XplNodeDebugger;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
+import com.dic.xsuper.lang.ui.css.*;
 import com.dic.xsuper.lang.ui.document.*;
 import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
+import com.dic.xsuper.lang.ui.tags.NativeTag;
+import com.dic.xsuper.lang.ui.tags.TagFactory;
+import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
 
 import java.util.*;
 
@@ -33,13 +39,24 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     private  final Interpreter interpreter;    // O cérebro (Lógica e Memória XPL)
 
-    private final XplUiBridge rendererBridge; // A ponte para o Pintor (JavaFX)
+    private XplUiBridge rendererBridge; // A ponte para o Pintor (JavaFX)
     private final DomEvaluator evaluator;     // O purificador de árvores (@if, @for)
 
     // ─── Estado da Aplicação ────────────────────────────────────────────────
 
     private XplNode staticRoot;    // A "Planta" original (com diretivas @ intactas)
     private XplNode activeDom;     // A "Casa" construída (árvore limpa, hidratada)
+
+    // ⭐ NOVO: Guarda todos os blocos de CSS carregados
+    private final List<String> loadedStyles = new ArrayList<>();
+
+    public XplNode getActiveDom() {
+        return activeDom;
+    }
+
+    public XplNode getStaticRoot() {
+        return staticRoot;
+    }
 
     // ─── O Documento Global (injetado no XPL) ─────────────────────────────
 
@@ -133,6 +150,66 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         }
     }
 
+    public static void injectStylesAndRender(XplNode uiRoot, String cssRawCode, Map<String, Object> xplContext) {
+
+        // 1. Parser e Evaluator
+        XplNode rawCssAst = new XplCssParser(new XplCssLexer(cssRawCode).scanTokens()).parse();
+        XplNode flatCssAst = XplCssEvaluator.evaluate(rawCssAst, xplContext);
+
+        // 2. Extrair Tema Global
+        XplCssResolver resolver = new XplCssResolver();
+        resolver.extractRootVariables(flatCssAst);
+
+        // 3. FASE 1 - INJEÇÃO GLOBAL (Estilos base vindos do ficheiro CSS)
+        XplCssMatcher.applyStyles(uiRoot, flatCssAst, resolver);
+
+        // 4. FASE 2 - INJEÇÃO INLINE (Sobrescreve a base global se houver estilo direto no XPL)
+        XplCssMatcher.applyInlineStyles(uiRoot, resolver);
+
+        // 5. Entregar ao construtor nativo
+        System.out.println("Motor CSS carregado. Cascata resolvida.");
+    }
+
+    // ─── Ponto de entrada: Carregar Estilos (CSS) ───────────────────────────
+    public void loadStyles(String... styles) {
+        System.out.println("[Engine] A carregar novos blocos de estilo...");
+        for (String style : styles) {
+            if (style != null && !style.trim().isEmpty()) {
+                this.loadedStyles.add(style);
+            }
+        }
+    }
+
+    // ─── Processador Interno de Cascata ─────────────────────────────────────
+    private void applyStylesToActiveDom() {
+        if (this.loadedStyles.isEmpty() || this.activeDom == null) return;
+
+        System.out.println("[Engine] 5. A fundir o CSS e aplicar a Cascata...");
+
+        // 1. Unificar todos os estilos
+        StringBuilder combinedCss = new StringBuilder();
+        for (String style : this.loadedStyles) {
+            combinedCss.append(style).append("\n");
+        }
+
+        // 2. Extrair variáveis globais do XPL para o CSS
+        // Cria um mapa com as variáveis da linguagem para o CSS resolver @if, @for e interpolações
+        Map<String, Object> xplContext = new HashMap<>(interpreter.globals.values);
+
+        // 3. Parser e Evaluator
+        XplCssLexer lexer = new XplCssLexer(combinedCss.toString());
+        XplNode rawCssAst = new XplCssParser(lexer.scanTokens()).parse();
+        XplNode flatCssAst = XplCssEvaluator.evaluate(rawCssAst, xplContext);
+
+        // 4. Extrair Tema Global (:root)
+        XplCssResolver resolver = new XplCssResolver();
+        resolver.extractRootVariables(flatCssAst);
+
+        // 5. Aplicar o CSS Global e Sobrescrever com o CSS Inline
+        XplCssMatcher.applyStyles(this.activeDom, flatCssAst, resolver);
+        XplCssMatcher.applyInlineStyles(this.activeDom, resolver);
+    }
+
     public static SuperUiEngine getInstance() {
         return instance;
     }
@@ -160,7 +237,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     // =========================================================================
     // 🧹 NORMALIZADOR DO DOM (Padrão W3C Estrito)
-    // ⭐ MÉTODO ROBUSTO: Retorna a árvore normalizada para garantir atualização ⭐
     // =========================================================================
     public XplNode normalizeDocumentTree(XplNode root) {
         // 1. Identificar o nó <html> na raiz
@@ -187,7 +263,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         }
 
         // 3. Mover nós órfãos que estejam na raiz (fora do <html>) para dentro
-        //    Usamos uma cópia para não modificar a lista enquanto iteramos
         List<XplNode> rootChildrenCopy = new ArrayList<>(root.children);
         for (XplNode child : rootChildrenCopy) {
             if (child == htmlNode) continue;  // não mexe no html
@@ -199,7 +274,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                     headNode = child;
                     htmlNode.children.addFirst(headNode);
                 } else {
-                    // funde conteúdos se já existir head
                     headNode.children.addAll(child.children);
                 }
             } else if (child.tag.equalsIgnoreCase("body")) {
@@ -219,20 +293,69 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             }
         }
 
-        // 4. Garantir que <head> e <body> existam
-        if (headNode == null) {
-            headNode = new XplNode("head");
-            htmlNode.children.addFirst(headNode);
-        }
-        if (bodyNode == null) {
-            bodyNode = new XplNode("body");
-            htmlNode.children.add(bodyNode);
-        }
+        if (headNode == null) htmlNode.children.addFirst(new XplNode("head"));
+        if (bodyNode == null) htmlNode.children.add(new XplNode("body"));
+
+        // ⭐ A MAGIA ACONTECE AQUI: Purificar e hidratar a árvore final!
+        purifyTree(root);
 
         return root;
     }
 
+    // =========================================================================
+    // 🧬 PURIFICADOR E SINCRONIZADOR BIFÁSICO DE ÁRVORE
+    // =========================================================================
+    private void purifyTree(XplNode node) {
+        if (node == null) return;
 
+        // 1. RESOLUÇÃO CSS: Converter string bruta para o mapa 'style'
+        if (node.attributes.containsKey("style")) {
+            String rawStyle = node.attributes.get("style").toString();
+            String[] declarations = rawStyle.split(";");
+            for (String dec : declarations) {
+                if (!dec.trim().isEmpty()) {
+                    String[] kv = dec.split(":", 2);
+                    if (kv.length == 2) {
+                        node.style.put(kv[0].trim().toLowerCase(), kv[1].trim());
+                    }
+                }
+            }
+        }
+
+        // 2. SINCRONIZAÇÃO DE TEXTO (Mantendo os nós #text vivos!)
+        if (node.children != null && !node.children.isEmpty()) {
+            StringBuilder combinedText = new StringBuilder();
+
+            for (XplNode child : node.children) {
+                if ("#text".equalsIgnoreCase(child.tag)) {
+                    // Apanha o texto avaliado (ex: após injetar variáveis) mas NÃO apaga o nó!
+                    if (child.textContent != null) {
+                        combinedText.append(child.textContent).append(" ");
+                    }
+                } else {
+                    // Continua a purificar as tags normais
+                    purifyTree(child);
+                }
+            }
+
+            // Injeta a soma dos textos no textContent do pai para o JavaFX ler rápido
+            String aggregatedText = combinedText.toString().trim();
+            if (!aggregatedText.isEmpty()) {
+                node.textContent = aggregatedText;
+            }
+
+        } else if (node.textContent != null && !node.textContent.trim().isEmpty()) {
+            // 3. AUTO-PREENCHIMENTO: Se o nó tem textContent mas perdeu os filhos #text
+            node.textContent = node.textContent.trim();
+
+            // Garante que o ecossistema W3C tem o seu filho #text correspondente!
+            if (!"#text".equalsIgnoreCase(node.tag)) {
+                XplNode textNode = new XplNode("#text");
+                textNode.textContent = node.textContent;
+                node.addChild(textNode);
+            }
+        }
+    }
 
     /**
      * Obtém a classe de um componente registado.
@@ -259,36 +382,53 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     public void renderCycle() {
         if (staticRoot == null) return;
 
-        System.out.println(staticRoot.children.getLast().children);
-
-        // 1. O Evaluator resolve a árvore. (Isto cria uma árvore nova, sem referências antigas)
+        // 1. Resolve @if, @for na Árvore Virtual
         this.activeDom = evaluator.evaluateTree(staticRoot);
 
-        // 2. Normalização (Arrumação) na árvore virtual (XplNode)
-        // Chamamos isto antes de converter para objetos XplElement
+        // 2. Normaliza (<html>, <head>, <body>) e processa os textos
         normalizeDocumentTree(this.activeDom);
 
-        // 3. 💧 Limpeza Total e Hidratação
-        // Aqui está o segredo: limpamos o documento antes de hidratar
+        // ⭐ 3. CORREÇÃO: Aplica Cascata CSS PRIMEIRO! (Preenche node.style)
+        applyStylesToActiveDom();
+
+        // ⭐ 4. CORREÇÃO: Serializa DEPOIS! (Copia as cores finais para os atributos)
+        serializeComputedStyles(this.activeDom);
+
+        // 5. Limpeza Total
         this.document.documentElement = null;
         this.document.head = null;
         this.document.body = null;
 
-        // Convertemos a árvore normalizada para Objetos Vivos (XplElement)
+        // 6. Gera a Árvore Viva com os textos e estilos corretos!
         this.document.documentElement = this.activeDom.toXplElement();
-
-        // 4. Conectar os ponteiros rápidos (Sempre a partir do novo documentElement!)
-        // Usamos querySelector que, por ser novo, só encontra o que está nesta instância
         this.document.head = this.document.documentElement.querySelector("head");
         this.document.body = this.document.documentElement.querySelector("body");
 
-        // 5. Hidratação final
+        // 7. Hidrata conectando a Árvore Virtual à Viva perfeitamente
         hydrateHeadlessDom(this.activeDom);
-        registerNodesInXpl(this.activeDom);
 
-        // 6. Enviar para a Ponte Gráfica
+        // 8. Enviar para a Ponte Gráfica
         if (rendererBridge != null) {
             rendererBridge.renderView(this.activeDom);
+        }
+    }
+
+    // =========================================================================
+    // 🎨 SERIALIZADOR DE ESTILOS COMPUTADOS
+    // =========================================================================
+    private void serializeComputedStyles(XplNode node) {
+        if (node == null) return;
+
+        if (!node.style.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, String> entry : node.style.entrySet()) {
+                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
+            }
+            node.attributes.put("style", sb.toString().trim());
+        }
+
+        for (XplNode child : node.children) {
+            serializeComputedStyles(child);
         }
     }
 
@@ -484,13 +624,89 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         componentRegistry.put(tagName, (XplClass)tagElement);
     }
 
+    /**
+     * O programador chamou isto do XPL!
+     * Agora sim, acordamos o JavaFX, criamos a janela e renderizamos.
+     */
+    public void showWindow(String title, double width, double height) {
+        System.out.println("[Engine] O script solicitou a criação de uma janela UI...");
+
+        try {
+            javafx.application.Platform.startup(() -> {});
+        } catch (IllegalStateException e) {
+            // Toolkit já iniciado
+        }
+
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+
+        javafx.application.Platform.runLater(() -> {
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            renderCycle();
+            // ⭐ 1. A CURA DA TELA BRANCA: Procurar o <body> dentro do activeDom
+            XplNode bodyNode =findBodyNode(activeDom);
+
+            System.out.println("Recuperado: "+bodyNode.tag);
+
+            // ⭐ 2. Usar um VBox que se expande automaticamente (como o <body> real)
+            javafx.scene.layout.VBox fxBody = new javafx.scene.layout.VBox();
+            fxBody.setStyle("-fx-background-color: #f0f2f5; -fx-padding: 0;"); // Ajusta a cor de fundo se quiseres
+
+            // ⭐ 2. LIGAR A PONTE DE REATIVIDADE!
+            // Não precisas de iterar nós manualmente. Entregamos o contentor ao JavaFxRenderer.
+            // O próprio renderCycle vai usar a ponte para desenhar o <body> inteiro.
+            this.rendererBridge = new JavaFxRenderer(fxBody);
+
+            XplNodeDebugger.debbug(bodyNode);
+
+            ScrollPane scroll = new ScrollPane(fxBody);
+            scroll.setFitToWidth(true);
+
+            Scene scene = new javafx.scene.Scene(scroll, width, height);
+            stage.setTitle(title);
+            stage.setScene(scene);
+
+            stage.show();
+            latch.countDown();
+        });
+
+        try {
+            latch.await();
+        } catch (InterruptedException ignored) {}
+
+        if (this.activeDom != null) {
+            renderCycle();
+        }
+    }
+
     // ─── Acesso ao Documento Global ──────────────────────────────────────────
 
     public XplDocument getDocument() {
         return this.document;
     }
 
+
+    public XplNode findBodyNode(XplNode node) {
+        if (node == null) return null;
+
+        // 1. É o body? Perfeito, retorna!
+        if ("body".equalsIgnoreCase(node.tag)) return node;
+
+        // 2. Mergulha nos filhos
+        if (node.children != null) {
+            for (XplNode child : node.children) {
+                XplNode found = findBodyNode(child);
+                // Se encontrou o body nas profundezas deste filho, propaga-o para cima!
+                if (found != null) return found;
+            }
+        }
+
+        // 3. Se chegou aqui, este ramo (ex: <head> ou um <div> perdido) não contém o <body>.
+        return null;
+    }
+
+
     // ─── Métodos utilitários para o XPL ─────────────────────────────────────
+
 
 
     @Override
@@ -503,6 +719,16 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
                 String html = intp.evaluate(args.getFirst().expression).toString();
                 loadView(html);
+                return null;
+            }
+        });
+
+        // loadStyles(cssSource)
+        this.fields.put("loadStyles", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
+                String css = intp.evaluate(args.getFirst().expression).toString();
+                loadStyles(css);
                 return null;
             }
         });
@@ -523,6 +749,19 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                     System.out.println(obj);
                 }
                 return object;
+            }
+        });
+
+        // showWindow(title, width, height)
+        this.fields.put("showWindow", new XplCallable() {
+            @Override public int arity() { return 3; }
+            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
+                String title = intp.evaluate(args.get(0).expression).toString();
+                double width = Double.parseDouble(intp.evaluate(args.get(1).expression).toString());
+                double height = Double.parseDouble(intp.evaluate(args.get(2).expression).toString());
+
+                showWindow(title, width, height);
+                return null;
             }
         });
 

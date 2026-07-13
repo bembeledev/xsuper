@@ -4,13 +4,9 @@ import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import com.dic.xsuper.lang.ui.tags.TagFactory;
 import javafx.application.Application;
-import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
-import java.util.Random;
 
 /**
  * Teste Avançado de Renderização de Inputs HTML para JavaFX.
@@ -46,7 +42,7 @@ public class TestUIInputRender extends Application {
 
     // ─── CONSTRUTOR DO FORMULÁRIO AVANÇADO ────────────────────────────────
 
-    private static XplNode createAdvancedForm() {
+    public static XplNode createAdvancedForm() {
         XplNode container = new XplNode("div");
         container.attributes.put("style", """
                 padding: 40px;

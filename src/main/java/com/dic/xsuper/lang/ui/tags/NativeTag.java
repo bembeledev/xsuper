@@ -1,7 +1,7 @@
 package com.dic.xsuper.lang.ui.tags;
 
+import com.dic.xsuper.lang.ui.cursor.StyleCursorUtils;
 import com.dic.xsuper.lang.ui.event.AttachJavaFxListener;
-import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.event.XplEventType;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.layout.panes.CustomLayoutPane;
@@ -11,24 +11,13 @@ import com.dic.xsuper.lang.ui.properties.cssunit.CssContext;
 import com.dic.xsuper.lang.ui.properties.gradient.Gradient;
 import com.dic.xsuper.lang.ui.properties.gradient.GradientStop;
 
-import javafx.concurrent.Worker;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Region;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.KeyEvent;
-import com.dic.xsuper.lang.ui.SuperUiEngine;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
 
 import java.util.*;
 
-public abstract class NativeTag {
-
+public abstract class NativeTag{
     protected String id;
     protected String className;
     protected Map<String, String> style = new HashMap<>();
@@ -41,6 +30,7 @@ public abstract class NativeTag {
     protected CssContext cssContext;
 
     public NativeTag(XplNode node) {
+
         this.sourceNode = node;
         this.id = node.id;
         this.className = node.className;
@@ -49,6 +39,9 @@ public abstract class NativeTag {
 
         if (node.attributes != null && node.attributes.containsKey("style")) {
             parseStyle(node.attributes.get("style").toString());
+        }
+        if (node.style != null) {
+            this.style.putAll(node.style);
         }
 
         this.resolvedStyles = StyleResolver.resolve(node.tag, this.style);
@@ -223,6 +216,11 @@ public abstract class NativeTag {
 
         if (sourceNode.attributes.containsKey("disabled")) {
             fxNode.setDisable(Boolean.parseBoolean(sourceNode.attributes.get("disabled").toString()));
+        }
+
+        // ─── Cursor ─────────────────────────────────────────────────────────────
+        if (style.containsKey("cursor")) {
+            StyleCursorUtils.applyCursor(fxNode, style.get("cursor"));
         }
 
         StringBuilder css = new StringBuilder();

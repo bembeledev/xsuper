@@ -23,10 +23,13 @@ public class XplCssParser {
                 root.addChild(parseSwitchBlock());
             } else if (match(XplCssTokenType.AT_MATCH)) {
                 root.addChild(parseMatchBlock());
-            } else if (match(XplCssTokenType.AT_MEDIA) || match(XplCssTokenType.AT_KEYFRAMES) || match(XplCssTokenType.AT_IMPORT)) {
+            } else if (match(XplCssTokenType.AT_MEDIA)) {
+                root.addChild(parseMediaRule());
+            } else if (match(XplCssTokenType.AT_KEYFRAMES)) {
+                root.addChild(parseKeyframesRule());
+            } else if (match(XplCssTokenType.AT_IMPORT)) {
                 root.addChild(parseAtRule());
             } else {
-                // Regra normal: seletor + bloco
                 String selector = parseSelector();
                 if (selector != null && !selector.isEmpty()) {
                     XplNode rule = new XplNode("rule");
@@ -69,6 +72,53 @@ public class XplCssParser {
         }
 
         return ifNode;
+    }
+
+    // 🌐 Media Query: Captura tudo como a condição correta
+    private XplNode parseMediaRule() {
+        StringBuilder condition = new StringBuilder();
+
+        // Em vez de procurar rigidamente parênteses, lemos tudo até ao início do bloco '{'
+        while (!isAtEnd() && !check(XplCssTokenType.LBRACE)) {
+            condition.append(advance().lexeme).append(" ");
+        }
+
+        XplNode mediaNode = new XplNode("@media");
+        mediaNode.attributes.put("condition", condition.toString().trim());
+
+        parseBlock(mediaNode); // O interior do media são regras normais
+        return mediaNode;
+    }
+
+    // 🎬 Keyframes: Espera o nome da animação (ex: spin) e blocos com percentagens (0%, 100%)
+    private XplNode parseKeyframesRule() {
+        // O nome da animação é capturado como identificador/seletor
+        String animName = previous().lexeme;
+        if (check(XplCssTokenType.IDENTIFIER) || check(XplCssTokenType.SELECTOR)) {
+            animName = advance().lexeme;
+        }
+
+        XplNode keyframesNode = new XplNode("@keyframes");
+        keyframesNode.attributes.put("name", animName);
+
+        consume(XplCssTokenType.LBRACE, "Esperado '{' no @keyframes");
+
+        // O interior do keyframes são passos temporais (from, to, 0%, 50%, 100%)
+        while (!check(XplCssTokenType.RBRACE) && !isAtEnd()) {
+            if (check(XplCssTokenType.SELECTOR) || check(XplCssTokenType.IDENTIFIER) || check(XplCssTokenType.NUMBER)) {
+                String frameSelector = parseSelector();
+                XplNode frameNode = new XplNode("frame");
+                frameNode.attributes.put("step", frameSelector);
+                parseBlock(frameNode);
+                keyframesNode.addChild(frameNode);
+            } else {
+                advance();
+            }
+        }
+
+        consume(XplCssTokenType.RBRACE, "Esperado '}' para fechar o @keyframes");
+
+        return keyframesNode;
     }
 
     private XplNode parseForBlock() {
@@ -190,31 +240,51 @@ public class XplCssParser {
                 XplNode propNode = new XplNode("property");
                 propNode.attributes.put("name", propName);
 
-                if (match(XplCssTokenType.AT_IF)) {
-                    propNode.addChild(parseIfBlock());
-                } else if (match(XplCssTokenType.AT_SWITCH)) {
-                    propNode.addChild(parseSwitchBlock());
-                } else if (match(XplCssTokenType.AT_MATCH)) {
-                    propNode.addChild(parseMatchBlock());
-                } else {
-                    propNode.addChild(parseValue());
+                // ⭐ NOVO: Um valor CSS pode ser uma mistura! Lemos TUDO até o ';'
+                while (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
+                    if (match(XplCssTokenType.AT_IF)) {
+                        propNode.addChild(parseIfBlock());
+                    } else if (match(XplCssTokenType.AT_SWITCH)) {
+                        propNode.addChild(parseSwitchBlock());
+                    } else if (match(XplCssTokenType.AT_MATCH)) {
+                        propNode.addChild(parseMatchBlock());
+                    } else {
+                        propNode.addChild(parseValue());
+                    }
                 }
 
                 parent.addChild(propNode);
+                match(XplCssTokenType.SEMICOLON); // Consome o ; no final da linha
+            }
+            else if (match(XplCssTokenType.VAR_NAME)) {
+                String varName = previous().lexeme;
+                consume(XplCssTokenType.COLON, "Esperado ':' após variável.");
+                XplNode varNode = new XplNode("variable");
+                varNode.attributes.put("name", varName);
+                // Valor pode ser literal, número, expressão ou diretiva
+                if (match(XplCssTokenType.AT_IF)) {
+                    varNode.addChild(parseIfBlock());
+                } else if (match(XplCssTokenType.AT_SWITCH)) {
+                    varNode.addChild(parseSwitchBlock());
+                } else {
+                    varNode.addChild(parseValue());
+                }
+                parent.addChild(varNode);
                 match(XplCssTokenType.SEMICOLON);
             }
             // 3. Seletor aninhado (regra)
-            else if (match(XplCssTokenType.SELECTOR) || check(XplCssTokenType.IDENTIFIER)) {
-                // Para suportar seletores compostos, consumimos todos os SELECTOR/IDENTIFIER/COMMA consecutivos
-                StringBuilder selector = new StringBuilder();
-                selector.append(previous().lexeme);
-                while (check(XplCssTokenType.SELECTOR) || check(XplCssTokenType.IDENTIFIER) || check(XplCssTokenType.COMMA)) {
-                    selector.append(advance().lexeme);
+            else if (check(XplCssTokenType.SELECTOR) || check(XplCssTokenType.IDENTIFIER) ||
+                    check(XplCssTokenType.PSEUDO_CLASS) || check(XplCssTokenType.STAR) ||
+                    check(XplCssTokenType.NUMBER)) {
+                // Usamos o método parseSelector() nativo que já entende as variáveis {{...}} e as vírgulas!
+                String selector = parseSelector();
+
+                if (selector != null && !selector.isEmpty()) {
+                    XplNode childRule = new XplNode("rule");
+                    childRule.attributes.put("selector", selector);
+                    parseBlock(childRule);
+                    parent.addChild(childRule);
                 }
-                XplNode childRule = new XplNode("rule");
-                childRule.attributes.put("selector", selector.toString().trim());
-                parseBlock(childRule);
-                parent.addChild(childRule);
             }
             // 4. Literais (STRING, NUMBER) – consumir e criar nó literal
             else if (match(XplCssTokenType.STRING)) {
@@ -250,6 +320,21 @@ public class XplCssParser {
         StringBuilder selector = new StringBuilder();
 
         while (!isAtEnd()) {
+
+            // Consome PSEUDO_CLASS (ex: :root)
+            if (check(XplCssTokenType.PSEUDO_CLASS)) {
+                selector.append(advance().lexeme);
+                continue;
+            }
+
+            // ⭐ Seletor universal: * { ... }
+            if (check(XplCssTokenType.STAR)) {
+                selector.append(advance().lexeme);
+                // Se o próximo token for '{', para, senão continua (ex: *.classe)
+                if (check(XplCssTokenType.LBRACE)) break;
+                continue;
+            }
+
             // Se encontrarmos '{{', capturamos o conteúdo (bind)
             if (check(XplCssTokenType.LBRACE) && checkAhead(XplCssTokenType.LBRACE)) {
                 selector.append(advance().lexeme); // {
@@ -281,25 +366,87 @@ public class XplCssParser {
     private XplNode parseValue() {
         XplNode valNode = new XplNode("value");
 
-        if (match(XplCssTokenType.STRING)) {
-            valNode.attributes.put("type", "literal");
-            valNode.attributes.put("data", previous().literal);
-        } else if (match(XplCssTokenType.NUMBER)) {
-            valNode.attributes.put("type", "number");
-            valNode.attributes.put("data", previous().literal != null ? previous().literal : previous().lexeme);
-        } else {
-            // Expressão composta (ex: 12px, calc(...))
-            StringBuilder sb = new StringBuilder();
-            while (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
-                if (check(XplCssTokenType.AT_IF) || check(XplCssTokenType.AT_SWITCH) ||
-                        check(XplCssTokenType.AT_FOR) || check(XplCssTokenType.AT_MATCH)) {
-                    break;
+        // 1. Tratamento isolado para var() no início
+        if (match(XplCssTokenType.VAR_FUNC)) {
+            valNode.attributes.put("type", "var");
+            if (match(XplCssTokenType.VAR_NAME)) {
+                valNode.attributes.put("name", previous().lexeme);
+                if (match(XplCssTokenType.COMMA)) {
+                    StringBuilder fallback = new StringBuilder();
+                    while (!isAtEnd() && !check(XplCssTokenType.RPAREN)) {
+                        fallback.append(advance().lexeme);
+                    }
+                    XplNode fallbackNode = new XplNode("literal");
+                    fallbackNode.attributes.put("type", "fallback");
+                    fallbackNode.attributes.put("value", fallback.toString().trim());
+                    valNode.addChild(fallbackNode);
                 }
-                sb.append(advance().lexeme);
+                consume(XplCssTokenType.RPAREN, "Esperado ')' para fechar var()");
+            }
+            return valNode;
+        }
+
+        // 2. Tratamento isolado para calc()
+        if (match(XplCssTokenType.CALC_FUNC)) {
+            StringBuilder calcExpr = new StringBuilder("calc(");
+            int depth = 1;
+            while (depth > 0 && !isAtEnd()) {
+                XplCssToken token = advance();
+                if (token.type == XplCssTokenType.LPAREN) depth++;
+                else if (token.type == XplCssTokenType.RPAREN) depth--;
+
+                if (token.type == XplCssTokenType.PLUS || token.type == XplCssTokenType.MINUS ||
+                        token.type == XplCssTokenType.STAR || token.type == XplCssTokenType.SLASH) {
+                    calcExpr.append(" ").append(token.lexeme).append(" ");
+                } else {
+                    calcExpr.append(token.lexeme);
+                }
             }
             valNode.attributes.put("type", "expression");
-            valNode.attributes.put("data", sb.toString().trim());
+            valNode.attributes.put("data", calcExpr.toString().trim());
+            return valNode;
         }
+
+        // 3. O SEGREDO: Coleta todos os tokens contíguos até bater numa parede (; ou })
+        StringBuilder sb = new StringBuilder();
+        while (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
+            // Se encontrar uma diretiva misturada no valor (ex: border: 3px @if), ele recua para o parseBlock!
+            if (check(XplCssTokenType.AT_IF) || check(XplCssTokenType.AT_SWITCH) ||
+                    check(XplCssTokenType.AT_FOR) || check(XplCssTokenType.AT_MATCH)) {
+                break;
+            }
+
+            XplCssToken t = advance();
+            if (t.type == XplCssTokenType.STRING) {
+                sb.append("\"").append(t.literal != null ? t.literal : t.lexeme).append("\"");
+            } else {
+                sb.append(t.lexeme);
+            }
+
+            // Adiciona espaços lógicos onde é necessário (ignora antes de vírgulas)
+            if (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
+                XplCssTokenType nextType = peek().type;
+                if (t.type != XplCssTokenType.LPAREN && nextType != XplCssTokenType.RPAREN &&
+                        nextType != XplCssTokenType.COMMA && t.type != XplCssTokenType.COMMA) {
+                    sb.append(" ");
+                }
+            }
+        }
+
+        String expr = sb.toString().trim();
+
+        // Otimização: Identifica perfeitamente se é uma string pura, um número puro, ou uma expressão complexa
+        if (expr.startsWith("\"") && expr.endsWith("\"") && expr.indexOf("\"", 1) == expr.length() - 1) {
+            valNode.attributes.put("type", "literal");
+            valNode.attributes.put("data", expr.substring(1, expr.length() - 1));
+        } else if (expr.matches("^-?\\d+(\\.\\d+)?(%|[a-zA-Z]+)?$")) {
+            valNode.attributes.put("type", "number");
+            valNode.attributes.put("data", expr);
+        } else {
+            valNode.attributes.put("type", "expression");
+            valNode.attributes.put("data", expr);
+        }
+
         return valNode;
     }
 

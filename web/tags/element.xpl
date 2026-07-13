@@ -51,4 +51,7 @@ let html = """
 __ui_engine.loadView(html);
 
 
+// BAM! A janela aparece aqui.
+// O JavaFX arranca, o renderizador é injetado, e a vista já mastigada é pintada.
+__ui_engine.showWindow("Aplicação Desktop Nativa", 800, 600);
 println(document.getInnerHTML());

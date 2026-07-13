@@ -17,7 +17,7 @@ public final class HtmlTagUtils {
     private static final Set<String> NATIVE_TAGS = Set.of(
             // Estrutura
             "html", "head", "body", "title", "base", "link", "meta", "style",
-            "script", "noscript", "template", "slot", "dialog",
+            "script", "noscript", "template", "slot", "dialog", "web", "tabs","tab",
 
             // Secções
             "section", "nav", "article", "aside", "header", "footer", "main",

@@ -114,8 +114,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
                 com.dic.xsuper.lang.Parser parser = new com.dic.xsuper.lang.Parser(tokens);
                 List<com.dic.xsuper.lang.Stmt> statements = parser.parse();
 
-
-
                 // ⭐ A VERDADEIRA MAGIA: Injetar diretamente no GLOBALS temporariamente ⭐
                 // Como é uma execução dinâmica (eval), o interpretador vai procurar aqui!
 

@@ -61,6 +61,8 @@ public class RunApp extends Application {
         //return MenuExample.createNavExample();
         //return TestMenus.createFullMenuExample();
         //return TestUIRender.createSampleTree();
-        return StyleTransformTest.createTransformTestTree();
+        //return StyleTransformTest.createTransformTestTree();
+        //return AnimationTest.createTransformDemo();
+        return TestUIInputRender.createAdvancedForm();
     }
 }

@@ -40,6 +40,11 @@ public enum XplCssTokenType {
 
     // Especiais CSS
     AT_MEDIA, AT_KEYFRAMES, AT_IMPORT, AT_EXTEND,
+    // ... existentes
+    PSEUDO_CLASS,      // :root, :hover, etc.
+    VAR_NAME,          // --cor-primaria
+    VAR_FUNC,          // var(
+    CALC_FUNC,          // calc(
 
     BANG, SELECTOR, PROPERTY, EOF
 }
