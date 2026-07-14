@@ -87,14 +87,6 @@ public class XplCssMatcher {
 
             // Tratamento de Media Queries (se a janela do JavaFX corresponder, validamos as regras internas)
             if ("@media".equals(ruleNode.tag)) {
-                // Aqui irias injetar a lógica de leitura da janela atual (ex: Stage.getWidth() <= 600)
-                // Para simplificar, assumimos true e lemos as regras filhas do @media
-                boolean isMediaMatching = true;
-                if (isMediaMatching) {
-                    for (XplNode mediaRule : ruleNode.children) {
-                        matchAndInject(uiNode, mediaRule, resolver);
-                    }
-                }
                 continue;
             }
 

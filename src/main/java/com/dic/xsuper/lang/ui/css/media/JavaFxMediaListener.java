@@ -1,17 +1,25 @@
 package com.dic.xsuper.lang.ui.css.media;
 
-import javafx.scene.Node;
+import com.dic.xsuper.lang.ui.html.XplNode;
 import javafx.scene.Scene;
-import java.util.HashSet;
+
 import java.util.Map;
-import java.util.Set;
 
 public class JavaFxMediaListener {
 
-    // ⭐ OBRIGATÓRIO: LinkedHashMap garante que o motor lê o CSS de cima para baixo!
-    private final Map<String, XplMediaNode> mediaMap = new java.util.LinkedHashMap<>();
+    public final Map<String, XplMediaNode> mediaMap = new java.util.LinkedHashMap<>();
+
+    private Runnable engineRebuildTrigger;
+
+    public void setEngineRebuildTrigger(Runnable trigger) {
+        this.engineRebuildTrigger = trigger;
+    }
 
     public void addMediaNode(XplMediaNode node) {
+        // Se a query já existir na memória, preserva o estado (Ligado/Desligado)
+        if (mediaMap.containsKey(node.condition)) {
+            node.isActive = mediaMap.get(node.condition).isActive;
+        }
         mediaMap.put(node.condition, node);
     }
 
@@ -19,129 +27,94 @@ public class JavaFxMediaListener {
         mediaMap.clear();
     }
 
+    /**
+     * Anexa os listeners de redimensionamento à cena.
+     * Quando a largura muda, avalia as media queries.
+     */
     public void attachToScene(Scene scene) {
-        // 1. Ouve redimensionamentos, MAS SÓ se a janela já estiver fisicamente visível no ecrã!
         scene.widthProperty().addListener((obs, oldW, newW) -> {
-            if (scene.getWindow() == null || !scene.getWindow().isShowing()) return; // Bloqueia o fantasma!
-
+            if (scene.getWindow() == null || !scene.getWindow().isShowing()) return;
             double width = newW.doubleValue();
             if (width <= 0) return;
-            evaluateAll(scene, width);
+            evaluateAll(width);
         });
 
-        // 2. A avaliação inicial perfeita: Dispara apenas no momento exato em que a janela aparece.
         scene.windowProperty().addListener((obs, oldWin, newWin) -> {
             if (newWin != null) {
                 newWin.showingProperty().addListener((o, oldS, isShowing) -> {
-                    if (isShowing) {
-                        evaluateAll(scene, scene.getWidth());
-                    }
+                    if (isShowing) evaluateAll(scene.getWidth());
                 });
             }
         });
     }
 
     /**
-     * Motor inteligente: Apenas verifica quem liga/desliga.
-     * Se houver alteração real, aciona o Repaint.
+     * Avalia todas as media queries com a largura atual.
+     * Se alguma mudar de estado, dispara a reconstrução da UI.
      */
-    private void evaluateAll(Scene scene, double width) {
+    private void evaluateAll(double width) {
         boolean stateChanged = false;
 
         for (XplMediaNode mediaNode : mediaMap.values()) {
             boolean conditionMet = mediaNode.evaluate(width);
-
-            // Se cruzou o limite (para ligar ou para desligar)
             if (conditionMet != mediaNode.isActive) {
                 mediaNode.isActive = conditionMet;
                 stateChanged = true;
             }
         }
 
-        // Se pelo menos um @media mudou de estado, re-calculamos a cascata!
-        if (stateChanged) {
-            repaintCascade(scene);
+        if (stateChanged && engineRebuildTrigger != null) {
+            System.out.println("[MediaListener] 📱 Media queries mudaram. A reconstruir UI...");
+            engineRebuildTrigger.run();
         }
     }
 
     /**
-     * A MAGIA DO CHROME: Limpa a tela e aplica os estilos na ordem correta.
+     * Aplica as regras das media queries ativas ao DOM virtual (XplNode).
+     * Percorre a árvore e sobrescreve os estilos dos nós que correspondem aos seletores.
+     * Este método é chamado a partir do renderCycle da SuperUiEngine.
      */
-    private void repaintCascade(Scene scene) {
-        Set<Node> affectedNodes = new HashSet<>();
+    public void applyActiveStylesToVirtualDom(XplNode root) {
+        if (root == null) return;
 
-        // 1. GATHERING: Identificar todos os nós afetados por QUALQUER media query
         for (XplMediaNode mediaNode : mediaMap.values()) {
-            for (String selector : mediaNode.selectorsAndStyles.keySet()) {
-                for (Node fxNode : scene.getRoot().lookupAll(selector)) {
-                    // Garante que a foto original (sem CSS de media queries) está guardada
-                    if (!fxNode.getProperties().containsKey("base_style")) {
-                        fxNode.getProperties().put("base_style", fxNode.getStyle() != null ? fxNode.getStyle() : "");
-                    }
-                    affectedNodes.add(fxNode);
-                }
-            }
-        }
+            if (!mediaNode.isActive) continue;
 
-        // 2. RESET: Reverter todos os nós afetados para a sua forma pura original
-        for (Node fxNode : affectedNodes) {
-            String baseStyle = (String) fxNode.getProperties().get("base_style");
-            fxNode.setStyle(baseStyle);
-        }
-
-        // 3. APPLY: Reaplicar as regras ativas de cima para baixo.
-        // Como é um LinkedHashMap, o último CSS (min-width: 400px) vai sobrepor o primeiro se houver conflito!
-        for (XplMediaNode mediaNode : mediaMap.values()) {
-            if (mediaNode.isActive) {
-                System.out.println("[MediaListener] 🎨 Pintando Cascata: " + mediaNode.condition);
-
-                for (Map.Entry<String, Map<String, String>> entry : mediaNode.selectorsAndStyles.entrySet()) {
-                    String selector = entry.getKey();
-                    Map<String, String> cssRules = entry.getValue();
-
-                    for (Node fxNode : scene.getRoot().lookupAll(selector)) {
-                        String currentStyle = fxNode.getStyle() != null ? fxNode.getStyle().trim() : "";
-                        if (!currentStyle.isEmpty() && !currentStyle.endsWith(";")) {
-                            currentStyle += ";";
-                        }
-
-                        StringBuilder mediaStyle = new StringBuilder(currentStyle);
-
-                        for (Map.Entry<String, String> rule : cssRules.entrySet()) {
-                            String propName = rule.getKey().toLowerCase();
-                            String value = rule.getValue() != null ? rule.getValue().trim() : "";
-                            if (value.isEmpty()) continue;
-
-                            // 🛠️ TRADUTOR DE FLEXBOX PARA JAVAFX
-                            if (propName.equals("flex-direction")) {
-                                String orientation = value.equals("column") ? "vertical" : "horizontal";
-                                mediaStyle.append(" -fx-orientation: ").append(orientation).append(";");
-                                continue;
-                            }
-                            if (propName.equals("display")) {
-                                // Ignoramos o 'display: flex' puro no CSS do JavaFX para não gerar warnings
-                                continue;
-                            }
-
-                            String fxProp = convertToFxProp(propName);
-                            mediaStyle.append(" ").append(fxProp).append(": ").append(value).append(";");
-                        }
-
-                        fxNode.setStyle(mediaStyle.toString());
-                    }
-                }
+            for (Map.Entry<String, Map<String, String>> entry : mediaNode.selectorsAndStyles.entrySet()) {
+                String selector = entry.getKey().trim();
+                Map<String, String> cssRules = entry.getValue();
+                applyRulesToTree(root, selector, cssRules);
             }
         }
     }
 
-    private String convertToFxProp(String cssProp) {
-        return switch (cssProp.toLowerCase()) {
-            case "background", "background-color" -> "-fx-background-color";
-            case "color" -> "-fx-text-fill";
-            case "font-size" -> "-fx-font-size";
-            case "padding" -> "-fx-padding";
-            case "border-radius" -> "-fx-background-radius";
-            default -> "-fx-" + cssProp;
-        };
+    /**
+     * Aplica as regras de uma media query a todos os nós que correspondem ao seletor.
+     * Percorre recursivamente a árvore.
+     */
+    private void applyRulesToTree(XplNode node, String selector, Map<String, String> cssRules) {
+        if (matchesSelector(node, selector)) {
+            // Sobrescreve os estilos no node.style
+            for (Map.Entry<String, String> rule : cssRules.entrySet()) {
+                node.style.put(rule.getKey().toLowerCase(), rule.getValue());
+            }
+        }
+        for (XplNode child : node.children) {
+            applyRulesToTree(child, selector, cssRules);
+        }
+    }
+
+    /**
+     * Verifica se um nó corresponde a um seletor CSS.
+     * Suporta seletores de classe (.), ID (#) e tag (nome da tag).
+     */
+    private boolean matchesSelector(XplNode node, String selector) {
+        if (selector.startsWith(".")) {
+            return node.className != null && node.className.contains(selector.substring(1));
+        } else if (selector.startsWith("#")) {
+            return node.id != null && node.id.equals(selector.substring(1));
+        } else {
+            return node.tag != null && node.tag.equalsIgnoreCase(selector);
+        }
     }
 }

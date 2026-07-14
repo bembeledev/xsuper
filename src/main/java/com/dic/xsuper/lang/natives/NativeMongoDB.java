@@ -107,7 +107,7 @@ public class NativeMongoDB {
             }
             switch (methodName) {
                 case "getDatabase": {
-                    String dbName = (String) args.get(0);
+                    String dbName = (String) args.getFirst();
                     MongoDatabase db = client.getDatabase(dbName);
                     return new MongoDatabaseWrapper(db);
                 }
@@ -152,7 +152,7 @@ public class NativeMongoDB {
         public Object invokeMethod(String methodName, List<Object> args, Interpreter interpreter) {
             switch (methodName) {
                 case "getCollection": {
-                    String collName = (String) args.get(0);
+                    String collName = (String) args.getFirst();
                     MongoCollection<Document> coll = db.getCollection(collName);
                     return new MongoCollectionWrapper(coll);
                 }
@@ -160,7 +160,7 @@ public class NativeMongoDB {
                     return db.listCollectionNames().into(new ArrayList<>());
                 }
                 case "createCollection": {
-                    String collName = (String) args.get(0);
+                    String collName = (String) args.getFirst();
                     db.createCollection(collName);
                     return null;
                 }
@@ -202,13 +202,13 @@ public class NativeMongoDB {
             try {
                 switch (methodName) {
                     case "insertOne": {
-                        Map<String, Object> docMap = (Map<String, Object>) args.get(0);
+                        Map<String, Object> docMap = (Map<String, Object>) args.getFirst();
                         Document doc = mapToDocument(docMap);
                         InsertOneResult result = coll.insertOne(doc);
                         return Map.of("insertedId", result.getInsertedId());
                     }
                     case "insertMany": {
-                        List<Map<String, Object>> docsList = (List<Map<String, Object>>) args.get(0);
+                        List<Map<String, Object>> docsList = (List<Map<String, Object>>) args.getFirst();
                         List<Document> docs = docsList.stream()
                                 .map(NativeMongoDB::mapToDocument)
                                 .collect(Collectors.toList());
@@ -240,7 +240,7 @@ public class NativeMongoDB {
                         return new MongoCursorWrapper(iterable.iterator());
                     }
                     case "findOne": {
-                        Map<String, Object> filterMap = args.size() > 0 ? (Map<String, Object>) args.get(0) : new HashMap<>();
+                        Map<String, Object> filterMap = !args.isEmpty() ? (Map<String, Object>) args.get(0) : new HashMap<>();
                         Map<String, Object> optionsMap = args.size() > 1 ? (Map<String, Object>) args.get(1) : new HashMap<>();
                         Bson filter = mapToBson(filterMap);
                         FindIterable<Document> iterable = coll.find(filter).limit(1);
@@ -316,13 +316,13 @@ public class NativeMongoDB {
                         return new MongoCursorWrapper(iterable.iterator());
                     }
                     case "createIndex": {
-                        Map<String, Object> keysMap = (Map<String, Object>) args.get(0);
+                        Map<String, Object> keysMap = (Map<String, Object>) args.getFirst();
                         Bson keys = mapToBson(keysMap);
                         String indexName = coll.createIndex(keys);
                         return indexName;
                     }
                     case "createIndexes": {
-                        List<Map<String, Object>> indexList = (List<Map<String, Object>>) args.get(0);
+                        List<Map<String, Object>> indexList = (List<Map<String, Object>>) args.getFirst();
                         List<IndexModel> models = new ArrayList<>();
                         for (Map<String, Object> idx : indexList) {
                             Bson keys = mapToBson((Map<String, Object>) idx.get("keys"));
@@ -343,15 +343,14 @@ public class NativeMongoDB {
                         return null;
                     }
                     case "dropIndex": {
-                        String indexName = (String) args.get(0);
+                        String indexName = (String) args.getFirst();
                         coll.dropIndex(indexName);
                         return null;
                     }
                     case "listIndexes": {
                         List<Map<String, Object>> indexes = new ArrayList<>();
                         coll.listIndexes().forEach(doc -> {
-                            Map<String, Object> idxMap = new LinkedHashMap<>();
-                            doc.forEach((k, v) -> idxMap.put(k, v));
+                            Map<String, Object> idxMap = new LinkedHashMap<>(doc);
                             indexes.add(idxMap);
                         });
                         return indexes;

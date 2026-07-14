@@ -425,6 +425,19 @@ public class XplNode {
         return xplObj;
     }
 
+
+    public static XplNode findBodyNode(XplNode node) {
+        if (node == null) return null;
+        if ("body".equalsIgnoreCase(node.tag)) return node;
+        if (node.children != null) {
+            for (XplNode child : node.children) {
+                XplNode found = findBodyNode(child);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
     // ─── MÉTODO DE INSPEÇÃO ──────────────────────────────────────────────────
 
     @Override

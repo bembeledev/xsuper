@@ -6,10 +6,10 @@ import com.dic.xsuper.lang.ui.tags.TagFactory;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.ButtonBase;
-import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +34,33 @@ public class JavaFxRenderer implements XplUiBridge {
     @Override
     public void setEngineCallback(EngineCallback callback) {
         this.engineCallback = callback;
+    }
+
+    // No teu JavaFxRenderer.java
+
+    public void rebuildFullView(XplNode updatedDom) {
+
+        // 1. Incinera a árvore visual antiga do JavaFX!
+        this.windowRoot.getChildren().clear();
+
+        // 2. Encontra o <body> no novo DOM Virtual
+        //XplNode bodyNode = XplNode.findBodyNode(updatedDom);
+        //if (bodyNode == null) return;
+
+        // 3. RECRIACÃO TOTAL!
+        // O TagFactory e o LayoutEngine vão ler o novo VDOM (que já tem o CSS do @media ativo).
+        // Se a largura for de telemóvel, o LayoutEngine lê "flex-direction: column"
+        // e instancia FINALMENTE um FlexColumnPane novo!
+        //for (XplNode child : bodyNode.children) {
+            // Supondo que usas o TagFactory aqui para gerar os nós visuais
+        //}
+
+        javafx.scene.Node newNativeNode = TagFactory.create(updatedDom).build();
+        if (newNativeNode != null) {
+           this.windowRoot.getChildren().add(newNativeNode);
+        }
+
+        System.out.println("[Renderer] 🏗️ Layout Nativo reconstruído com sucesso!");
     }
 
     // =====================================================================

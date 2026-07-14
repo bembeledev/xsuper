@@ -1,7 +1,5 @@
 package com.dic.xsuper.lang.ui.animation;
 
-import javafx.util.Duration;
-
 import java.util.HashMap;
 import java.util.Map;
 

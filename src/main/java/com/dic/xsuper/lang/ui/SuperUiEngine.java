@@ -1,7 +1,6 @@
 package com.dic.xsuper.lang.ui;
 
 import com.dic.xsuper.lang.*;
-import com.dic.xsuper.lang.debug.XplNodeDebugger;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
@@ -11,10 +10,7 @@ import com.dic.xsuper.lang.ui.css.media.XplMediaNode;
 import com.dic.xsuper.lang.ui.document.*;
 import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
-import com.dic.xsuper.lang.ui.tags.NativeTag;
-import com.dic.xsuper.lang.ui.tags.TagFactory;
-import javafx.scene.Scene;
-import javafx.scene.control.ScrollPane;
+import com.dic.xsuper.lang.ui.window.MainWindow;
 
 import java.util.*;
 
@@ -35,6 +31,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     public static XplClass ELEMENT_CLASS;
     public static XplClass DOCUMENT_CLASS;
     public static XplClass ENGINE_CLASS;
+
+
+    MainWindow mainWindow;
 
 
     // ─── Pilares da Engine ──────────────────────────────────────────────────
@@ -83,7 +82,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         this.interpreter = interpreter;
         this.rendererBridge = rendererBridge;
         this.evaluator = new DomEvaluator(interpreter, this);
-
+        // No construtor, após criar mediaListener
+        mediaListener.setEngineRebuildTrigger(this::renderCycle);
+        this.mainWindow = new MainWindow(this);
+        this.mediaListener.setEngineRebuildTrigger(this.mainWindow::forceLayoutRebuild);
         if (this.interpreter != null && this.interpreter.globals != null) {
 
 
@@ -453,6 +455,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         // ⭐ 3. CORREÇÃO: Aplica Cascata CSS PRIMEIRO! (Preenche node.style)
         applyStylesToActiveDom();
 
+        // Aplica as regras de media queries ativas ao DOM virtual
+        mediaListener.applyActiveStylesToVirtualDom(this.activeDom);
+
+
         // ⭐ 4. CORREÇÃO: Serializa DEPOIS! (Copia as cores finais para os atributos)
         serializeComputedStyles(this.activeDom);
 
@@ -473,15 +479,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         if (rendererBridge != null) {
             rendererBridge.renderView(this.activeDom);
         }
-
-        // Se a cena já existir, reaplicar media queries
-        /*if (rendererBridge != null && rendererBridge.getScene() != null) {
-            Scene scene = rendererBridge.getScene();
-            if (scene != null) {
-                // Reavalia as media queries com a largura atual
-                mediaListener.reattach(scene); // ou apenas reaplicar
-            }
-        }*/
 
     }
 
@@ -703,57 +700,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      * Agora sim, acordamos o JavaFX, criamos a janela e renderizamos.
      */
     public void showWindow(String title, double width, double height) {
-        System.out.println("[Engine] O script solicitou a criação de uma janela UI...");
-
-        try {
-            javafx.application.Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Toolkit já iniciado
+        if (mainWindow == null) {
+            mainWindow = new MainWindow(this);
         }
-
-        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-
-        javafx.application.Platform.runLater(() -> {
-            javafx.stage.Stage stage = new javafx.stage.Stage();
-            renderCycle();
-            // ⭐ 1. A CURA DA TELA BRANCA: Procurar o <body> dentro do activeDom
-            XplNode bodyNode =findBodyNode(activeDom);
-
-            System.out.println("Recuperado: "+bodyNode.tag);
-
-            // ⭐ 2. Usar um VBox que se expande automaticamente (como o <body> real)
-            javafx.scene.layout.VBox fxBody = new javafx.scene.layout.VBox();
-            fxBody.setStyle("-fx-background-color: #f0f2f5; -fx-padding: 0;"); // Ajusta a cor de fundo se quiseres
-
-            // ⭐ 2. LIGAR A PONTE DE REATIVIDADE!
-            // Não precisas de iterar nós manualmente. Entregamos o contentor ao JavaFxRenderer.
-            // O próprio renderCycle vai usar a ponte para desenhar o <body> inteiro.
-            this.rendererBridge = new JavaFxRenderer(fxBody);
-
-            XplNodeDebugger.debbug(bodyNode);
-
-            ScrollPane scroll = new ScrollPane(fxBody);
-            scroll.setFitToWidth(true);
-
-            Scene scene = new javafx.scene.Scene(scroll, width, height);
-
-            // ⭐ A TUA LÓGICA EM AÇÃO:
-            // O listener "agarra-se" à Scene e altera apenas quem precisa!
-            mediaListener.attachToScene(scene);
-            stage.setTitle(title);
-            stage.setScene(scene);
-
-            stage.show();
-            latch.countDown();
-        });
-
-        try {
-            latch.await();
-        } catch (InterruptedException ignored) {}
-
-        if (this.activeDom != null) {
-            renderCycle();
-        }
+        mainWindow.showWindow(title, width, height);
     }
 
     // ─── Acesso ao Documento Global ──────────────────────────────────────────
@@ -1121,4 +1071,11 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         return nativeModel;
     }
 
+    public void setRendererBridge(JavaFxRenderer rendererBridge) {
+        this.rendererBridge = rendererBridge;
+    }
+
+    public JavaFxMediaListener getMediaListener() {
+        return mediaListener;
+    }
 }

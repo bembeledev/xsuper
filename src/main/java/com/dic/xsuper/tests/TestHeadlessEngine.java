@@ -38,6 +38,8 @@ public class TestHeadlessEngine {
             public void reportError(String message) {
                 System.err.println("❌ [Ponte UI] Erro: " + message);
             }
+
+
         };
 
         // =====================================================================
