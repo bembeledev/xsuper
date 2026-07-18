@@ -30,18 +30,24 @@ public class JavaFxMediaListener {
      * Anexa os listeners de redimensionamento à cena.
      * Quando a largura muda, avalia as media queries.
      */
-    public void attachToScene(Scene scene) {
-        scene.widthProperty().addListener((obs, oldW, newW) -> {
-            if (scene.getWindow() == null || !scene.getWindow().isShowing()) return;
-            double width = newW.doubleValue();
-            if (width <= 0) return;
-            evaluateAll(width);
-        });
+    // Em JavaFxMediaListener.java
 
+    /**
+     * Anexa os listeners de redimensionamento à JANELA (Evita loops infinitos de Scrollbar!).
+     */
+    public void attachToScene(Scene scene) {
         scene.windowProperty().addListener((obs, oldWin, newWin) -> {
             if (newWin != null) {
+
+                // ⭐ Escuta a Janela Física do SO, ignorando as barras de rolagem internas!
+                newWin.widthProperty().addListener((o, oldW, newWWidth) -> {
+                    double width = newWWidth.doubleValue();
+                    if (width <= 0) return;
+                    evaluateAll(width);
+                });
+
                 newWin.showingProperty().addListener((o, oldS, isShowing) -> {
-                    if (isShowing) evaluateAll(scene.getWidth());
+                    if (isShowing) evaluateAll(newWin.getWidth());
                 });
             }
         });

@@ -108,20 +108,13 @@ public class MainWindow {
     public void forceLayoutRebuild() {
         System.out.println("[MainWindow] ⚠️ Hard Reflow solicitado pelo MediaListener.");
 
-        // 1. Executa o renderCycle para atualizar a árvore virtual
+        // 1. Executa o renderCycle para atualizar a árvore virtual e aplicar o novo CSS
         engine.renderCycle();
 
-        // 2. Obtém a nova árvore ativa e o <body>
-        XplNode activeDom = engine.getActiveDom();
-        XplNode bodyNode = XplNode.findBodyNode(activeDom);
-        if (bodyNode == null) bodyNode = activeDom;
-
-        // 3. Reconstroi a UI a partir do zero (se a ponte existir)
+        // 2. Dispara o Hard Reflow VERDADEIRO (Usa a função de 1 argumento!)
         if (rendererBridge != null) {
-            XplNode finalBodyNode = bodyNode;
-            Platform.runLater(() -> rendererBridge.rebuildFullView(finalBodyNode._internalUid,finalBodyNode));
+            Platform.runLater(() -> rendererBridge.rebuildFullView(engine.getActiveDom()));
         }
-
     }
 
     // ─── GETTERS (para a SuperUiEngine poder aceder, se necessário) ────

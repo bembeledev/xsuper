@@ -97,6 +97,37 @@ public class JavaFxRenderer implements XplUiBridge {
         });
     }
 
+
+
+    /**
+     * HARD REFLOW: Usado EXCLUSIVAMENTE para Media Queries e Responsividade.
+     * Destrói a árvore física e recria as instâncias nativas corretas (HBox <-> VBox).
+     */
+    public void rebuildFullView(XplNode updatedDom) {
+        Platform.runLater(() -> {
+            // 1. Incinera a árvore visual antiga do JavaFX e limpa a memória!
+            this.windowRoot.getChildren().clear();
+            this.fxNodeRegistry.clear();
+            this.currentDomRoot = updatedDom;
+
+            // 2. RECRIACÃO TOTAL!
+            for (XplNode child : updatedDom.children) {
+                NativeTag tag = TagFactory.create(child);
+                if (tag != null) {
+                    Node fxNode = tag.build();
+                    child.nativeNode = fxNode;
+
+                    // Fundamental para não perderes os eventos (cliques, inputs) após o reflow!
+                    registerNodeRecursively(tag);
+
+                    this.windowRoot.getChildren().add(fxNode);
+                }
+            }
+
+            System.out.println("[Renderer] 🏗️ Hard Reflow (Responsividade) concluído com sucesso!");
+        });
+    }
+
     // =====================================================================
     // 2. ALGORITMO DE DIFFING (O Coração do React/Vue)
     // =====================================================================

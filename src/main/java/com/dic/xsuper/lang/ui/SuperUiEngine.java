@@ -253,20 +253,20 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         return null;
     }
 
+    // Em SuperUiEngine.java
+
     private void syncVirtualToLive(XplNode vNode, XplElement lNode) {
         if (vNode == null || lNode == null) return;
 
-        vNode._internalUid = lNode._internalUid; // Garante alinhamento de matrículas
+        vNode._internalUid = lNode._internalUid;
 
-        if (vNode.attributes.containsKey("style")) {
-            lNode.setAttributeSilently("style", vNode.attributes.get("style"));
-        }
+        // ✂️ APAGADA A GRAVAÇÃO DO STYLE!
+        // A Árvore Viva agora mantém-se pura, apenas com o estilo inline original.
+
         vNode.liveElement = lNode;
 
-        for (int i = 0; i < vNode.children.size(); i++) {
-            if (i < lNode.getChildren().size()) {
-                syncVirtualToLive(vNode.children.get(i), lNode.getChildren().get(i));
-            }
+        for (int i = 0; i < vNode.children.size() && i < lNode.getChildren().size(); i++) {
+            syncVirtualToLive(vNode.children.get(i), lNode.getChildren().get(i));
         }
     }
 
@@ -591,7 +591,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
 
     // ─── Ciclo de Reactividade (O Loop da Magia) ─────────────────────────────
-
     /**
      * Recalcula os @if e @for, hidrata os nós com ID, e renderiza a UI.
      * Deve ser chamado sempre que uma variável XPL relevante mudar.
@@ -670,10 +669,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             if (node.textContent != null && !node.textContent.isEmpty()) {
                 attrs.put("textContent", node.textContent);
             }
-            // Guardar também o estilo inline se houver (caso o CSS mude)
-            if (node.attributes.containsKey("style")) {
-                attrs.put("style", node.attributes.get("style"));
-            }
             values.put(node.id, attrs);
         }
 
@@ -706,20 +701,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                     // Se for 'textContent', actualiza o texto
                     if ("textContent".equals(key)) {
                         node.textContent = (String) val;
-                    }
-                    // Se for 'style', actualiza o estilo
-                    if ("style".equals(key)) {
-                        node.style.clear();
-                        // Parse do estilo inline para o mapa
-                        String styleStr = (String) val;
-                        if (styleStr != null && !styleStr.isEmpty()) {
-                            for (String decl : styleStr.split(";")) {
-                                String[] parts = decl.split(":", 2);
-                                if (parts.length == 2) {
-                                    node.style.put(parts[0].trim(), parts[1].trim());
-                                }
-                            }
-                        }
                     }
                 }
                 // Notificar a bridge para actualizar o nó JavaFX (se já existir)

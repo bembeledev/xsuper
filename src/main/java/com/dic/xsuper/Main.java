@@ -1,5 +1,4 @@
 package com.dic.xsuper;
-
 import com.dic.xsuper.app.XplorerApp;
 
 public class Main {

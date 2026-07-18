@@ -302,12 +302,10 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Métodos de manipulação de atributos ──────────────────────────────────
-
-
     public void setAttribute(String name, Object value) {
         if (value == null) return;
 
-        // Proteção contra poluição: Nunca guardamos propriedades virtuais no HTML
+        // Protecção contra poluição: Nunca guardamos propriedades virtuais no HTML
         if (name.equalsIgnoreCase("innerHTML") || name.equalsIgnoreCase("textContent") || name.equalsIgnoreCase("innerText")) {
             return;
         }
@@ -322,7 +320,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
 
         attributes.put(name, value);
 
-        // Dispara reatividade
+        // Dispara reactividade
         com.dic.xsuper.lang.ui.event.eventbus.UiEventPublisher.publishDomMutated(this._internalUid, name, value);
     }
 
@@ -335,15 +333,14 @@ public class XplElement extends XplInstance implements XplNativeObject{
         return attributes.containsKey(name);
     }
 
-    /**
+    /*
      * Método interno rigoroso: Usado APENAS quando o JavaFX está a atualizar o DOM.
      * Actualiza a memória silenciosamente sem disparar um novo evento para a UI.
-     */
-    /**
+     *
      * Actualiza a memória silenciosamente sem disparar um novo evento.
      */
     public void setAttributeSilently(String name, Object value) {
-        // ⭐ PROTEÇÃO ABSOLUTA: Nunca poluir os atributos HTML com conteúdo virtual!
+        // ⭐ PROTECÇÃO ABSOLUTA: Nunca poluir os atributos HTML com conteúdo virtual!
         if (name.equalsIgnoreCase("innerHTML") || name.equalsIgnoreCase("textContent") || name.equalsIgnoreCase("innerText")) {
             return;
         }
