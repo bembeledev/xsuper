@@ -7,6 +7,8 @@ import com.dic.xsuper.lang.Parser;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.Token;
 import com.dic.xsuper.lang.Stmt;
+import com.dic.xsuper.lang.ui.XplUiBridge;
+import com.dic.xsuper.lang.ui.document.XplElement;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.utils.ConsoleTheme;
 
@@ -78,12 +80,17 @@ public class RunXplCmd implements Command {
 
                 // ─── ADICIONA ESTAS LINHAS ──────────────────────────────────────────────
                 // 2. Cria uma ponte silenciosa (Headless Bridge) para o terminal não crashar
-                com.dic.xsuper.lang.ui.XplUiBridge headlessBridge = new com.dic.xsuper.lang.ui.XplUiBridge() {
+                com.dic.xsuper.lang.ui.XplUiBridge headlessBridge = new XplUiBridge() {
                     @Override public void renderView(XplNode root) {}
                     @Override public void updateProperty(String id, String prop, Object val) {
                         System.out.println("   🎨 [Terminal UI] " + id + " mudou " + prop + " para " + val);
                     }
                     @Override public void setEngineCallback(EngineCallback callback) {}
+
+                    @Override
+                    public void rebuildFullView(String targetId, XplNode virtualNode) {}
+
+
                     @Override public void reportError(String message) {
                         System.err.println("Erro UI: " + message);
                     }

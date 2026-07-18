@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.ui.tags.controls;
 
+import com.dic.xsuper.lang.ui.event.eventbus.UiEventBus;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import javafx.scene.control.Control;
@@ -75,6 +76,47 @@ public abstract class FormControlTag extends NativeTag {
         size = getAttrAsString(attrs, "size", "");
         spellcheck = getAttrAsString(attrs, "spellcheck", "");
         step = getAttrAsString(attrs, "step", "");
+    }
+
+    /**
+     * Motor Rígido de Two-Way Data Binding.
+     * Liga qualquer propriedade JavaFX (Property<T>) a um atributo do XPL.
+     *
+     * @param fxProperty A propriedade do JavaFX (ex: textField.textProperty())
+     * @param domAttribute O nome do atributo no DOM (ex: "value", "checked")
+     */
+    // Em FormControlTag.java
+
+    protected <T> void bindTwoWayProperty(javafx.beans.property.Property<T> fxProperty, String domAttribute) {
+        fxProperty.addListener((obs, oldVal, newVal) -> {
+            Object currentValue = sourceNode.attributes.get(domAttribute);
+            if (newVal != null && !newVal.equals(currentValue)) {
+
+                // Atualiza Planta Base
+                sourceNode.attributes.put(domAttribute, newVal);
+
+                // Publica no BUS que o JavaFX interagiu! (O UiEventHandlers fará o resto)
+                if (sourceNode.id != null && !sourceNode.id.isEmpty()) {
+                    com.dic.xsuper.lang.ui.event.eventbus.UiEventPublisher
+                            .publishUiInteracted(sourceNode.id, domAttribute, newVal);
+                }
+            }
+        });
+    }
+
+    protected <T> void bindToChannel(javafx.beans.property.Property<T> fxProperty, String domAttribute) {
+        fxProperty.addListener((obs, oldVal, newVal) -> {
+
+            // O JavaFX não altera o DOM diretamente. Ele pede ao Canal para avisar quem de direito.
+            if (sourceNode.id != null && !sourceNode.id.isEmpty() && newVal != null) {
+                UiEventBus.getInstance().publish(
+                        UiEventBus.Topic.UI_INTERACTED,
+                        sourceNode.id,
+                        domAttribute,
+                        newVal
+                );
+            }
+        });
     }
 
     private String getAttrAsString(Map<String, Object> attrs, String key, String defaultValue) {

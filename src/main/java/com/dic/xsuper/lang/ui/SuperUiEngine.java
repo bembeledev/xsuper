@@ -1,6 +1,8 @@
 package com.dic.xsuper.lang.ui;
-
 import com.dic.xsuper.lang.*;
+import com.dic.xsuper.lang.ui.animation.XplKeyframe;
+import com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation;
+import com.dic.xsuper.lang.ui.helpers.SuperUiEngineUtils;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
@@ -17,35 +19,36 @@ import java.util.*;
 /**
  * A Super Engine: O coração que bombeia a vida entre a Linguagem XPL e o Renderizador Gráfico (JavaFX).
  * <p>
- * Esta classe gerencia o ciclo de vida da UI, a reatividade, a hidratação do DOM,
+ * Esta classe gerência o ciclo de vida da UI, a reactividade, a hidratação do DOM,
  * e a comunicação bidirecional entre o XPL e a interface gráfica.
  */
-public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
+public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     // Variável para guardar o motor que está a rodar
     private static SuperUiEngine instance;
-
     public static  XplClass EVENT_CLASS; ;
+
     // 1. As Plantas (Classes) Nativas Globais
     public static XplClass ELEMENT_CLASS;
     public static XplClass DOCUMENT_CLASS;
     public static XplClass ENGINE_CLASS;
 
-
+    // Janela Principal
     MainWindow mainWindow;
 
+    // 1. O Registo Global de Keyframes (Adiciona ao topo da SuperUiEngine)
+    private final Map<String, XplKeyframeAnimation> keyframesRegistry = new HashMap<>();
 
     // ─── Pilares da Engine ──────────────────────────────────────────────────
 
-    private  final Interpreter interpreter;    // O cérebro (Lógica e Memória XPL)
-
-    private XplUiBridge rendererBridge; // A ponte para o Pintor (JavaFX)
-    private final DomEvaluator evaluator;     // O purificador de árvores (@if, @for)
+    private  final Interpreter interpreter;     // O cérebro (Lógica e Memória XPL)
+    private XplUiBridge rendererBridge;         // A ponte para o Pintor (JavaFX)
+    private final DomEvaluator evaluator;       // O purificador de árvores (@if, @for)
 
     // ─── Estado da Aplicação ────────────────────────────────────────────────
 
-    private XplNode staticRoot;    // A "Planta" original (com diretivas @ intactas)
+    private XplNode staticRoot;    // A "Planta" original (com directivas @ intactas)
     private XplNode activeDom;     // A "Casa" construída (árvore limpa, hidratada)
 
     // ⭐ NOVO: Guarda todos os blocos de CSS carregados
@@ -59,22 +62,19 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         return staticRoot;
     }
 
-    // ─── O Documento Global (injetado no XPL) ─────────────────────────────
-
+    // ─── O Documento Global (injectado no XPL) ─────────────────────────────
     private final XplDocument document;
 
-    // ─── Registro de funções XPL para eventos da UI ────────────────────────
-
-    private final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
+    // ─── Registo de funções XPL para eventos da UI ────────────────────────
+    public final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
 
     // Instância global do Listener
     private final JavaFxMediaListener mediaListener = new JavaFxMediaListener();
 
-    private static XPLModel nativeModel;
+    public static XPLModel nativeModel;
 
     // Mapa que associa o nome da tag personalizada à sua classe XPL
     private final Map<String, XplClass> componentRegistry = new HashMap<>();
-
 
     // ─── Construtor ─────────────────────────────────────────────────────────
     public SuperUiEngine(Interpreter interpreter, XplUiBridge rendererBridge) {
@@ -82,12 +82,13 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         this.interpreter = interpreter;
         this.rendererBridge = rendererBridge;
         this.evaluator = new DomEvaluator(interpreter, this);
+
         // No construtor, após criar mediaListener
         mediaListener.setEngineRebuildTrigger(this::renderCycle);
         this.mainWindow = new MainWindow(this);
         this.mediaListener.setEngineRebuildTrigger(this.mainWindow::forceLayoutRebuild);
-        if (this.interpreter != null && this.interpreter.globals != null) {
 
+        if (this.interpreter != null && this.interpreter.globals != null) {
 
             // =================================================================
             // ⭐ FASE 1: OBTER OS MODELOS NATIVOS REAIS (SEM REPETIR CÓDIGO!)
@@ -97,8 +98,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             XPLModel engineModel = com.dic.xsuper.lang.ui.SuperUiEngine.buildNativeModel();
 
             XPLModel eventModel = XplEvent.buildNativeModel();
-
-
 
             // =================================================================
             // ⭐ FASE 1.5: REGISTAR NO COMPILADOR (Para o 'extends' funcionar)
@@ -124,26 +123,23 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                 this.interpreter.globals.defineConst("XplElement", ELEMENT_CLASS);
 
             }
-
             if (!this.interpreter.globals.values.containsKey("XplDocument")) {
                 DOCUMENT_CLASS = new com.dic.xsuper.lang.poo.XplClass(documentModel, interpreter.globals);
                 this.interpreter.globals.defineConst("XplDocument", DOCUMENT_CLASS);
             }
-
             if (!interpreter.globals.values.containsKey("XplEvent")) {
                 interpreter.globals.defineConst("XplEvent", EVENT_CLASS);
             }
-
             // =================================================================
             // ⭐ FASE 2: A PRÓPRIA ENGINE ASSUME A SUA IDENTIDADE (__ui_engine)
             // =================================================================
             this.klass = ENGINE_CLASS;
-            this.invokeMethod(); // Injeta os próprios métodos!
+            this.invokeMethod(); // Injecta os próprios métodos!
             this.interpreter.globals.defineConst("__ui_engine", this);
         }
 
         // =================================================================
-        // ⭐ FASE 3: SÓ AGORA INSTANCIAMOS OS OBJETOS VIVOS (DOM)
+        // ⭐ FASE 3: SÓ AGORA INSTANCIÁMOS OS OBJECTOS VIVOS (DOM)
         // Agora o 'super(ELEMENT_CLASS)' lá dentro do Java vai encontrar a classe perfeitamente!
         // =================================================================
 
@@ -154,8 +150,125 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             this.interpreter.globals.defineConst("document", this.document);
             this.interpreter.globals.defineConst("ui", this.document);
         }
+
+        // canal de comunicação entre o JavaFx, o DOM e o Interpretador para a UI.
+        com.dic.xsuper.lang.ui.event.eventbus.UiEventBusSubscriber.register(this);
     }
 
+    public void processPartialHtmlUpdate(String targetIdOrUid, String htmlContent) {
+        // Tenta achar por UID interno (seguro), senão faz fallback para ID público (para retrocompatibilidade)
+        XplElement liveTarget = document.getElementByInternalUid(targetIdOrUid);
+        if (liveTarget == null) {
+            liveTarget = document.getElementById(targetIdOrUid);
+        }
+
+        if (liveTarget != null) {
+            // 1. Esvazia os filhos antigos e reseta o texto
+            liveTarget.clear();
+
+            try {
+                // 2. Lexer e Parser do novo HTML
+                HtmlLexer lexer = new HtmlLexer(htmlContent);
+                HtmlParser parser = new HtmlParser(lexer.scanTokens());
+                XplNode parsedRoot = parser.parse();
+
+                // A CURA DOS TEXTOS FANTASMAS: Funde os nós #text no textContent das tags!
+                purifyTree(parsedRoot);
+
+                // 3. Hidrata e anexa à Árvore Viva
+                for (XplNode childVirtual : parsedRoot.children) {
+                    hydrateHeadlessDom(childVirtual);
+                    if (childVirtual.liveElement != null) {
+                        liveTarget.appendChild(childVirtual.liveElement);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Erro de Parse no innerHTML: " + e.getMessage());
+                return;
+            }
+
+            // 4. SINCRONIZAR! Recria a árvore virtual a partir da viva (inteira)
+            this.activeDom = XplNode.fromXplElement(this.document.documentElement);
+
+            // 4.5 RESGATE: Transfere eventos e componentes perdidos da Árvore Viva
+            syncLiveToVirtual(this.activeDom, this.document.documentElement);
+
+            // 5. APLICA A CASCATA CSS (O Segredo que faltava para os botões aparecerem!)
+            applyStylesToActiveDom();
+            mediaListener.applyActiveStylesToVirtualDom(this.activeDom);
+            serializeComputedStyles(this.activeDom);
+
+            // 6. HIDRATAR A ÁRVORE VIVA COM O NOVO CSS
+            syncVirtualToLive(this.activeDom, this.document.documentElement);
+
+            // 7. Regista os novos elementos
+            document.clearIndex();
+            document.registerElement(this.document.documentElement);
+
+            // 7. Extrai a 'Div' virtual com os estilos já injetados e envia ao JavaFX
+            XplNode virtualTarget = findVirtualNodeByUid(this.activeDom, liveTarget._internalUid);
+            if (virtualTarget == null) {
+                virtualTarget = findVirtualNodeById(this.activeDom, liveTarget.getId());
+            }
+
+            if (rendererBridge != null && virtualTarget != null) {
+                // O Renderer JavaFX usa SEMPRE a matrícula secreta interna
+                rendererBridge.rebuildFullView(liveTarget._internalUid, virtualTarget);
+            }
+        }
+    }
+
+    private void syncLiveToVirtual(XplNode vNode, XplElement lNode) {
+        if (vNode == null || lNode == null) return;
+
+        // ⭐ RESGATE IMACULADO: A Árvore Virtual recupera tudo o que o "fromXplElement" esqueceu!
+        vNode._internalUid = lNode._internalUid;
+        vNode.hostComponent = lNode.hostComponent;
+        vNode.events.putAll(lNode.inlineEvents); // Devolve o (click)="logout();" à vida!
+        vNode.liveElement = lNode;
+
+        for (int i = 0; i < vNode.children.size() && i < lNode.getChildren().size(); i++) {
+            syncLiveToVirtual(vNode.children.get(i), lNode.getChildren().get(i));
+        }
+    }
+
+    // --- Helpers Obrigatórios ---
+    private XplNode findVirtualNodeByUid(XplNode root, String uid) {
+        if (root == null || uid == null) return null;
+        if (uid.equals(root._internalUid)) return root;
+        for (XplNode child : root.children) {
+            XplNode found = findVirtualNodeByUid(child, uid);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private XplNode findVirtualNodeById(XplNode root, String id) {
+        if (root == null || id == null) return null;
+        if (id.equals(root.id)) return root;
+        for (XplNode child : root.children) {
+            XplNode found = findVirtualNodeById(child, id);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private void syncVirtualToLive(XplNode vNode, XplElement lNode) {
+        if (vNode == null || lNode == null) return;
+
+        vNode._internalUid = lNode._internalUid; // Garante alinhamento de matrículas
+
+        if (vNode.attributes.containsKey("style")) {
+            lNode.setAttributeSilently("style", vNode.attributes.get("style"));
+        }
+        vNode.liveElement = lNode;
+
+        for (int i = 0; i < vNode.children.size(); i++) {
+            if (i < lNode.getChildren().size()) {
+                syncVirtualToLive(vNode.children.get(i), lNode.getChildren().get(i));
+            }
+        }
+    }
 
     // ─── Ponto de entrada: Carregar Estilos (CSS) ───────────────────────────
     public void loadStyles(String... styles) {
@@ -191,6 +304,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         // ⭐ NOVO: Alimentar o JavaFxMediaListener com os dados!
         extractMediaQueries(flatCssAst);
 
+        //extrai as animações
+        extractKeyframes(flatCssAst);
+
         // 4. Extrair Tema Global (:root)
         XplCssResolver resolver = new XplCssResolver();
         resolver.extractRootVariables(flatCssAst);
@@ -205,7 +321,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     // ─── Ponto de entrada: Carregar a View ──────────────────────────────────
-
     public void loadView(String htmlSource) {
         System.out.println("[Engine] 1. A ler o HTML e a extrair Tokens...");
         HtmlLexer lexer = new HtmlLexer(htmlSource);
@@ -224,11 +339,11 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         renderCycle();
     }
 
-
     // =========================================================================
     // 🧹 NORMALIZADOR DO DOM (Padrão W3C Estrito)
     // =========================================================================
     public XplNode normalizeDocumentTree(XplNode root) {
+
         // 1. Identificar o nó <html> na raiz
         XplNode htmlNode = null;
         for (XplNode child : root.children) {
@@ -293,7 +408,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     // =========================================================================
-    // 🧬 PURIFICADOR E SINCRONIZADOR BIFÁSICO DE ÁRVORE
+    // 🧬 PURIFICADOR E SINCRONIZADOR DIFÁSICO DE ÁRVORE
     // =========================================================================
     private void purifyTree(XplNode node) {
         if (node == null) return;
@@ -318,7 +433,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
             for (XplNode child : node.children) {
                 if ("#text".equalsIgnoreCase(child.tag)) {
-                    // Apanha o texto avaliado (ex: após injetar variáveis) mas NÃO apaga o nó!
+                    // Apanha o texto avaliado (ex: após injectar variáveis) mas NÃO apaga o nó!
                     if (child.textContent != null) {
                         combinedText.append(child.textContent).append(" ");
                     }
@@ -328,13 +443,14 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                 }
             }
 
-            // Injeta a soma dos textos no textContent do pai para o JavaFX ler rápido
+            // Injecta a soma dos textos no textContent do pai para o JavaFX ler rápido
             String aggregatedText = combinedText.toString().trim();
             if (!aggregatedText.isEmpty()) {
                 node.textContent = aggregatedText;
             }
 
         } else if (node.textContent != null && !node.textContent.trim().isEmpty()) {
+
             // 3. AUTO-PREENCHIMENTO: Se o nó tem textContent mas perdeu os filhos #text
             node.textContent = node.textContent.trim();
 
@@ -362,18 +478,55 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
 
+    public XplKeyframeAnimation getKeyframe(String name) {
+        return keyframesRegistry.get(name);
+    }
 
-    // =========================================================================
-    // 📱 EXTRATOR DE MEDIA QUERIES
-    // =========================================================================
-
-    private void extractMediaQueries(XplNode flatCssAst) {
+    // 2. O Extractor de Keyframes (Adiciona perto do extractMediaQueries)
+    private void extractKeyframes(XplNode flatCssAst) {
         if (flatCssAst == null || flatCssAst.children == null) return;
 
+        Iterator<XplNode> iterator = flatCssAst.children.iterator();
+        while (iterator.hasNext()) {
+            XplNode node = iterator.next();
+
+            // Se encontrar um bloco @keyframes
+            if ("@keyframes".equalsIgnoreCase(node.tag) || "keyframes".equalsIgnoreCase(node.tag)) {
+                String animName = node.attributes.getOrDefault("name", "").toString();
+                XplKeyframeAnimation animation = new XplKeyframeAnimation(animName);
+
+                // Varre os frames (ex: "0%", "100%", "from", "to")
+                for (XplNode frameNode : node.children) {
+                    if ("frame".equalsIgnoreCase(frameNode.tag) || "rule".equalsIgnoreCase(frameNode.tag)) {
+                        String position = frameNode.attributes.getOrDefault("selector", "0%").toString();
+                        XplKeyframe keyframe = new XplKeyframe(position);
+
+                        // Varre as propriedades de CSS do frame (opacity, transform, etc.)
+                        for (XplNode propNode : frameNode.children) {
+                            String propName = propNode.attributes.getOrDefault("name", "").toString();
+                            String propValue = extractDeepValue(propNode);
+                            keyframe.addStyle(propName, propValue);
+                        }
+                        animation.addKeyframe(keyframe);
+                    }
+                }
+
+                // Guarda no registo global e APAGA da árvore base para não poluir o CSS
+                keyframesRegistry.put(animName, animation);
+                System.out.println("[Engine] 🎬 Keyframe registado: " + animName);
+                iterator.remove();
+            }
+        }
+    }
+
+    // =========================================================================
+    // 📱 EXTRACTOR DE MEDIA QUERIES
+    // =========================================================================
+    private void extractMediaQueries(XplNode flatCssAst) {
+        if (flatCssAst == null || flatCssAst.children == null) return;
         // Limpa media queries antigas (evita duplicação em múltiplos renderCycles)
         // Se ainda não tens o método clear() no JavaFxMediaListener, podes criar lá!
         // this.mediaListener.clear();
-
         for (XplNode node : flatCssAst.children) {
             if ("@media".equalsIgnoreCase(node.tag) || "media_block".equalsIgnoreCase(node.tag)) {
 
@@ -393,7 +546,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                             if ("property".equalsIgnoreCase(propNode.tag) || "variable".equalsIgnoreCase(propNode.tag)) {
                                 String propName = propNode.attributes.getOrDefault("name", "").toString();
 
-                                // ⭐ A MAGIA ACONTECE AQUI: Extração invencível!
+                                // A MAGIA ACONTECE AQUI: Extracção invencível!
                                 String propValue = extractDeepValue(propNode);
 
                                 properties.put(propName, propValue);
@@ -412,11 +565,11 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
 
-    // 🧲 EXTRATOR PROFUNDO (Garante que nenhum valor de CSS escapa)
+    // 🧲 EXTRACTOR PROFUNDO (Garante que nenhum valor de CSS escapa)
     private String extractDeepValue(XplNode node) {
         if (node == null) return "";
 
-        // 1. Tenta encontrar nos atributos diretos
+        // 1. Tenta encontrar nos atributos directos
         if (node.attributes.containsKey("value")) return node.attributes.get("value").toString().trim();
         if (node.attributes.containsKey("data")) return node.attributes.get("data").toString().trim();
 
@@ -446,40 +599,144 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     public void renderCycle() {
         if (staticRoot == null) return;
 
-        // 1. Resolve @if, @for na Árvore Virtual
+        // 1. Guardar estado actual
+        Map<String, Object> currentValues = new HashMap<>();
+        collectCurrentValues(this.activeDom, currentValues);
+
+        // 2. Resolve @if, @for na Árvore Virtual
         this.activeDom = evaluator.evaluateTree(staticRoot);
 
-        // 2. Normaliza (<html>, <head>, <body>) e processa os textos
+        // 3. Normaliza (<html>, <head>, <body>)
         normalizeDocumentTree(this.activeDom);
 
-        // ⭐ 3. CORREÇÃO: Aplica Cascata CSS PRIMEIRO! (Preenche node.style)
+        // 4. Restaurar valores guardados
+        restoreValues(this.activeDom, currentValues);
+
+        // 5. Aplica Cascata CSS
         applyStylesToActiveDom();
 
-        // Aplica as regras de media queries ativas ao DOM virtual
+        // 6. Aplica media queries activas
         mediaListener.applyActiveStylesToVirtualDom(this.activeDom);
 
-
-        // ⭐ 4. CORREÇÃO: Serializa DEPOIS! (Copia as cores finais para os atributos)
+        // 7. Serializa estilos
         serializeComputedStyles(this.activeDom);
 
-        // 5. Limpeza Total
+        // 8. LIMPEZA TOTAL (Evita fantasmas no mapa de IDs)
         this.document.documentElement = null;
         this.document.head = null;
         this.document.body = null;
+        this.document.clearIndex();
 
-        // 6. Gera a Árvore Viva com os textos e estilos corretos!
-        this.document.documentElement = this.activeDom.toXplElement();
-        this.document.head = this.document.documentElement.querySelector("head");
-        this.document.body = this.document.documentElement.querySelector("body");
-
-        // 7. Hidrata conectando a Árvore Virtual à Viva perfeitamente
+        // 9. HIDRATAÇÃO (Constrói a verdadeira Árvore Viva)
         hydrateHeadlessDom(this.activeDom);
 
-        // 8. Enviar para a Ponte Gráfica
+        // 10. CONECTA A ÁRVORE VIVA AO DOCUMENTO (Acaba com o Split-Brain!)
+        this.document.documentElement = this.activeDom.liveElement;
+        if (this.document.documentElement != null) {
+            this.document.head = this.document.documentElement.querySelector("head");
+            this.document.body = this.document.documentElement.querySelector("body");
+            this.document.registerElement(this.document.documentElement);
+        }
+
+        // 11. Renderização gráfica
         if (rendererBridge != null) {
             rendererBridge.renderView(this.activeDom);
         }
+    }
 
+    // ─── Preservação de estado da UI ───────────────────────────────
+    /**
+     * Percorre a árvore activa e guarda os valores dos atributos importantes
+     * de nós que tenham ID.
+     * @param node Nó actual
+     * @param values Mapa onde guardar (key = id, value = mapa de atributos)
+     */
+    private void collectCurrentValues(XplNode node, Map<String, Object> values) {
+        if (node == null) return;
+
+        // Se o nó tem ID, guardamos os atributos que nos interessam
+        if (node.id != null && !node.id.isEmpty()) {
+            Map<String, Object> attrs = new HashMap<>();
+            // Guardar atributos que são afectados por inputs
+            if (node.attributes.containsKey("value")) {
+                attrs.put("value", node.attributes.get("value"));
+            }
+            if (node.attributes.containsKey("checked")) {
+                attrs.put("checked", node.attributes.get("checked"));
+            }
+            if (node.attributes.containsKey("selected")) {
+                attrs.put("selected", node.attributes.get("selected"));
+            }
+            if (node.textContent != null && !node.textContent.isEmpty()) {
+                attrs.put("textContent", node.textContent);
+            }
+            // Guardar também o estilo inline se houver (caso o CSS mude)
+            if (node.attributes.containsKey("style")) {
+                attrs.put("style", node.attributes.get("style"));
+            }
+            values.put(node.id, attrs);
+        }
+
+        // Recursão para os filhos
+        for (XplNode child : node.children) {
+            collectCurrentValues(child, values);
+        }
+    }
+
+    /**
+     * Restaura os valores guardados nos nós recriados que tenham ID.
+     * @param node Nó actual (da nova árvore)
+     * @param values Mapa com os valores guardados anteriormente
+     */
+    private void restoreValues(XplNode node, Map<String, Object> values) {
+        if (node == null) return;
+
+        if (node.id != null && !node.id.isEmpty()) {
+            Object stored = values.get(node.id);
+            if (stored instanceof Map<?, ?> attrs) {
+                // Restaurar atributos
+                for (Map.Entry<?, ?> entry : ((Map<String, Object>) attrs).entrySet()) {
+                    String key = (String) entry.getKey();
+                    Object val = entry.getValue();
+                    node.attributes.put(key, val);
+                    // Se for 'value', também actualiza o liveElement se existir
+                    if ("value".equals(key) && node.liveElement != null) {
+                        node.liveElement.setAttributeSilently(key, val);
+                    }
+                    // Se for 'textContent', actualiza o texto
+                    if ("textContent".equals(key)) {
+                        node.textContent = (String) val;
+                    }
+                    // Se for 'style', actualiza o estilo
+                    if ("style".equals(key)) {
+                        node.style.clear();
+                        // Parse do estilo inline para o mapa
+                        String styleStr = (String) val;
+                        if (styleStr != null && !styleStr.isEmpty()) {
+                            for (String decl : styleStr.split(";")) {
+                                String[] parts = decl.split(":", 2);
+                                if (parts.length == 2) {
+                                    node.style.put(parts[0].trim(), parts[1].trim());
+                                }
+                            }
+                        }
+                    }
+                }
+                // Notificar a bridge para actualizar o nó JavaFX (se já existir)
+                if (rendererBridge != null && node.liveElement != null) {
+                    // Actualiza propriedades específicas no JavaFX
+                    rendererBridge.updateProperty(node.id, "value", node.attributes.get("value"));
+                    rendererBridge.updateProperty(node.id, "checked", node.attributes.get("checked"));
+                    rendererBridge.updateProperty(node.id, "style", node.attributes.get("style"));
+                    rendererBridge.updateProperty(node.id, "textContent", node.textContent);
+                }
+            }
+        }
+
+        // Recursão para os filhos
+        for (XplNode child : node.children) {
+            restoreValues(child, values);
+        }
     }
 
     // =========================================================================
@@ -502,7 +759,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     // ─── Comunicação UI → Engine → XPL ──────────────────────────────────────
-
     /**
      * Quando o utilizador interage com a UI (ex: clica num botão), o JavaFX chama este método.
      * O evento é despachado para os ouvintes XPL registados.
@@ -529,60 +785,14 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         }
 
         // 4. Após o evento, re-renderizar (se as funções XPL alteraram variáveis)
-        renderCycle();
+        //renderCycle();
     }
 
-    /**
-     * Executa código XPL diretamente a partir de atributos HTML inline (ex: onclick="salvar()").
-     */
-    public void dispatchInlineEvent(String scriptCallback, XplEvent eventInstance) {
-        System.out.println("[Engine] A executar evento inline: " + scriptCallback);
-
-        try {
-            // 1. Injetamos temporariamente o objeto 'event' na memória global do XPL.
-            interpreter.globals.defineVar("event", eventInstance);
-
-            // 2. TRUQUE DO LEXER/PARSER: Preparamos a string para o teu compilador!
-            String codigoInjetado = scriptCallback.trim();
-            if (!codigoInjetado.endsWith(";")) {
-                codigoInjetado += ";"; // Garante que é um Statement válido no XPL
-            }
-
-            // Gerar Tokens
-            com.dic.xsuper.lang.Lexer lexer = new com.dic.xsuper.lang.Lexer(codigoInjetado, "Inline_Event");
-            java.util.List<com.dic.xsuper.lang.Token> tokens = lexer.tokenize();
-
-            // Gerar AST
-            com.dic.xsuper.lang.Parser parser = new com.dic.xsuper.lang.Parser(tokens);
-            java.util.List<com.dic.xsuper.lang.Stmt> statements = parser.parse();
-
-            // 3. Executar os Statements!
-            for (com.dic.xsuper.lang.Stmt stmt : statements) {
-                // Se a tua string foi uma expressão (ex: "salvar()"), o parser gerou um ExpressionStmt
-                if (stmt instanceof com.dic.xsuper.lang.Stmt.ExpressionStmt exprStmt) {
-                    interpreter.evaluate(exprStmt.expression);
-                }
-                // Se tiver blocos lógicos ou for genérico, usas o execute do teu Interpreter
-                else {
-                    interpreter.execute(stmt); // (Ajusta este nome se o teu método de correr Stmts for diferente)
-                }
-            }
-
-        } catch (Exception e) {
-            System.err.println("[Engine] Erro ao compilar/executar o evento inline: " + scriptCallback);
-            e.printStackTrace();
-        } finally {
-            // 4. Independentemente de sucesso ou erro, limpamos a variável mágica
-           interpreter.globals.remove("event");
-
-            // 5. A MAGIA REATIVA: Atualiza a interface gráfica se os dados mudaram!
-            renderCycle();
-        }
+    public XplUiBridge getRendererBridge() {
+        return rendererBridge;
     }
-
 
     // ─── Registar funções XPL como ouvintes de eventos ──────────────────────
-
     /**
      * Regista uma função XPL para ser chamada quando um evento ocorrer no documento.
      */
@@ -597,26 +807,24 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         eventListeners.computeIfAbsent(type, k -> new ArrayList<>()).add(listener);
     }
 
-    // ─── Sistema Nervoso Central (Reatividade Cirúrgica) ────────────────────
-
+    // ─── Sistema Nervoso Central (Reactividade Cirúrgica) ────────────────────
     /**
      * Invocado pelo UiElement (Headless DOM) sempre que o código XPL altera um atributo.
      * Ex: O XPL executou `botao.setAttribute("disabled", true)`.
-     */
-    public void notifyStateChanged(String id, String name, Object value) {
-        System.out.println("[Engine] ⚡ Mutação detetada no ID '" + id + "': [" + name + "] = " + value);
 
-        // 1. Atualiza a Árvore Virtual Limpa (activeDom) para manter a coerência da memória
+    public void notifyStateChanged(String id, String name, Object value) {
+        System.out.println("[Engine] ⚡ Mutação detectada no ID '" + id + "': [" + name + "] = " + value);
+
+        // 1. Actualiza a Árvore Virtual Limpa (activeDom) para manter a coerência da memória
         syncActiveDomState(activeDom, id, name, value);
 
         // 2. Avisar a Interface Gráfica (SE ELA EXISTIR!)
         if (rendererBridge != null) {
             rendererBridge.updateProperty(id, name, value);
         }
-    }
+    }*/
 
     // ─── Sincronização da Árvore Virtual ────────────────────────────────────
-
     private void syncActiveDomState(XplNode node, String targetId, String attrName, Object newValue) {
         if (node == null) return;
         if (targetId != null && targetId.equals(node.id)) {
@@ -634,51 +842,43 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         }
     }
 
-    // ─── Hidratação: Criar os Objetos Vivos (XplElement) ────────────────────
-
+    // ─── Hidratação: Criar os Objectos Vivos (XplElement) ────────────────────
     private void hydrateHeadlessDom(XplNode node) {
         if (node == null) return;
 
-        // Se o nó tiver um ID, ele ganha vida no mundo XPL
-        if (node.id != null && !node.id.isEmpty()) {
-            XplElement element = new XplElement(node.tag);
-            // ⭐ TRANSFERE A MEMÓRIA DO COMPONENTE!
-            element.hostComponent = node.hostComponent;
-            // Copia atributos (silenciosamente, para não disparar notificações)
-            for (Map.Entry<String, Object> entry : node.attributes.entrySet()) {
-                element.setAttribute(entry.getKey(), entry.getValue());
-            }
+        // ⭐ CORRECÇÃO: TODOS os nós precisam de existir no DOM Vivo (com ou sem ID)
+        XplElement element = new XplElement(node.tag);
+        // ⭐ A PASSAGEM DE TESTEMUNHO! O DOM Vivo herda a matrícula da Planta Virtual
+        element._internalUid = node._internalUid;
+        element.hostComponent = node.hostComponent;
 
-
-            // ⭐ ADICIONA ESTAS 3 LINHAS (Copiar os eventos inline para a memória) ⭐
-            element.inlineEvents.putAll(node.events);
-
-
-            element.setId(node.id);
-            element.setClassName(node.className);
-            element.textContent = node.textContent;
-
-            // Regista no documento global
-            document.registerElement(element);
-
-            // Guarda a referência no nó para futuras sincronizações
-            node.liveElement = element;
-
-            System.out.println("[Engine] 💧 Nó Hidratado para XPL: " + node.id + " (" + node.tag + ")");
+        // Copia atributos silenciosamente (Incluindo os estilos compilados)
+        for (Map.Entry<String, Object> entry : node.attributes.entrySet()) {
+            element.setAttributeSilently(entry.getKey(), entry.getValue());
         }
 
-        // Recursão para os filhos
+        element.isSyncing = false;
+        element.inlineEvents.putAll(node.events);
+
+        // Se tiver ID ou Classe, actualiza propriedades de atalho
+        if (node.id != null) element.setId(node.id);
+        if (node.className != null) element.setClassName(node.className);
+        if (node.textContent != null) element.textContent = node.textContent;
+
+        // Regista no documento
+        document.registerElement(element);
+        node.liveElement = element;
+
+        // Recursão
         for (XplNode child : node.children) {
             hydrateHeadlessDom(child);
-            // Se o pai tem um elemento vivo, anexa os filhos hidratados à árvore DOM viva
-            if (node.liveElement != null && child.liveElement != null) {
-                node.liveElement.appendChild(child.liveElement);
+            if (child.liveElement != null) {
+                element.appendChild(child.liveElement);
             }
         }
     }
 
     // ─── Registar nós na tabela de símbolos do XPL ──────────────────────────
-
     private void registerNodesInXpl(XplNode node) {
         if (node.id != null && !node.id.isEmpty()) {
             interpreter.environment.defineLet(node.id, node.liveElement);
@@ -689,7 +889,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     public void setXplModel(String tagName, Object tagElement){
-
         this.interpreter.registry_model.put(tagName,((XplClass)tagElement).model);
         interpreter.globals.defineConst(tagName, tagElement);
         componentRegistry.put(tagName, (XplClass)tagElement);
@@ -707,210 +906,16 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     // ─── Acesso ao Documento Global ──────────────────────────────────────────
-
     public XplDocument getDocument() {
         return this.document;
     }
 
-
-    public XplNode findBodyNode(XplNode node) {
-        if (node == null) return null;
-
-        // 1. É o body? Perfeito, retorna!
-        if ("body".equalsIgnoreCase(node.tag)) return node;
-
-        // 2. Mergulha nos filhos
-        if (node.children != null) {
-            for (XplNode child : node.children) {
-                XplNode found = findBodyNode(child);
-                // Se encontrou o body nas profundezas deste filho, propaga-o para cima!
-                if (found != null) return found;
-            }
-        }
-
-        // 3. Se chegou aqui, este ramo (ex: <head> ou um <div> perdido) não contém o <body>.
-        return null;
-    }
-
-
     // ─── Métodos utilitários para o XPL ─────────────────────────────────────
-
-
-
     @Override
     public void invokeMethod() {
-        // ─── MÉTODOS DA ENGINE ──────────────────────────────────────────────
-
-        // loadView(htmlSource)
-        this.fields.put("loadView", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String html = intp.evaluate(args.getFirst().expression).toString();
-                loadView(html);
-                return null;
-            }
-        });
-
-        // loadStyles(cssSource)
-        this.fields.put("loadStyles", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String css = intp.evaluate(args.getFirst().expression).toString();
-                loadStyles(css);
-                return null;
-            }
-        });
-
-
-        // ⭐ O NOVO RENDERIZADOR JSON DE CONSOLA ⭐
-        this.fields.put("printDOM", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                Object obj = intp.evaluate(args.getFirst().expression);
-                String object = null;
-                try {
-                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                    mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
-                    //System.out.println(mapper.writeValueAsString(obj));
-                    object = mapper.writeValueAsString(obj);
-                } catch (Exception e) {
-                    System.out.println(obj);
-                }
-                return object;
-            }
-        });
-
-        // showWindow(title, width, height)
-        this.fields.put("showWindow", new XplCallable() {
-            @Override public int arity() { return 3; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String title = intp.evaluate(args.get(0).expression).toString();
-                double width = Double.parseDouble(intp.evaluate(args.get(1).expression).toString());
-                double height = Double.parseDouble(intp.evaluate(args.get(2).expression).toString());
-
-                showWindow(title, width, height);
-                return null;
-            }
-        });
-
-        // loadView(htmlSource)
-        this.fields.put("defineTag", new XplCallable() {
-            @Override public int arity() { return 2; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String tagName = intp.evaluate(args.get(0).expression).toString();
-                Object tagElement = intp.evaluate(args.get(1).expression);
-                if (HtmlTagUtils.isNativeTag(tagName)) {
-                    throw new RuntimeException("Erro de Estrutura: A tag '<" + tagName + ">' não é permitida dentro de um componente customizado.");
-                }
-                if (!HtmlTagUtils.isValidCustomTagName(tagName)) {
-                    throw new RuntimeException(String.format(
-                            "Erro de Estrutura: A tag customizada '<%s>' não pode ser usada neste contexto. " +
-                                    "Esta secção espera apenas tags nativas da Web (como <div>, <p>, <span>). " +
-                                    "Certifique-se de que o componente <%s> está a ser instanciado dentro de um container permitido (como <body>).",
-                            tagName, tagName
-                    ));
-                }
-                setXplModel(tagName, tagElement);
-                return null;
-            }
-        });
-
-        // renderCycle()
-        this.fields.put("renderCycle", new XplCallable() {
-            @Override public int arity() { return 0; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                renderCycle();
-                return null;
-            }
-        });
-
-        // dispatchEvent(eventName, payload, targetId)
-        this.fields.put("dispatchEvent", new XplCallable() {
-            @Override public int arity() { return 3; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String eventName = intp.evaluate(args.get(0).expression).toString();
-                Object payload = intp.evaluate(args.get(1).expression);
-                String targetId = intp.evaluate(args.get(2).expression).toString();
-                dispatchEvent(eventName, payload, targetId);
-                return null;
-            }
-        });
-
-        // addEventListener(type, listener) – suporta XplFunction ou XplEventListener
-        this.fields.put("addEventListener", new XplCallable() {
-            @Override public int arity() { return -1; } // 2 ou 3 argumentos
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                if (args.size() < 2 || args.size() > 3) {
-                    throw new IllegalArgumentException("addEventListener espera 2 ou 3 argumentos.");
-                }
-                String type = intp.evaluate(args.get(0).expression).toString();
-                Object listenerObj = intp.evaluate(args.get(1).expression);
-                if (listenerObj instanceof XplEventListener) {
-                    addEventListener(type, (XplEventListener) listenerObj);
-                } else if (listenerObj instanceof XplFunction) {
-                    addEventListener(type, (XplFunction) listenerObj);
-                } else {
-                    throw new IllegalArgumentException("Ouvinte deve ser XplEventListener ou XplFunction.");
-                }
-                // Opções ignoradas
-                return null;
-            }
-        });
-
-        // removeEventListener(type, listener)
-        this.fields.put("removeEventListener", new XplCallable() {
-            @Override public int arity() { return 2; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String type = intp.evaluate(args.get(0).expression).toString();
-                XplEventListener listener = (XplEventListener) intp.evaluate(args.get(1).expression);
-                // Para remover, precisamos ter uma lista de listeners; faremos uma busca
-                List<XplEventListener> list = eventListeners.get(type);
-                if (list != null) {
-                    list.remove(listener);
-                }
-                return null;
-            }
-        });
-
-        // notifyStateChanged(id, name, value) – geralmente chamado internamente, mas pode ser exposto
-        this.fields.put("notifyStateChanged", new XplCallable() {
-            @Override public int arity() { return 3; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String id = intp.evaluate(args.get(0).expression).toString();
-                String name = intp.evaluate(args.get(1).expression).toString();
-                Object value = intp.evaluate(args.get(2).expression);
-                notifyStateChanged(id, name, value);
-                return null;
-            }
-        });
-
-        // getDocument()
-        this.fields.put("getDocument", new XplCallable() {
-            @Override public int arity() { return 0; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                return getDocument();
-            }
-        });
-
-        // ─── PROPRIEDADES COMO MÉTODOS (GETTERS) ────────────────────────────
-
-        // Versão da engine (exemplo)
-        this.fields.put("getVersion", new XplCallable() {
-            @Override public int arity() { return 0; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                return "1.0.0";
-            }
-        });
-
-        // Nome da engine
-        this.fields.put("getName", new XplCallable() {
-            @Override public int arity() { return 0; }
-            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                return "SuperUiEngine";
-            }
-        });
+        //Métodos de sicronização para a acessar o nosso objecto
+        SuperUiEngineUtils.buildMethods(this);
     }
-
 
     @Override
     public Object getProperty(String propertyName) {
@@ -922,152 +927,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         };
     }
 
-
     public static XPLModel buildNativeModel() {
-        if (nativeModel == null) {
-            nativeModel = new XPLModel("SuperUiEngine", null);
-
-            // ─── Campos (propriedades) ──────────────────────────────────────────────
-            String[] fieldNames = {"document", "ui"};
-            for (String f : fieldNames) {
-                Token nameToken = new Token(TokenType.IDENTIFIER, f, null, 0, 0);
-                // FieldDecl(Token modifier, boolean isStatic, boolean isFinal, boolean isReadonly, Token name, TypeNode type)
-                Stmt.FieldDecl field = new Stmt.FieldDecl(null, false, false, false, nameToken, null);
-                nativeModel.addField(field);
-            }
-
-            // ─── Métodos ──────────────────────────────────────────────────────────────
-
-            // loadView(html)
-            List<Stmt.Param> paramsHTML = List.of(
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "html", null, 0, 0), null, null)
-            );
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "loadView", null, 0, 0),
-                    paramsHTML,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // renderCycle()
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "renderCycle", null, 0, 0),
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // dispatchEvent(eventName, payload, targetId)
-            List<Stmt.Param> paramsEvent = List.of(
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "eventName", null, 0, 0), null, null),
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "payload", null, 0, 0), null, null),
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "targetId", null, 0, 0), null, null)
-            );
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "dispatchEvent", null, 0, 0),
-                    paramsEvent,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // addEventListener(type, listener)
-            List<Stmt.Param> paramsListener = List.of(
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "type", null, 0, 0), null, null),
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "listener", null, 0, 0), null, null)
-            );
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "addEventListener", null, 0, 0),
-                    paramsListener,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // removeEventListener(type, listener)
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "removeEventListener", null, 0, 0),
-                    paramsListener,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // notifyStateChanged(id, name, value)
-            List<Stmt.Param> paramsState = List.of(
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "id", null, 0, 0), null, null),
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "name", null, 0, 0), null, null),
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "value", null, 0, 0), null, null)
-            );
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "notifyStateChanged", null, 0, 0),
-                    paramsState,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // getDocument()
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "getDocument", null, 0, 0),
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // getVersion()
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "getVersion", null, 0, 0),
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // getName()
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "getName", null, 0, 0),
-                    Collections.emptyList(),
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-
-            // getProperty(propName)
-            List<Stmt.Param> paramsProp = List.of(
-                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "propName", null, 0, 0), null, null)
-            );
-            nativeModel.addMethod(new Stmt.Function(
-                    null, false, false,
-                    new Token(TokenType.IDENTIFIER, "getProperty", null, 0, 0),
-                    paramsProp,
-                    null,
-                    null,
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            ));
-        }
+        if (nativeModel == null) SuperUiEngineUtils.buildNativeModel();
         return nativeModel;
     }
 
@@ -1077,5 +938,11 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     public JavaFxMediaListener getMediaListener() {
         return mediaListener;
+    }
+
+    public void executeInlineScript(String scriptCallback, XplEvent event) {
+        // Instancia o executor isolado e delega a execução do script XPL
+        new com.dic.xsuper.lang.ui.event.eventbus.InlineScriptExecutor(this.interpreter, this)
+                .execute(scriptCallback, event);
     }
 }

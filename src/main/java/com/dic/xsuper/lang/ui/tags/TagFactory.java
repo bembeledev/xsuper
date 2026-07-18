@@ -73,6 +73,7 @@ public class TagFactory {
                     case "tel" -> new TelInputTag(node);
                     case "url" -> new UrlInputTag(node);
                     case "search" -> new SearchInputTag(node);
+                    case "color" -> new ColorInputTag(node);
                     // Botões
                     case "submit" -> new SubmitInputTag(node);
                     case "reset" -> new ResetInputTag(node);

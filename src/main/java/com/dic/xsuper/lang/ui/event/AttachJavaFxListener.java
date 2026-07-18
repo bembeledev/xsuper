@@ -7,7 +7,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.web.WebView;
-
 import java.util.Map;
 
 public class AttachJavaFxListener {
@@ -294,7 +293,7 @@ public class AttachJavaFxListener {
         // 1. Cria a instância nativa do evento XPL
         XplEvent xplEvent = new XplEvent(type.getWebName(), sourceNode, sourceNode);
 
-        // 2. Tira os dados à medida do tipo de objeto recebido
+        // 2. Tira os dados à medida do tipo de objecto recebido
         if (eventData != null) {
             if (eventData instanceof javafx.scene.input.MouseEvent me) {
                 xplEvent.setDetail("clientX", me.getSceneX());
@@ -329,7 +328,11 @@ public class AttachJavaFxListener {
         }
 
         // 3. Chama a instância da Engine e executa o script inline!
-        com.dic.xsuper.lang.ui.SuperUiEngine.getInstance().dispatchInlineEvent(callbackString, xplEvent);
+        com.dic.xsuper.lang.ui.event.eventbus.UiEventPublisher.publishEventDispatch(
+                sourceNode._internalUid != null ? sourceNode._internalUid : "global",
+                callbackString,
+                xplEvent
+        );
 
         // 4. Bloqueia o comportamento do JavaFX se o script XPL fez 'event.preventDefault()'
         if (xplEvent.defaultPrevented && eventData instanceof javafx.event.Event fxEvent) {

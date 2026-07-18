@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.ui;
 
+import com.dic.xsuper.lang.ui.document.XplElement;
 import com.dic.xsuper.lang.ui.html.XplNode;
 
 /**
@@ -35,6 +36,8 @@ public interface XplUiBridge {
      * A Engine vai injetar-se a si mesma aqui.
      */
     void setEngineCallback(EngineCallback callback);
+
+    void rebuildFullView(String targetId, com.dic.xsuper.lang.ui.html.XplNode virtualNode);
 
     /**
      * O canal de comunicação para enviar eventos de volta.

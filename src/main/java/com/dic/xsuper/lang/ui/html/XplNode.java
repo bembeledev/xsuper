@@ -5,7 +5,6 @@ import com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation;
 import com.dic.xsuper.lang.ui.animation.XplTransition;
 import com.dic.xsuper.lang.ui.document.XplElement;
 
-import javax.swing.*;
 import java.util.*;
 
 import static com.dic.xsuper.lang.ui.html.HtmlTagUtils.GLOBAL_ATTRIBUTES;
@@ -43,10 +42,22 @@ public class XplNode {
     public Map<String, XplKeyframeAnimation> keyframeAnimations = new HashMap<>();
 
 
+    // Gerador global e imune a colisões
+    private static final java.util.concurrent.atomic.AtomicLong UID_GENERATOR = new java.util.concurrent.atomic.AtomicLong(1);
+
+
+    // Método para o XplElement poder pedir uma matrícula se for criado manualmente
+    public static String generateUid() {
+        return "node_" + UID_GENERATOR.getAndIncrement();
+    }
+
+    // A matrícula original da árvore virtual
+    public String _internalUid = generateUid();
+
     // ─── ESTILO E ESTADO ─────────────────────────────────────────────────────
 
     public Map<String, String> style = new HashMap<>();
-    public Object value = null;
+    public Object value = "";
     public boolean disabled = false;
     public boolean hidden = false;
 
@@ -474,6 +485,11 @@ public class XplNode {
         if (attrName.startsWith("data-") || attrName.startsWith("aria-")) return true;
         // 3. Verifica se o atributo está na lista específica da tag
         return HtmlTagUtils.isSpecificAttribute(tag, attrName);
+    }
+
+
+    public XplNode getCurrentNode(){
+        return this;
     }
 
 }

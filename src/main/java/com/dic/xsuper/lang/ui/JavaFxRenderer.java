@@ -1,15 +1,13 @@
 package com.dic.xsuper.lang.ui;
 
+import com.dic.xsuper.lang.ui.animation.XplTransition;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import com.dic.xsuper.lang.ui.tags.TagFactory;
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.ButtonBase;
-import javafx.scene.control.Labeled;
-import javafx.scene.control.TextInputControl;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,31 +34,37 @@ public class JavaFxRenderer implements XplUiBridge {
         this.engineCallback = callback;
     }
 
-    // No teu JavaFxRenderer.java
+    // Em JavaFxRenderer.java
+    @Override
+    public void rebuildFullView(String targetUid, XplNode virtualNode) {
+        Platform.runLater(() -> {
+            // 1. Encontra a caixa antiga na tela
+            Node oldFxNode = fxNodeRegistry.get(targetUid);
+            if (oldFxNode == null) return;
 
-    public void rebuildFullView(XplNode updatedDom) {
+            javafx.scene.Parent parent = oldFxNode.getParent();
 
-        // 1. Incinera a árvore visual antiga do JavaFX!
-        this.windowRoot.getChildren().clear();
+            if (parent instanceof Pane parentPane) {
+                int index = parentPane.getChildren().indexOf(oldFxNode);
+                if (index == -1) return;
 
-        // 2. Encontra o <body> no novo DOM Virtual
-        //XplNode bodyNode = XplNode.findBodyNode(updatedDom);
-        //if (bodyNode == null) return;
+                // 2. Limpa a memória velha
+                fxNodeRegistry.remove(targetUid);
 
-        // 3. RECRIACÃO TOTAL!
-        // O TagFactory e o LayoutEngine vão ler o novo VDOM (que já tem o CSS do @media ativo).
-        // Se a largura for de telemóvel, o LayoutEngine lê "flex-direction: column"
-        // e instancia FINALMENTE um FlexColumnPane novo!
-        //for (XplNode child : bodyNode.children) {
-            // Supondo que usas o TagFactory aqui para gerar os nós visuais
-        //}
+                // ⭐ 3. CRIA A CAIXA NOVA INTEIRA (Com todas as regras do TagFactory, Margens e Textos!)
+                NativeTag newTag = TagFactory.create(virtualNode);
+                if (newTag != null) {
+                    Node newFxNode = newTag.build();
+                    virtualNode.nativeNode = newFxNode;
 
-        javafx.scene.Node newNativeNode = TagFactory.create(updatedDom).build();
-        if (newNativeNode != null) {
-           this.windowRoot.getChildren().add(newNativeNode);
-        }
+                    registerNodeRecursively(newTag);
 
-        System.out.println("[Renderer] 🏗️ Layout Nativo reconstruído com sucesso!");
+                    // 4. Substituição cirúrgica da caixa no pai
+                    parentPane.getChildren().set(index, newFxNode);
+                    parentPane.requestLayout(); // Garante o alinhamento instantâneo
+                }
+            }
+        });
     }
 
     // =====================================================================
@@ -152,9 +156,6 @@ public class JavaFxRenderer implements XplUiBridge {
         }
     }
 
-    // =====================================================================
-    // 3. O PATCH CIRÚRGICO (Altera apenas o que mudou)
-    // =====================================================================
     private void patchNodeProperties(XplNode oldNode, XplNode newNode, Node fxNode) {
         if (fxNode == null) return;
 
@@ -167,7 +168,7 @@ public class JavaFxRenderer implements XplUiBridge {
             }
         }
 
-        // B. Diff de CSS (Impede o JavaFX de reprocessar estilos iguais)
+        // B. Diff de CSS
         String oldStyle = oldNode.attributes.getOrDefault("style", "").toString();
         String newStyle = newNode.attributes.getOrDefault("style", "").toString();
         if (!oldStyle.equals(newStyle)) {
@@ -179,6 +180,19 @@ public class JavaFxRenderer implements XplUiBridge {
         boolean newDisabled = Boolean.parseBoolean(newNode.attributes.getOrDefault("disabled", "false").toString());
         if (oldDisabled != newDisabled) {
             fxNode.setDisable(newDisabled);
+        }
+
+        // ⭐ D. DIFF DO VALUE E CHECKED (Fundamental para não perderes os dados!) ⭐
+        String oldValue = oldNode.attributes.getOrDefault("value", "").toString();
+        String newValue = newNode.attributes.getOrDefault("value", "").toString();
+        if (!oldValue.equals(newValue)) {
+            applyRawStyleToFxNode(fxNode, "value", newValue, newValue);
+        }
+
+        String oldChecked = oldNode.attributes.getOrDefault("checked", "false").toString();
+        String newChecked = newNode.attributes.getOrDefault("checked", "false").toString();
+        if (!oldChecked.equals(newChecked)) {
+            applyRawStyleToFxNode(fxNode, "checked", newChecked, newChecked);
         }
     }
 
@@ -193,7 +207,15 @@ public class JavaFxRenderer implements XplUiBridge {
                 fxNodeRegistry.put(id, fxNode);
             }
 
-            for (Map.Entry<String, String> entry : tag.getEvents().entrySet()) {
+            // ⭐ Lê a matrícula secreta gerada no XplNode/XplElement
+            String secretUid = tag.getSourceNode()._internalUid;
+
+            if (secretUid != null) {
+                // A caixa gráfica fica registada no dicionário com a chave "node_X"
+                fxNodeRegistry.put(secretUid, fxNode);
+            }
+
+            /*for (Map.Entry<String, String> entry : tag.getEvents().entrySet()) {
                 String eventName = entry.getKey();
                 String action = entry.getValue();
 
@@ -208,7 +230,7 @@ public class JavaFxRenderer implements XplUiBridge {
                         if (engineCallback != null) engineCallback.onEvent(action, newV);
                     });
                 }
-            }
+            }*/
         }
         for (NativeTag child : tag.getChildren()) {
             registerNodeRecursively(child);
@@ -224,119 +246,172 @@ public class JavaFxRenderer implements XplUiBridge {
             Node fxNode = fxNodeRegistry.get(nodeId);
             if (fxNode == null) return;
 
-            // Normalização de null para string segura
             String valStr = newValue != null ? newValue.toString() : "";
             String prop = propertyName.toLowerCase();
 
-            // ─── MAPA DE PROPRIEDADES CSS PARA JAVAFX ──────────────────────
-            switch (prop) {
+            // 1. Vai buscar a transição guardada (Se existir)
+            String transitionConfig = (String) fxNode.getProperties().get("transition");
 
-                // ─── ESTADOS BOOLEANOS ──────────────────────────────────────
-                case "disabled" -> fxNode.setDisable(Boolean.parseBoolean(valStr) || valStr.equals(""));
+            // 2. ⭐ INTERCETOR DE ANIMAÇÕES
+            if (transitionConfig != null && (transitionConfig.contains(prop) || transitionConfig.contains("all"))) {
+                // TEM TRANSIÇÃO!
+                XplTransition trans = new XplTransition(transitionConfig);
 
-                case "checked" -> {
-                    boolean isChecked = Boolean.parseBoolean(valStr) || valStr.equals("");
-                    if (fxNode instanceof javafx.scene.control.CheckBox cb) cb.setSelected(isChecked);
-                    else if (fxNode instanceof javafx.scene.control.RadioButton rb) rb.setSelected(isChecked);
-                    else if (fxNode instanceof javafx.scene.control.ToggleButton tb) tb.setSelected(isChecked);
-                }
+                // Lê o valor físico exato do nó no ecrã antes de mudar
+                String oldValue = getCurrentFxPropertyValue(fxNode, prop);
 
-                case "visible" -> {
-                    boolean isVisible = Boolean.parseBoolean(valStr);
-                    fxNode.setVisible(isVisible);
-                    fxNode.setManaged(isVisible);
-                }
+                // Chama o motor de animações para fazer a interpolação!
+                com.dic.xsuper.lang.ui.animation.XplAnimationEngine.applyTransition(
+                        fxNode, prop, oldValue, valStr, trans
+                );
 
-                // ─── CONTEÚDO E VALORES ─────────────────────────────────────
-                case "value" -> {
-                    if (fxNode instanceof javafx.scene.control.TextInputControl input) {
-                        input.setText(valStr);
-                    } else if (fxNode instanceof javafx.scene.control.ComboBox combo) {
-                        combo.setValue(newValue);
-                    } else if (fxNode instanceof javafx.scene.control.Slider slider) {
-                        try { slider.setValue(Double.parseDouble(valStr)); } catch (Exception ignored) {}
-                    }
-                }
-
-                case "text", "textcontent", "innerhtml" -> {
-                    if (fxNode instanceof javafx.scene.control.Labeled labeled) {
-                        labeled.setText(valStr);
-                    } else if (fxNode instanceof javafx.scene.control.TextInputControl input) {
-                        input.setText(valStr);
-                    }
-                }
-
-                // ─── ESTILO E APARÊNCIA ─────────────────────────────────────
-                case "style" -> fxNode.setStyle(valStr);
-
-                case "class", "classname" -> {
-                    fxNode.getStyleClass().clear();
-                    if (!valStr.isEmpty()) {
-                        fxNode.getStyleClass().addAll(valStr.split("\\s+"));
-                    }
-                }
-
-                // ─── PROPRIEDADES CSS COMUNS ────────────────────────────────
-                // Dimensões
-                case "width" -> setSize(fxNode, "width", valStr);
-                case "height" -> setSize(fxNode, "height", valStr);
-                case "maxwidth" -> setSize(fxNode, "maxWidth", valStr);
-                case "maxheight" -> setSize(fxNode, "maxHeight", valStr);
-                case "minwidth" -> setSize(fxNode, "minWidth", valStr);
-                case "minheight" -> setSize(fxNode, "minHeight", valStr);
-                case "prefwidth" -> setSize(fxNode, "prefWidth", valStr);
-                case "prefheight" -> setSize(fxNode, "prefHeight", valStr);
-
-                // Margens e Padding (via CSS)
-                case "margin", "padding" -> applyInsets(fxNode, prop, valStr);
-
-                // Background
-                case "background", "background-color" -> applyBackground(fxNode, valStr);
-
-                // Cor do texto
-                case "color", "text-fill" -> applyTextFill(fxNode, valStr);
-
-                // Fonte
-                case "font-size" -> applyFontSize(fxNode, valStr);
-                case "font-family" -> applyFontFamily(fxNode, valStr);
-                case "font-weight" -> applyFontWeight(fxNode, valStr);
-                case "font-style" -> applyFontStyle(fxNode, valStr);
-                case "text-align" -> applyTextAlign(fxNode, valStr);
-                case "text-decoration" -> applyTextDecoration(fxNode, valStr);
-                case "border-radius" -> applyBorderRadius(fxNode, valStr);
-                // Transformações
-                case "transform" -> applyTransform(fxNode, valStr);
-                // Opacidade
-                case "opacity" -> {
-                    try { fxNode.setOpacity(Double.parseDouble(valStr)); } catch (Exception ignored) {}
-                }
-                // Display e Layout (Flex/Grid)
-                case "display" -> applyDisplay(fxNode, valStr);
-                case "flex-direction" -> applyFlexDirection(fxNode, valStr);
-                case "align-items" -> applyAlignment(fxNode, "align-items", valStr);
-                case "justify-content" -> applyAlignment(fxNode, "justify-content", valStr);
-                case "gap" -> applyGap(fxNode, valStr);
-
-                // ─── MÍDIA E ATRIBUTOS ESPECÍFICOS ──────────────────────────
-                case "src" -> {
-                    if (fxNode instanceof javafx.scene.image.ImageView iv) {
-                        try {
-                            iv.setImage(new javafx.scene.image.Image(valStr, true));
-                        } catch (Exception e) {
-                            System.err.println("[JavaFxRenderer] Erro ao carregar src: " + valStr);
-                        }
-                    }
-                }
-
-                // ─── FALLBACK: ATRIBUTOS DE DADOS E CUSTOMIZADOS ────────────
-                default -> {
-                    fxNode.getProperties().put(propertyName, newValue);
-                    System.out.println("[JavaFxRenderer] Propriedade '" + propertyName + "' injetada na memória do nó.");
-                }
+            } else {
+                // NÃO TEM TRANSIÇÃO. Aplica a mudança instantânea.
+                applyRawStyleToFxNode(fxNode, prop, valStr, newValue);
             }
         });
     }
 
+    // =====================================================================
+    // 🛠️ HELPER: LER O VALOR FÍSICO ATUAL DO JAVAFX
+    // =====================================================================
+    private String getCurrentFxPropertyValue(Node fxNode, String prop) {
+        return switch (prop.toLowerCase()) {
+            case "opacity" -> String.valueOf(fxNode.getOpacity());
+            case "translatex" -> String.valueOf(fxNode.getTranslateX());
+            case "translatey" -> String.valueOf(fxNode.getTranslateY());
+            case "scalex" -> String.valueOf(fxNode.getScaleX());
+            case "scaley" -> String.valueOf(fxNode.getScaleY());
+            case "rotate" -> String.valueOf(fxNode.getRotate());
+            default -> "0"; // Valor seguro de fallback
+        };
+    }
+
+    // =====================================================================
+    // 🛠️ HELPER: APLICADOR BRUTO (O teu antigo switch gigante)
+    // =====================================================================
+    private void applyRawStyleToFxNode(Node fxNode, String prop, String valStr, Object newValue) {
+        switch (prop) {
+            // ─── ESTADOS BOOLEANOS ──────────────────────────────────────
+            case "disabled" -> fxNode.setDisable(Boolean.parseBoolean(valStr) || valStr.equals(""));
+
+            case "checked" -> {
+                boolean isChecked = Boolean.parseBoolean(valStr) || valStr.equals("");
+                if (fxNode instanceof javafx.scene.control.CheckBox cb) cb.setSelected(isChecked);
+                else if (fxNode instanceof javafx.scene.control.RadioButton rb) rb.setSelected(isChecked);
+                else if (fxNode instanceof javafx.scene.control.ToggleButton tb) tb.setSelected(isChecked);
+            }
+
+            case "visible" -> {
+                boolean isVisible = Boolean.parseBoolean(valStr);
+                fxNode.setVisible(isVisible);
+                fxNode.setManaged(isVisible);
+            }
+
+            // ─── CONTEÚDO E VALORES ─────────────────────────────────────
+            case "value" -> {
+                if (fxNode instanceof javafx.scene.control.TextInputControl input) {
+                    // ⭐ SÓ ATUALIZA SE O TEXTO FOR DIFERENTE (Protege o cursor!)
+                    if (!input.getText().equals(valStr)) {
+                        input.setText(valStr);
+                    }
+                } else if (fxNode instanceof javafx.scene.control.ComboBox combo) {
+                    if (combo.getValue() == null || !combo.getValue().toString().equals(valStr)) {
+                        combo.setValue(newValue);
+                    }
+                } else if (fxNode instanceof javafx.scene.control.Slider slider) {
+                    try { slider.setValue(Double.parseDouble(valStr)); } catch (Exception ignored) {}
+                } else if (fxNode instanceof javafx.scene.control.Spinner spinner) {
+                    // ⭐ A CURA DO SPINNER (INPUT NUMBER) ⭐
+                    try {
+                        double parsed = Double.parseDouble(valStr);
+                        if (spinner.getValue() == null || !spinner.getValue().toString().equals(String.valueOf(parsed))) {
+                            spinner.getValueFactory().setValue(parsed);
+                        }
+
+                        // Só atualiza o Editor se for NUMERICAMENTE diferente!
+                        // (Impede de apagar "10." e voltar para "10.0" enquanto o user digita decimais)
+                        String editorText = spinner.getEditor().getText();
+                        boolean shouldUpdateText = true;
+                        try {
+                            if (Double.parseDouble(editorText) == parsed) {
+                                shouldUpdateText = false; // Já é igual, deixa o cursor em paz!
+                            }
+                        } catch(Exception e) {}
+
+                        if (shouldUpdateText && !editorText.equals(valStr)) {
+                            spinner.getEditor().setText(valStr);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+
+            case "text", "textcontent", "innerhtml" -> {
+                if (fxNode instanceof javafx.scene.control.Labeled labeled) {
+                    labeled.setText(valStr);
+                } else if (fxNode instanceof javafx.scene.control.TextInputControl input) {
+                    input.setText(valStr);
+                }
+            }
+
+            // ─── ESTILO E APARÊNCIA ─────────────────────────────────────
+            case "style" -> fxNode.setStyle(valStr);
+
+            case "class", "classname" -> {
+                fxNode.getStyleClass().clear();
+                if (!valStr.isEmpty()) {
+                    fxNode.getStyleClass().addAll(valStr.split("\\s+"));
+                }
+            }
+
+            // ─── PROPRIEDADES CSS COMUNS ────────────────────────────────
+            case "width" -> setSize(fxNode, "width", valStr);
+            case "height" -> setSize(fxNode, "height", valStr);
+            case "maxwidth" -> setSize(fxNode, "maxWidth", valStr);
+            case "maxheight" -> setSize(fxNode, "maxHeight", valStr);
+            case "minwidth" -> setSize(fxNode, "minWidth", valStr);
+            case "minheight" -> setSize(fxNode, "minHeight", valStr);
+            case "prefwidth" -> setSize(fxNode, "prefWidth", valStr);
+            case "prefheight" -> setSize(fxNode, "prefHeight", valStr);
+
+            case "margin", "padding" -> applyInsets(fxNode, prop, valStr);
+            case "background", "background-color" -> applyBackground(fxNode, valStr);
+            case "color", "text-fill" -> applyTextFill(fxNode, valStr);
+
+            case "font-size" -> applyFontSize(fxNode, valStr);
+            case "font-family" -> applyFontFamily(fxNode, valStr);
+            case "font-weight" -> applyFontWeight(fxNode, valStr);
+            case "font-style" -> applyFontStyle(fxNode, valStr);
+            case "text-align" -> applyTextAlign(fxNode, valStr);
+            case "text-decoration" -> applyTextDecoration(fxNode, valStr);
+            case "border-radius" -> applyBorderRadius(fxNode, valStr);
+
+            case "transform" -> applyTransform(fxNode, valStr);
+            case "opacity" -> {
+                try { fxNode.setOpacity(Double.parseDouble(valStr)); } catch (Exception ignored) {}
+            }
+
+            case "display" -> applyDisplay(fxNode, valStr);
+            case "flex-direction" -> applyFlexDirection(fxNode, valStr);
+            case "align-items" -> applyAlignment(fxNode, "align-items", valStr);
+            case "justify-content" -> applyAlignment(fxNode, "justify-content", valStr);
+            case "gap" -> applyGap(fxNode, valStr);
+
+            case "src" -> {
+                if (fxNode instanceof javafx.scene.image.ImageView iv) {
+                    try {
+                        iv.setImage(new javafx.scene.image.Image(valStr, true));
+                    } catch (Exception e) {
+                        System.err.println("[JavaFxRenderer] Erro ao carregar src: " + valStr);
+                    }
+                }
+            }
+
+            default -> {
+                fxNode.getProperties().put(prop, newValue);
+            }
+        }
+    }
     // ─── MÉTODOS AUXILIARES PARA APLICAÇÃO DE ESTILOS ──────────────────────
 
     private void setSize(Node node, String sizeType, String value) {

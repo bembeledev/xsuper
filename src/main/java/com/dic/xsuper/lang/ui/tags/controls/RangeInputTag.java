@@ -41,12 +41,6 @@ public class RangeInputTag extends FormControlTag {
         // 4. Aplica estilos específicos (ex: thumb-color)
         applyRangeStyles();
 
-        // 5. Liga eventos de mudança de valor para o motor XPL
-        fxSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            // Dispara um evento "input" ou "change" que pode ser capturado no XPL
-            dispatchEvent("input", sourceNode.id, newVal);
-            dispatchEvent("change", sourceNode.id, newVal);
-        });
 
         return fxSlider;
     }
@@ -106,5 +100,14 @@ public class RangeInputTag extends FormControlTag {
     @Override
     protected void addChildren() {
         // <input> é void element – não tem filhos
+    }
+
+    @Override
+    protected void bindEvents() {
+        super.bindEvents();
+        if (fxSlider != null) {
+            // Liga o arrasto do slider ao atributo 'value'
+            bindTwoWayProperty(fxSlider.valueProperty(), "value");
+        }
     }
 }

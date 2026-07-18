@@ -10,12 +10,10 @@ implement MotorAPI {
 
 declare Motor {
     pub ola: int;
-
 }
 
 implement Motor {
     pub fun saudar() { println("Vrumm..."); }
-
 }
 
 
@@ -55,8 +53,6 @@ meuMotor.saudar();
 meuMotor::CallMethod(/*coisas assim*/);
 meuMotor::getDecorators();
 MotorAPI::getDeclareName();
-
-
 
 If(a instance Peixe,bloc).Else(block);
 

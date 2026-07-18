@@ -202,23 +202,35 @@ public class SelectTag extends NativeTag {
 
     // ─── EVENTOS ─────────────────────────────────────────────────────────────
 
+    @Override
     protected void bindEvents() {
-        if (fxControl instanceof ComboBox<?> combo) {
+        super.bindEvents(); // Garante herança da NativeTag
+
+        if (fxControl instanceof javafx.scene.control.ComboBox<?> combo) {
             combo.valueProperty().addListener((obs, oldVal, newVal) -> {
-                Object selectedValue = getSelectedValue();
-                dispatchEvent("change", sourceNode.id, selectedValue);
-                dispatchEvent("input", sourceNode.id, selectedValue);
+                syncSelectValueToDom();
             });
-        } else if (fxControl instanceof ListView<?> listView) {
+        } else if (fxControl instanceof javafx.scene.control.ListView<?> listView) {
             listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                // Para múltipla, newVal pode ser null ou o primeiro item selecionado
-                Object selectedValue = getSelectedValue();
-                dispatchEvent("change", sourceNode.id, selectedValue);
-                dispatchEvent("input", sourceNode.id, selectedValue);
+                syncSelectValueToDom();
             });
         }
     }
 
+    private void syncSelectValueToDom() {
+        Object selectedValue = getSelectedValue();
+        Object currentValue = sourceNode.attributes.get("value");
+
+        if (selectedValue != null && !selectedValue.equals(currentValue)) {
+            sourceNode.attributes.put("value", selectedValue);
+            if (sourceNode.liveElement != null) {
+                sourceNode.liveElement.setAttributeSilently("value", selectedValue);
+            }
+            if (sourceNode.id != null && !sourceNode.id.isEmpty()) {
+                com.dic.xsuper.lang.ui.SuperUiEngine.getInstance().dispatchEvent("change", selectedValue, sourceNode.id);
+            }
+        }
+    }
     // ─── OBTENÇÃO DO VALOR SELECIONADO ─────────────────────────────────────
 
     /**

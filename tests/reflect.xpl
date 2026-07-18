@@ -30,7 +30,6 @@ implement Calculadora {
     pub fun init(nome: string) {
         this.nome = nome;
     }
-
     pub fun somar(a: int, b: int): int {
         println("[" + this.nome + "] A calcular " + a + " + " + b + "...");
         return a + b;

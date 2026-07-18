@@ -2,7 +2,6 @@ package com.dic.xsuper.lang.ui.css.media;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
 import javafx.scene.Scene;
-
 import java.util.Map;
 
 public class JavaFxMediaListener {

@@ -54,16 +54,6 @@ public class TextareaTag extends FormControlTag { // ⭐ Agora herda o poder dos
         applyCommonAttributes(textArea);
         applyCommonStyles();
 
-        // ⭐ LIGAÇÃO AO FORMULÁRIO: Guarda o valor inicial
-        textArea.getProperties().put("xpl_input_value", textArea.getText());
-
-        // ⭐ EVENTOS EM TEMPO REAL: Atualiza a memória à medida que escreves
-        textArea.textProperty().addListener((obs, oldVal, newVal) -> {
-            textArea.getProperties().put("xpl_input_value", newVal);
-            // Podes disparar aqui o evento de XPL se quiseres:
-            // dispatchEvent("input", sourceNode.id, newVal);
-        });
-
         return textArea;
     }
 
@@ -76,5 +66,13 @@ public class TextareaTag extends FormControlTag { // ⭐ Agora herda o poder dos
     @Override
     protected void addChildren() {
         // Um textarea não renderiza filhos DOM (elementos gráficos), apenas lê o textContent no construtor.
+    }
+
+    @Override
+    protected void bindEvents() {
+        super.bindEvents();
+        if (fxNode instanceof javafx.scene.control.TextArea ta) {
+            bindTwoWayProperty(ta.textProperty(), "value");
+        }
     }
 }

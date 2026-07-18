@@ -69,4 +69,12 @@ public class RadioInputTag extends FormControlTag {
     protected void addChildren() {
         // Void element
     }
+
+    @Override
+    protected void bindEvents() {
+        super.bindEvents();
+        if (fxControl instanceof javafx.scene.control.ToggleButton tb) {
+            bindTwoWayProperty(tb.selectedProperty(), "checked");
+        }
+    }
 }

@@ -119,7 +119,7 @@ public class MainWindow {
         // 3. Reconstroi a UI a partir do zero (se a ponte existir)
         if (rendererBridge != null) {
             XplNode finalBodyNode = bodyNode;
-            Platform.runLater(() -> rendererBridge.rebuildFullView(finalBodyNode));
+            Platform.runLater(() -> rendererBridge.rebuildFullView(finalBodyNode._internalUid,finalBodyNode));
         }
 
     }

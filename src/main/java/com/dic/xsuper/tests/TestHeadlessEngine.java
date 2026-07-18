@@ -10,7 +10,7 @@ import com.dic.xsuper.lang.ui.document.XplElement;
 
 /**
  * Teste Headless da SuperUiEngine, sem JavaFX.
- * Verifica a hidratação, o índice de IDs e a reatividade.
+ * Verifica a hidratação, o índice de IDs e a reactividade.
  */
 public class TestHeadlessEngine {
     public static void main(String[] args) {
@@ -21,7 +21,7 @@ public class TestHeadlessEngine {
         XplUiBridge consoleBridge = new XplUiBridge() {
             @Override
             public void renderView(XplNode activeDomRoot) {
-                System.out.println("📺 [Ponte UI] Tela completa redesenhada! Nós ativos: " + activeDomRoot.children.size());
+                System.out.println("📺 [Ponte UI] Tela completa redesenhada! Nós activos: " + activeDomRoot.children.size());
             }
 
             @Override
@@ -35,10 +35,12 @@ public class TestHeadlessEngine {
             }
 
             @Override
+            public void rebuildFullView(String targetId, XplNode virtualNode) {}
+
+            @Override
             public void reportError(String message) {
                 System.err.println("❌ [Ponte UI] Erro: " + message);
             }
-
 
         };
 
@@ -46,17 +48,16 @@ public class TestHeadlessEngine {
         // 2. INICIALIZAR A ENGINE (com um Interpreter simulado)
         // =====================================================================
         // Como não temos um Interpreter real neste teste, criamos um stub
-        // que apenas permite a injeção do documento.
+        // que apenas permite a injecção do documento.
         Interpreter mockInterpreter = new Interpreter(null, null) {
             // Sobrescrevemos o construtor para não precisar de CommandRegistry
-            // e injetamos o documento manualmente.
+            // e injectamos o documento manualmente.
         };
-        // O construtor da SuperUiEngine já injeta o document no globals,
+        // O construtor da SuperUiEngine já injecta o document no globals,
         // mas como passamos um Interpreter nulo, precisamos de garantir que
         // o documento seja criado. Vamos criar a engine com um Interpreter real
         // (mesmo que seja apenas para testes) – mas o Interpreter precisa de
         // um CommandRegistry. Podemos passar null e tratar os nulos.
-
 
 
         SuperUiEngine engine = new SuperUiEngine(null, consoleBridge);
@@ -87,7 +88,7 @@ public class TestHeadlessEngine {
         // =====================================================================
         System.out.println("\n--- 🧠 SIMULANDO A EXECUÇÃO DO SCRIPT XPL ---");
 
-        // O documento global foi injetado como 'document' ou 'ui'
+        // O documento global foi injectado como 'document' ou 'ui'
         XplDocument document = engine2.getDocument();
 
         System.out.println("> Executando: var botao = document.getElementById('btn-login');");
@@ -98,7 +99,7 @@ public class TestHeadlessEngine {
             return;
         }
 
-        System.out.println("> Executando: botao.setAttribute('disabled', true);");
+        System.out.println("> Executando: botão.setAttribute('disabled', true);");
         botao.setAttribute("disabled", true);
         System.out.println("   -> Atributo 'disabled' definido para: " + botao.getAttribute("disabled"));
 

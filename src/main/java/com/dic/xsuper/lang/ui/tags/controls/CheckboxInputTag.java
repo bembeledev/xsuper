@@ -41,14 +41,6 @@ public class CheckboxInputTag extends FormControlTag {
             fxCheckbox.setText((String) sourceNode.attributes.get("label"));
         }
 
-        // 5. REGISTA EVENTOS DE MUDANÇA
-        // Quando o utilizador clica, atualizamos as propriedades internas do nó
-        fxCheckbox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            fxCheckbox.getProperties().put("xpl_is_checked", newVal);
-            // Aqui podes disparar um evento para o Javascript/XPL no futuro:
-            // dispatchEvent("change", sourceNode.id, newVal);
-        });
-
         return fxCheckbox;
     }
 
@@ -65,5 +57,14 @@ public class CheckboxInputTag extends FormControlTag {
     @Override
     protected void addChildren() {
         // <input> é void element – não fazemos nada!
+    }
+
+    @Override
+    protected void bindEvents() {
+        super.bindEvents();
+        if (fxCheckbox != null) {
+            // Liga o 'visto' da caixa ao atributo 'checked' do DOM
+            bindTwoWayProperty(fxCheckbox.selectedProperty(), "checked");
+        }
     }
 }

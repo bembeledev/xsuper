@@ -393,7 +393,7 @@ public class FileExplorerCLI {
 
                     case "findtext":
                         if (parts.length < 3) {
-                            System.out.println("Uso: findtext <padrão> <diretório> (ex: findtext 'TODO' .)");
+                            System.out.println("Uso: findtext <padrão> <directório> (ex: findtext 'TODO' .)");
                         } else {
                             String pattern = parts[1];
                             File searchDir = resolveFile(parts[2]);
@@ -457,11 +457,11 @@ public class FileExplorerCLI {
     }
 
     private File resolveFile(String name) {
-        // Se for caminho absoluto ou relativo com separadores, tenta diretamente
+        // Se for caminho absoluto ou relativo com separadores, tenta directamente
         if (name.contains(File.separator) || name.startsWith(".") || name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
             return new File(currentDir, name);
         }
-        // Senão, procura no diretório atual
+        // Senão, procura no directório actual
         File inCurrent = new File(currentDir, name);
         if (inCurrent.exists()) return inCurrent;
         // Se não existir, retorna o ficheiro no currentDir (será tratado como erro depois)
@@ -470,24 +470,24 @@ public class FileExplorerCLI {
 
     private void showHelp() {
         System.out.println("""
-                Comandos disponíveis:
-                  ls [-l]              - Listar conteúdo (detalhado com -l)
-                  cd <dir>             - Mudar diretório (.. para subir)
-                  pwd                  - Mostrar caminho atual
-                  mkdir <nome>         - Criar pasta
-                  touch <nome>         - Criar arquivo vazio
-                  rm [-f] <nome>       - Eliminar (forçar com -f)
-                  rename <antigo> <novo> - Renomear
-                  copy <origem> <dest> - Copiar arquivo/pasta
-                  mv <origem> <dest>   - Mover/renomear
-                  info <nome>          - Mostrar metadados resumidos
-                  props <nome>         - Mostrar todas as propriedades do ficheiro
-                  search <padrão>      - Buscar arquivos/pastas
-                  open <nome>          - Abrir com programa padrão
-                  run <executável> [args...] - Executar programa
-                  runwith <prog> <alvo> [args...] - Executar alvo com programa específico
-                  help                 - Este menu
-                  exit                 - Sair
+                  Comandos disponíveis:
+                  ls [-l]                               - Listar conteúdo (detalhado com -l)
+                  cd <dir>                              - Mudar directório (.. para subir)
+                  pwd                                   - Mostrar caminho actual
+                  mkdir <nome>                          - Criar pasta
+                  touch <nome>                          - Criar arquivo vazio
+                  rm [-f] <nome>                        - Eliminar (forçar com -f)
+                  rename <antigo> <novo>                - Renomear
+                  copy <origem> <dest>                  - Copiar arquivo/pasta
+                  mv <origem> <dest>                    - Mover/renomear
+                  info <nome>                           - Mostrar metadados resumidos
+                  props <nome>                          - Mostrar todas as propriedades do ficheiro
+                  search <padrão>                       - Buscar arquivos/pastas
+                  open <nome>                           - Abrir com programa padrão
+                  run <executável> [args...]            - Executar programa
+                  runwith <prog> <alvo> [args...]       - Executar alvo com programa específico
+                  help                                  - Este menu
+                  exit                                  - Sair
                 """);
     }
 }

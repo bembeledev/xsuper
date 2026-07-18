@@ -1,5 +1,7 @@
 package com.dic.xsuper.lang.ui.tags;
 
+import com.dic.xsuper.lang.ui.SuperUiEngine;
+import com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation;
 import com.dic.xsuper.lang.ui.cursor.StyleCursorUtils;
 import com.dic.xsuper.lang.ui.event.AttachJavaFxListener;
 import com.dic.xsuper.lang.ui.event.XplEventType;
@@ -70,11 +72,82 @@ public abstract class NativeTag{
         String overflowY = styles.getOrDefault("overflow-y", overflow).toLowerCase();
         String overflowX = styles.getOrDefault("overflow-x", overflow).toLowerCase();
 
+        // ==========================================================
+        // ⭐ MEMÓRIA DA TRANSIÇÃO (Para o JavaFxRenderer ler mais tarde)
+        // ==========================================================
+        if (styles.containsKey("transition")) {
+            fxNode.getProperties().put("transition", styles.get("transition"));
+        }
+
+        // ==========================================================
+        // ⭐ 4. O GATILHO DAS ANIMAÇÕES (Coloca aqui!)
+        // ==========================================================
+
+        if (styles.containsKey("animation")) {
+            String animationConfig = styles.get("animation");
+            // Ex: "fadeIn 2s ease-in-out forwards"
+            String[] parts = animationConfig.trim().split("\\s+");
+
+            if (parts.length > 0) {
+                String animName = parts[0];
+
+                // Vai buscar a planta ao registo da Engine
+                XplKeyframeAnimation anim = SuperUiEngine.getInstance().getKeyframe(animName);
+
+                if (anim != null) {
+                    // Constrói os overrides (duração, easing, etc.) a partir da string
+                    Map<String, String> overrides = extractAnimationOverrides(parts);
+
+                    // Dispara o motor!
+                    com.dic.xsuper.lang.ui.animation.XplAnimationEngine.applyKeyframeAnimation(fxNode, anim, overrides);
+                } else {
+                    System.err.println("[TagFactory] ⚠️ Animação não encontrada no CSS global: " + animName);
+                }
+            }
+        }
+
         if (overflowY.equals("auto") || overflowY.equals("scroll") ||
                 overflowX.equals("auto") || overflowX.equals("scroll")) {
             return wrapInWebScroll(fxNode, overflowX, overflowY, styles);
         }
+
+
+
         return fxNode;
+    }
+
+    /**
+     * Lê as partes da string de 'animation' e tenta descobrir o que é duração, fill-mode, iterações, etc.
+     */
+    private Map<String, String> extractAnimationOverrides(String[] parts) {
+        Map<String, String> overrides = new java.util.HashMap<>();
+
+        for (int i = 1; i < parts.length; i++) {
+            String p = parts[i].toLowerCase();
+
+            // É tempo? (Duração)
+            if (p.endsWith("ms") || p.endsWith("s")) {
+                // Se já tivermos duração, poderíamos assumir delay, mas vamos focar na duração principal
+                if (!overrides.containsKey("duration")) overrides.put("duration", p);
+            }
+            // É fill-mode?
+            else if (p.equals("forwards") || p.equals("backwards") || p.equals("both") || p.equals("none")) {
+                overrides.put("fill-mode", p);
+            }
+            // É direção?
+            else if (p.equals("normal") || p.equals("reverse") || p.equals("alternate") || p.equals("alternate-reverse")) {
+                overrides.put("direction", p);
+            }
+            // É iterações?
+            else if (p.equals("infinite")) {
+                overrides.put("iterations", "-1");
+            } else if (p.matches("\\d+")) {
+                overrides.put("iterations", p);
+            }
+            // (Opcional: podes mapear o Easing aqui também, se precisares de o substituir)
+        }
+
+        return overrides;
     }
 
     /**
