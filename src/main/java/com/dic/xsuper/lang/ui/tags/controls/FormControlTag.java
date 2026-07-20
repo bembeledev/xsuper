@@ -85,8 +85,6 @@ public abstract class FormControlTag extends NativeTag {
      * @param fxProperty A propriedade do JavaFX (ex: textField.textProperty())
      * @param domAttribute O nome do atributo no DOM (ex: "value", "checked")
      */
-    // Em FormControlTag.java
-
     protected <T> void bindTwoWayProperty(javafx.beans.property.Property<T> fxProperty, String domAttribute) {
         fxProperty.addListener((obs, oldVal, newVal) -> {
             Object currentValue = sourceNode.attributes.get(domAttribute);
@@ -104,20 +102,6 @@ public abstract class FormControlTag extends NativeTag {
         });
     }
 
-    protected <T> void bindToChannel(javafx.beans.property.Property<T> fxProperty, String domAttribute) {
-        fxProperty.addListener((obs, oldVal, newVal) -> {
-
-            // O JavaFX não altera o DOM diretamente. Ele pede ao Canal para avisar quem de direito.
-            if (sourceNode.id != null && !sourceNode.id.isEmpty() && newVal != null) {
-                UiEventBus.getInstance().publish(
-                        UiEventBus.Topic.UI_INTERACTED,
-                        sourceNode.id,
-                        domAttribute,
-                        newVal
-                );
-            }
-        });
-    }
 
     private String getAttrAsString(Map<String, Object> attrs, String key, String defaultValue) {
         Object val = attrs.get(key);
@@ -169,7 +153,6 @@ public abstract class FormControlTag extends NativeTag {
     }
 
     // ─── Getters para uso em subclasses ──────────────────────────────────────
-
     public String getName() { return name; }
     public String getValue() { return value; }
     public String getPlaceholder() { return placeholder; }
@@ -178,7 +161,6 @@ public abstract class FormControlTag extends NativeTag {
     public boolean isRequired() { return required; }
 
     // ─── Construtores e métodos herdados ──────────────────────────────────
-
     @Override
     protected void addChildren() {
         // Inputs são void elements – não têm filhos

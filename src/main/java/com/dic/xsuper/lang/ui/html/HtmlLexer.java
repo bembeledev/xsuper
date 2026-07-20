@@ -40,22 +40,25 @@ public class HtmlLexer {
         char c = advance();
 
         if (c == '<') {
-            isInsideTag = true;
-            addToken(HtmlTokenType.LT);
+            // ⭐ NOVO: Suporte a Comentários HTML <!-- -->
+            if (peek() == '!' && peekNext() == '-' && peekNextNext() == '-') {
+                scanComment();
+            } else {
+                isInsideTag = true;
+                addToken(HtmlTokenType.LT);
+            }
         } else if (c == '@') {
-            scanDirective(); // Apanhámos um @if, @for, etc!
+            scanDirective();
         } else if (c == '{') {
             addToken(HtmlTokenType.LBRACE);
         } else if (c == '}') {
             addToken(HtmlTokenType.RBRACE);
         } else if (c == '(' || c == ')') {
-            addToken(c == '(' ? HtmlTokenType.LPAREN : HtmlTokenType.RPAREN); // Para ler as condições do @if(...)
+            addToken(c == '(' ? HtmlTokenType.LPAREN : HtmlTokenType.RPAREN);
         } else if (!isWhitespace(c)) {
-            // Se não é nada disto, é texto bruto visível no ecrã!
             scanTextContent();
         }
     }
-
 
     // --- ESTADO 2: Dentro das Tags (id, class, [binding], (evento)) ---
     private void scanTagContent() {
@@ -63,26 +66,63 @@ public class HtmlLexer {
 
         switch (c) {
             case '>':
-                isInsideTag = false; // Saímos da tag!
+                isInsideTag = false;
                 addToken(HtmlTokenType.GT);
                 break;
             case '/': addToken(HtmlTokenType.SLASH); break;
             case '=': addToken(HtmlTokenType.EQUALS); break;
+
+            // ⭐ NOVO: Suporte a Aspas Simples, Duplas e Crases!
             case '"':
             case '\'':
+            case '`':
                 scanString(c);
                 break;
+
             case '[': addToken(HtmlTokenType.LBRACKET); break;
             case ']': addToken(HtmlTokenType.RBRACKET); break;
             case '(': addToken(HtmlTokenType.LPAREN); break;
             case ')': addToken(HtmlTokenType.RPAREN); break;
+
+            // ⭐ NOVO: O Lexer agora entende chaves dentro de tags para o "React Mode"!
+            case '{': addToken(HtmlTokenType.LBRACE); break;
+            case '}': addToken(HtmlTokenType.RBRACE); break;
+
             default:
-                if (isAlpha(c)) {
-                    scanIdentifier(); // Nome da tag ou de um atributo
-                }
+                if (isAlpha(c)) scanIdentifier();
                 break;
         }
     }
+
+    // ⭐ NOVO: Leitor de Comentários (Ignora tudo até encontrar '-->')
+    private void scanComment() {
+        advance(); // Consome '!'
+        advance(); // Consome '-'
+        advance(); // Consome '-'
+
+        while (!isAtEnd()) {
+            if (peek() == '-' && peekNext() == '-' && peekNextNext() == '>') {
+                advance(); // '-'
+                advance(); // '-'
+                advance(); // '>'
+                break;
+            }
+            if (peek() == '\n') line++;
+            advance();
+        }
+    }
+
+    // Funções de Lookahead estendido (adiciona no fundo do ficheiro)
+    private char peekNext() {
+        if (current + 1 >= source.length()) return '\0';
+        return source.charAt(current + 1);
+    }
+
+    private char peekNextNext() {
+        if (current + 2 >= source.length()) return '\0';
+        return source.charAt(current + 2);
+    }
+
 
       private void scanDirective() {
         while (isAlphaNumeric(peek())) advance();

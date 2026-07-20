@@ -8,16 +8,19 @@ import com.dic.xsuper.lang.ui.html.HtmlLexer;
 import com.dic.xsuper.lang.ui.html.HtmlParser;
 import com.dic.xsuper.lang.ui.html.HtmlTagUtils;
 import com.dic.xsuper.lang.ui.html.XplNode;
+import com.dic.xsuper.lang.ui.reactivity.XplReactiveState;
 
 import java.util.*;
 
 public class DomEvaluator {
     private final Interpreter interpreter; // O cérebro da tua linguagem!
     private final SuperUiEngine engine;
-
-    public DomEvaluator(Interpreter interpreter, SuperUiEngine engine) {
+    // ⭐ NOVO: O Map Reativo que controla os Signals
+    private final XplReactiveState reactiveState;
+    public DomEvaluator(Interpreter interpreter, SuperUiEngine engine, XplReactiveState reactiveState) {
         this.interpreter = interpreter;
         this.engine = engine;
+        this.reactiveState = reactiveState;
     }
 
     /**
@@ -58,22 +61,37 @@ public class DomEvaluator {
             case "text":
                 XplNode textNode = cloneNode(node);
                 // Passa o texto (ex: "{{item}}") pelo tradutor de variáveis!
-                textNode.textContent = resolveBindings(node.textContent);
+                // ⭐ NOVO: Guardar a string intocada (a planta) para o Cirurgião saber como a reconstruir mais tarde!
+                textNode.rawTemplate = node.textContent;
+                textNode.textContent = resolveBindings(node.textContent,textNode);
                 result.add(textNode);
                 break;
 
             default:
-                // Tag HTML normal (div, button, input, etc...)
                 XplNode dynamicElement = cloneNode(node);
 
-                // 1. Resolver Bindings Dinâmicos (ex: [disabled]="isCarregando")
+                // 1. Resolver Bindings Dinâmicos (Atributos)
                 for (String bindKey : node.bindings.keySet()) {
                     String varName = node.bindings.get(bindKey);
-                    Object value = evaluateExpressionXPL(varName);
-                    dynamicElement.attributes.put(bindKey, String.valueOf(value));
+
+                    if (reactiveState != null) {
+                        reactiveState.track(varName, dynamicElement);
+                    }
+                    Object value = evaluateExpressionXPL(varName); // A fonte da verdade!
+
+                    String strValue = value != null ? String.valueOf(value) : "";
+                    dynamicElement.setAttribute(bindKey, strValue);
                 }
 
-                // 2. Avaliar filhos recursivamente
+                // ====================================================================
+                // ⭐ A CURA DO TEXTO: Avaliar o textContent diretamente no Pai!
+                // ====================================================================
+                if (dynamicElement.textContent != null && dynamicElement.textContent.contains("{{")) {
+                    dynamicElement.rawTemplate = dynamicElement.textContent; // Guarda a planta original!
+                    dynamicElement.textContent = resolveBindings(dynamicElement.textContent, dynamicElement);
+                }
+
+                // 3. Avaliar filhos recursivamente
                 for (XplNode child : node.children) {
                     dynamicElement.children.addAll(evaluateNode(child));
                 }
@@ -114,7 +132,7 @@ public class DomEvaluator {
             if (key.equals("componentName") || key.equals("props")) continue;
 
             // ⭐ MAGIA: Resolver mantendo a tipagem real do XPL!
-            Object resolvedValue = resolveAttributeValue(entry.getValue().toString());
+            Object resolvedValue = resolveAttributeValue(entry.getValue().toString(),componentNode);
             props.put(key, resolvedValue);
         }
 
@@ -196,18 +214,22 @@ public class DomEvaluator {
     // =========================================================================
     // 🧪 RESOLVEDOR DE ATRIBUTOS (Preserva Objetos Reais!)
     // =========================================================================
-    private Object resolveAttributeValue(String text) {
+    private Object resolveAttributeValue(String text, XplNode componentNode) { // ⭐ 1. Adicionado o parâmetro
         if (text == null) return null;
 
         // Se for EXATAMENTE uma única expressão (ex: "{{pessoa}}") sem texto à volta
         if (text.startsWith("{{") && text.endsWith("}}") && text.indexOf("{{", 2) == -1) {
             String expr = text.substring(2, text.length() - 2).trim();
-            // Retorna o OBJETO REAL (Map, List, XplInstance, etc.)
+
+            // ⭐ 2. Magia dos sinais aplicada também às Props dos Componentes!
+            if (reactiveState != null && componentNode != null) {
+                return reactiveState.getAndTrack(expr, componentNode);
+            }
             return evaluateExpressionXPL(expr);
         }
 
-        // Se for texto misturado (ex: "Olá {{nome}}!"), resolve como String normal
-        return resolveBindings(text);
+        // ⭐ 3. A CORREÇÃO DO ERRO: Passamos o nó para a função!
+        return resolveBindings(text, componentNode);
     }
 
     // =====================================================================
@@ -217,8 +239,20 @@ public class DomEvaluator {
         List<XplNode> result = new ArrayList<>();
         String conditionCode = ifNode.attributes.get("condition").toString();
 
+
+        // ⭐ A MAGIA DOS SINAIS AQUI TAMBÉM!
+        // Ocultamente, o Map Reativo regista que o nó estático @if tem "ouvidos" nesta condição!
+        Object conditionResult;
+        if (reactiveState != null) {
+            // Passamos o ifNode inteiro para que ele seja o alvo enviado para o Nível 3!
+            conditionResult = reactiveState.getAndTrack(conditionCode, ifNode);
+        } else {
+            conditionResult = evaluateExpressionXPL(conditionCode);
+        }
+
+
         // 1. Testa a condição do @if principal
-        boolean isTrue = isTruthy(evaluateExpressionXPL(conditionCode));
+        boolean isTrue = isTruthy(conditionResult);
 
         if (isTrue) {
             // Se for verdade, pega APENAS nos filhos normais (ignora os blocos @else/elseif)
@@ -268,14 +302,25 @@ public class DomEvaluator {
         String varName = parts[0].replace("let ", "").trim();
         String listName = parts[1].trim();
 
-        Object listObject = evaluateExpressionXPL(listName);
+        // ⭐ SINAIS NO @FOR: Registamos a lista!
+        Object listObject;
+        if (reactiveState != null) {
+            listObject = reactiveState.getAndTrack(listName, forNode);
+        } else {
+            listObject = evaluateExpressionXPL(listName);
+        }
 
-        // Verificamos se a lista existe e é iterável
+
+        // ⭐ A CURA DOS ARRAYS (O motivo da lista não imprimir!)
+        List<Object> items = new ArrayList<>();
         if (listObject instanceof Iterable<?> iterable) {
-            boolean hasItems = false;
+            for (Object o : iterable) items.add(o);
+        } else if (listObject instanceof Object[] arr) {
+            items.addAll(java.util.Arrays.asList(arr)); // Se for um Array puro, convertemos para Lista!
+        }
 
-            for (Object item : iterable) {
-                hasItems = true;
+        if (!items.isEmpty()) {
+            for (Object item : items) {
                 // ⭐ MAGIA DE ESCOPO: Injetamos a variável temporária no ambiente
                 interpreter.environment.defineLet(varName, item);
 
@@ -285,18 +330,17 @@ public class DomEvaluator {
                     }
                 }
             }
-
-            // Se a lista estiver vazia, procuramos o bloco @empty
-            if (!hasItems) {
-                for (XplNode child : forNode.children) {
-                    if (child.tag.equals("@empty")) {
-                        for (XplNode emptyChild : child.children) {
-                            result.addAll(evaluateNode(emptyChild));
-                        }
+        } else {
+            // Bloco @empty
+            for (XplNode child : forNode.children) {
+                if (child.tag.equals("@empty")) {
+                    for (XplNode emptyChild : child.children) {
+                        result.addAll(evaluateNode(emptyChild));
                     }
                 }
             }
         }
+
         return result;
     }
 
@@ -354,7 +398,7 @@ public class DomEvaluator {
     // =====================================================================
     // 🧠 A PONTE QUÂNTICA ENTRE O DOM E O XPL
     // =====================================================================
-    private Object evaluateExpressionXPL(String expressao) {
+    public Object evaluateExpressionXPL(String expressao) {
         if (expressao == null || expressao.trim().isEmpty()) return null;
 
         try {
@@ -453,18 +497,27 @@ public class DomEvaluator {
     }
 
     // 🧪 O motor que transforma "{{item}}" no valor real avaliado pelo XPL
-    private String resolveBindings(String text) {
+    // Em DomEvaluator.java
+
+    // 🧪 O motor que transforma "{{item}}" no valor real avaliado pelo XPL
+    // ⭐ NOVO: Recebe o targetNode para o colar aos Signals
+    public String resolveBindings(String text, XplNode targetNode) {
         if (text == null || !text.contains("{{")) return text;
 
         String resolved = text;
-        // Regex para capturar tudo dentro de {{ }}
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\{(.+?)\\}\\}").matcher(text);
 
         while (m.find()) {
-            String expr = m.group(1).trim(); // Apanha o "item"
-            Object val = evaluateExpressionXPL(expr); // Pede ao Interpretador XPL para dar o valor!
+            String expr = m.group(1).trim();
 
-            // Substitui "{{item}}" pelo valor real
+            // 1. Cola os "Ouvidos" do nó à variável no Map Reativo
+            if (reactiveState != null && targetNode != null) {
+                reactiveState.track(expr, targetNode);
+            }
+
+            // 2. Vai SEMPRE buscar o valor real ao Interpretador (A Fonte da Verdade)
+            Object val = evaluateExpressionXPL(expr);
+
             resolved = resolved.replace(m.group(0), val != null ? String.valueOf(val) : "");
         }
         return resolved;

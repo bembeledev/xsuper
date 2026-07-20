@@ -1,31 +1,55 @@
 package com.dic.xsuper.lang;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Environment {
     private final Environment enclosing; // Escopo pai (ex: a função onde o if está dentro)
-    public final Map<String, Object> values = new HashMap<>();
-    private final Map<String, Boolean> isConstant = new HashMap<>();
+    public final Map<String, Object> values = Collections.synchronizedMap(new java.util.HashMap<>());
+    private final Map<String, Boolean> isConstant = Collections.synchronizedMap(new java.util.HashMap<>());
     private final long depth; // Nível de profundidade (0 = Arquivo/Global)
 
-    // ⭐ NOVO: Registo de quem entrou por via de 'import'
-    private final java.util.Set<String> importedSymbols = new java.util.HashSet<>();
-
+    public final java.util.Map<String, String> typeRegistry = Collections.synchronizedMap(new java.util.HashMap<>());
+    // Registo de quem entrou por via de 'import'
+    private final java.util.Set<String> importedSymbols = Collections.synchronizedSet(new java.util.HashSet<>());
 
     // ⭐ MEMÓRIA BLINDADA CONTRA CONCORRÊNCIA ⭐
     public final Map<String, Object> valuesConcurrency = new ConcurrentHashMap<>();
     public final Map<String, String> typeRegistryConcurrency = new ConcurrentHashMap<>();
 
+    // =========================================================================
+    // ⭐ 1. A INTERFACE DO NOVO SISTEMA NERVOSO GERAL (Múltiplos Eventos)
+    // =========================================================================
+    public interface XplEnvironmentListener {
+        void onVariableDeclared(String name, Object value, String scopeType); // scopeType: "let", "var", "const"
+        void onVariableMutated(String name, Object oldValue, Object newValue);
+        void onVariableRead(String name, Object value);
+    }
 
-    // ⭐ NOVO: Método para registar variáveis importadas
+    // Lista estática e Thread-Safe para múltiplos ouvintes globais (UI, Debugger, Profiler...)
+    private static final List<XplEnvironmentListener> globalListeners = new CopyOnWriteArrayList<>();
+
+    public static void addListener(XplEnvironmentListener listener) {
+        if (!globalListeners.contains(listener)) {
+            globalListeners.add(listener);
+        }
+    }
+
+    public static void removeListener(XplEnvironmentListener listener) {
+        globalListeners.remove(listener);
+    }
+
+    // ⭐ Método para registar variáveis importadas
     public void defineImported(String name, Object value) {
         values.put(name, value);
         importedSymbols.add(name); // Carimba o passaporte como "Importado"!
     }
 
-    // ⭐ NOVO: Método para a Guilhotina perguntar se o símbolo é importado
+    // ⭐ Método para a Guilhotina perguntar se o símbolo é importado
     public boolean isImported(String name) {
         return importedSymbols.contains(name);
     }
@@ -34,7 +58,7 @@ public class Environment {
         this.depth = 0;
     }
 
-    // ⭐ NOVO: Construtor Quântico para Raízes de Módulos
+    // ⭐ Construtor Quântico para Raízes de Módulos
     public Environment(Environment enclosing, long depth) {
         this.enclosing = enclosing;
         this.depth = depth;
@@ -45,18 +69,31 @@ public class Environment {
         this.depth = enclosing.depth + 1;
     }
 
-    public void defineVar(String name, Object value) {
-        if (depth > 0) {
-            throw new RuntimeException("Erro de Sintaxe: 'var' (" + name + ") só pode ser declarado ao nível do arquivo (Escopo Global).");
-        }
-        values.put(name, value);
-        isConstant.put(name, false);
+
+
+    // =========================================================================
+    // 📢 NOTIFICADORES INTERNOS (Alta Performance)
+    // =========================================================================
+    private void notifyDeclared(String name, Object value, String scopeType) {
+        if (globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : globalListeners) l.onVariableDeclared(name, value, scopeType);
+    }
+
+    private void notifyMutated(String name, Object oldValue, Object newValue) {
+        if (globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : globalListeners) l.onVariableMutated(name, oldValue, newValue);
+    }
+
+    private void notifyRead(String name, Object value) {
+        if (globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : globalListeners) l.onVariableRead(name, value);
     }
 
     public void defineLet(String name, Object value) {
-        // Pode ser redeclarado no mesmo escopo (sobrescreve) ou em escopos diferentes
+        // Pode ser re-declarado no mesmo escopo (sobrescreve) ou em escopos diferentes
         values.put(name, value);
         isConstant.put(name, false);
+        notifyDeclared(name, value, "let");
     }
 
     public void defineConst(String name, Object value) {
@@ -65,15 +102,26 @@ public class Environment {
         }
         values.put(name, value);
         isConstant.put(name, true);
+        notifyDeclared(name, value, "const");
     }
 
+    public void defineVar(String name, Object value) {
+        if (depth > 0) {
+            throw new RuntimeException("Erro de Sintaxe: 'var' (" + name + ") só pode ser declarado ao nível do arquivo (Escopo Global).");
+        }
+        values.put(name, value);
+        isConstant.put(name, false);
+        notifyDeclared(name, value, "var");
+    }
 
     public void assign(String name, Object value) {
         if (values.containsKey(name)) {
             if (isConstant.get(name)) {
                 throw new RuntimeException("Erro: Não podes reatribuir valor à constante '" + name + "'.");
             }
+            Object oldValue = values.get(name);
             values.put(name, value);
+            notifyMutated(name, oldValue, value);
             return;
         }
 
@@ -87,7 +135,9 @@ public class Environment {
 
     public Object get(String name) {
         if (values.containsKey(name)) {
-            return values.get(name);
+            Object val = values.get(name);
+            notifyRead(name, val); // Gatilho de Leitura!
+            return val;
         }
         if (enclosing != null) {
             return enclosing.get(name);
@@ -96,7 +146,7 @@ public class Environment {
     }
 
     /**
-     * Remove completamente uma variável do escopo atual.
+     * Remove completamente uma variável do escopo actual.
      * Útil para limpar variáveis temporárias injetadas pelo motor (ex: 'event').
      */
     public void remove(String name) {
@@ -112,9 +162,6 @@ public class Environment {
         // 4. Se por acaso foi importada, limpa também esse carimbo
         importedSymbols.remove(name);
     }
-
-    // 1. Adiciona o dicionário de trancas logo abaixo do teu 'values'
-    public final java.util.Map<String, String> typeRegistry = new java.util.HashMap<>();
 
     // 2. Adiciona este método para trancar uma variável a um tipo
     public void lockType(String name, String type) {

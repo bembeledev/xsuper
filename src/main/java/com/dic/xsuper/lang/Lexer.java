@@ -266,9 +266,6 @@ public class Lexer {
     // =========================================================================
     // ⭐ VOLUME 14: STRINGS MULTI-LINHA E INTERPOLAÇÃO MÁGICA (${...}) ⭐
     // =========================================================================
-    // =========================================================================
-    // ⭐ VOLUME 14: STRINGS MULTI-LINHA (TEXT BLOCKS) E INTERPOLAÇÃO ⭐
-    // =========================================================================
     private void string() {
         // O primeiro '"' já foi consumido pelo switch no scanToken()
         if (match('"')) {

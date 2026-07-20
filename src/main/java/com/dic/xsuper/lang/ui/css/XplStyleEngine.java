@@ -147,6 +147,7 @@ public class XplStyleEngine {
         }
     }
 
+
     private String[] rawStyleToArray(String rawStyle) {
         return rawStyle.split(";");
     }

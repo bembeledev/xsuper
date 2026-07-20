@@ -27,7 +27,7 @@ public class Parser {
         return this.errorCount > 0;
     }
 
-    // ⭐ NOVO: Permite extrair a quantidade exata de bugs encontrados!
+    // ⭐ NOVO: Permite extrair a quantidade exacta de bugs encontrados!
     public int getErrorCount() {
         return this.errorCount;
     }
@@ -236,10 +236,7 @@ public class Parser {
 
     // Lê: export declare... | export Cliente, Pessoa; | export all;
     // =========================================================================
-    // ⭐ ATUALIZAÇÃO: EXPORT DECLARATION BLINDADO E ESTRITO ⭐
-    // =========================================================================
-    // =========================================================================
-    // ⭐ EXPANSÃO: EXPORT COM DIAGNÓSTICO DE CONTEXTO CIRÚRGICO ⭐
+    // ⭐ ACTUALIZAÇÃO: EXPORT DECLARATION BLINDADO E ESTRITO ⭐
     // =========================================================================
     private Stmt exportDeclaration() {
         // 1. Caso 1: export all;
@@ -1828,7 +1825,7 @@ public class Parser {
     // Estes métodos "avançam" no array de Tokens passo a passo.
     // ==========================================
 
-    /** Se o token atual for de um dos tipos solicitados, avança um passo e devolve true. */
+    /** Se o token actual for de um dos tipos solicitados, avança um passo e devolve true. */
     private boolean match(TokenType... types) {
         for (TokenType type : types) {
             if (check(type)) {
@@ -1839,7 +1836,7 @@ public class Parser {
         return false;
     }
 
-    /** Vê o token atual sem avançar (espia o que vem a seguir). */
+    /** Vê o token actual sem avançar (espia o que vem a seguir). */
     private boolean check(TokenType type) {
         if (isAtEnd()) return false;
         return peek().type == type;

@@ -79,6 +79,21 @@ public class MainWindow {
             Scene scene = new Scene(scroll, width, height);
             this.currentScene = scene;
 
+            // ⭐ 6.1: Regista as dimensões iniciais na Engine
+            engine.setViewportSize(width, height);
+
+            // ⭐ 6.2: ESCUTA O REDIMENSIONAMENTO DO SO!
+            scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+                engine.setViewportSize(newVal.doubleValue(), scene.getHeight());
+                // Descomenta a linha abaixo se quiseres que o UI faça "Reflow" em tempo real
+                // ao arrastar a janela (Cuidado: pode ser pesado em PCs mais fracos!)
+                // engine.renderCycle();
+            });
+
+            scene.heightProperty().addListener((obs, oldVal, newVal) -> {
+                engine.setViewportSize(scene.getWidth(), newVal.doubleValue());
+            });
+
             // 7. Anexa o listener de media queries à cena
             mediaListener.attachToScene(scene);
 

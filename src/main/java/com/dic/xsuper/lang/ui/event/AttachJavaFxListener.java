@@ -16,13 +16,20 @@ public class AttachJavaFxListener {
     public static void attachJavaFxListener(XplNode sourceNode, Node fxNode, XplEventType type, String scriptCallback) {
         switch (type) {
             // ─── 🖱️ EVENTOS DE RATO (MOUSE) ──────────────────────────────────
-            case CLICK, DBLCLICK -> fxNode.setOnMouseClicked(e -> {
-                if (type == XplEventType.CLICK && e.getClickCount() == 1) {
-                    fireXplEvent( sourceNode,type, e, scriptCallback);
-                } else if (type == XplEventType.DBLCLICK && e.getClickCount() == 2) {
-                    fireXplEvent( sourceNode,type, e, scriptCallback);
+            case CLICK, DBLCLICK -> {
+                // ⭐ Proteção contra Botões: Eles exigem 'setOnAction' em vez de MouseClicked
+                if (fxNode instanceof ButtonBase btn) {
+                    if (type == XplEventType.CLICK) btn.setOnAction(e -> fireXplEvent(sourceNode, type, e, scriptCallback));
+                } else {
+                    fxNode.setOnMouseClicked(e -> {
+                        if (type == XplEventType.CLICK && e.getClickCount() == 1) {
+                            fireXplEvent(sourceNode, type, e, scriptCallback);
+                        } else if (type == XplEventType.DBLCLICK && e.getClickCount() == 2) {
+                            fireXplEvent(sourceNode, type, e, scriptCallback);
+                        }
+                    });
                 }
-            });
+            }
             case MOUSEDOWN -> fxNode.setOnMousePressed(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
             case MOUSEUP -> fxNode.setOnMouseReleased(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
             case MOUSEENTER -> fxNode.setOnMouseEntered(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
@@ -290,8 +297,13 @@ public class AttachJavaFxListener {
      * e empacota-os num XplEvent para o Interpretador.
      */
     private static void fireXplEvent(XplNode sourceNode, XplEventType type, Object eventData, String callbackString) {
-        // 1. Cria a instância nativa do evento XPL
-        XplEvent xplEvent = new XplEvent(type.getWebName(), sourceNode, sourceNode);
+
+        // ⭐ CORREÇÃO 2: Passar o LiveElement (O objeto real do DOM) e não o Virtual Node!
+        // A avaliação é "lazy" (tardia), por isso quando o utilizador clica, o liveElement já não é nulo.
+        Object targetElement = sourceNode.liveElement != null ? sourceNode.liveElement : sourceNode;
+
+        // 1. Cria a instância nativa do evento XPL com o Alvo Real
+        XplEvent xplEvent = new XplEvent(type.getWebName(), targetElement, targetElement);
 
         // 2. Tira os dados à medida do tipo de objecto recebido
         if (eventData != null) {
@@ -315,29 +327,21 @@ public class AttachJavaFxListener {
                 xplEvent.setDetail("sceneY", de.getSceneY());
             }
             else if (eventData instanceof java.util.Map<?, ?> map) {
-                // Para RESIZE, SCROLL, VISIBILITYCHANGE (Onde usaste Map.of)
                 for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
                     xplEvent.setDetail(entry.getKey().toString(), entry.getValue());
                 }
             }
             else if (!(eventData instanceof javafx.event.Event)) {
-                // Para INPUT, CHANGE, SELECT, TIMEUPDATE (Valores crus: String, Boolean, Double)
-                // Guarda o valor na chave 'value' dentro do event.detail
                 xplEvent.setDetail("value", eventData);
             }
         }
 
-        // 3. Chama a instância da Engine e executa o script inline!
-        com.dic.xsuper.lang.ui.event.eventbus.UiEventPublisher.publishEventDispatch(
-                sourceNode._internalUid != null ? sourceNode._internalUid : "global",
-                callbackString,
-                xplEvent
-        );
+        // ⭐ CORREÇÃO 3: Execução Directa (Bypass do EventBus para interações de utilizador rápidas)
+        com.dic.xsuper.lang.ui.SuperUiEngine.getInstance().executeInlineScript(callbackString, xplEvent);
 
         // 4. Bloqueia o comportamento do JavaFX se o script XPL fez 'event.preventDefault()'
         if (xplEvent.defaultPrevented && eventData instanceof javafx.event.Event fxEvent) {
             fxEvent.consume();
         }
     }
-
 }

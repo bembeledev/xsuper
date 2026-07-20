@@ -47,10 +47,22 @@ public abstract class NativeTag{
         }
 
         this.resolvedStyles = StyleResolver.resolve(node.tag, this.style);
-        this.cssContext = new CssContext()
-                .withFontSize((float) resolvedStyles.fontSize.toPixels(new CssContext()))
-                .withParentSize(800)
-                .withViewport(800, 600);
+
+        // ⭐ Vai buscar as dimensões dinâmicas à Engine!
+        com.dic.xsuper.lang.ui.SuperUiEngine engine = com.dic.xsuper.lang.ui.SuperUiEngine.getInstance();
+        double vw = engine != null ? engine.getViewportWidth() : 800;
+        double vh = engine != null ? engine.getViewportHeight() : 600;
+
+        this.cssContext = new com.dic.xsuper.lang.ui.properties.cssunit.CssContext()
+                .withFontSize((float) resolvedStyles.fontSize.toPixels(new com.dic.xsuper.lang.ui.properties.cssunit.CssContext()))
+
+                // O "Parent" assume o tamanho do ecrã (Viewport) inicialmente.
+                // Num motor avançado, este valor seria atualizado pelo teu LayoutEngine
+                // no momento em que o pai é posicionado no ecrã.
+                .withParentSize(vw)
+
+                // Dimensão global do ecrã para as medidas 'vw' e 'vh' do CSS
+                .withViewport(vw, vh);
 
         for (XplNode childNode : node.children) {
             NativeTag childTag = TagFactory.create(childNode);
@@ -58,14 +70,18 @@ public abstract class NativeTag{
         }
     }
 
+    // Em NativeTag.java
+
     public Node build() {
         fxNode = createNode();
         applyCommonStyles();
         applyTagSpecificStyles();
+
         // Usamos new HashMap<> para compatibilidade entre Map<String, String> e Map<String, Object>
-        StyleTransformUtils.applyTransforms(fxNode, new HashMap<>(this.style));
+        //com.dic.xsuper.lang.ui.helpers.StyleTransformUtils.applyTransforms(fxNode, new HashMap<>(this.style));
         addChildren();
         bindEvents();
+
         // 🌐 PADRÃO DA WEB: Qualquer nó vira scroll se tiver "overflow: auto" ou "scroll"
         Map<String, String> styles = getRawStyles();
         String overflow = styles.getOrDefault("overflow", "visible").toLowerCase();
@@ -80,9 +96,8 @@ public abstract class NativeTag{
         }
 
         // ==========================================================
-        // ⭐ 4. O GATILHO DAS ANIMAÇÕES (Coloca aqui!)
+        // ⭐ 4. O GATILHO DAS ANIMAÇÕES
         // ==========================================================
-
         if (styles.containsKey("animation")) {
             String animationConfig = styles.get("animation");
             // Ex: "fadeIn 2s ease-in-out forwards"
@@ -91,8 +106,9 @@ public abstract class NativeTag{
             if (parts.length > 0) {
                 String animName = parts[0];
 
-                // Vai buscar a planta ao registo da Engine
-                XplKeyframeAnimation anim = SuperUiEngine.getInstance().getKeyframe(animName);
+                // ⭐ CORREÇÃO AQUI: Passamos pelo "AnimationManager" em vez de pedir direto à Engine!
+                com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation anim =
+                        SuperUiEngine.getInstance().getAnimationManager().getKeyframe(animName);
 
                 if (anim != null) {
                     // Constrói os overrides (duração, easing, etc.) a partir da string
@@ -111,42 +127,29 @@ public abstract class NativeTag{
             return wrapInWebScroll(fxNode, overflowX, overflowY, styles);
         }
 
-
-
         return fxNode;
     }
 
-    /**
-     * Lê as partes da string de 'animation' e tenta descobrir o que é duração, fill-mode, iterações, etc.
-     */
+    // ==========================================================
+    // 🛠️ Helper para extrair a Duração, Iterações, etc. (Cola isto na NativeTag se não tiveres)
+    // ==========================================================
     private Map<String, String> extractAnimationOverrides(String[] parts) {
-        Map<String, String> overrides = new java.util.HashMap<>();
+        Map<String, String> overrides = new HashMap<>();
 
         for (int i = 1; i < parts.length; i++) {
             String p = parts[i].toLowerCase();
-
-            // É tempo? (Duração)
             if (p.endsWith("ms") || p.endsWith("s")) {
-                // Se já tivermos duração, poderíamos assumir delay, mas vamos focar na duração principal
                 if (!overrides.containsKey("duration")) overrides.put("duration", p);
-            }
-            // É fill-mode?
-            else if (p.equals("forwards") || p.equals("backwards") || p.equals("both") || p.equals("none")) {
+            } else if (p.equals("forwards") || p.equals("backwards") || p.equals("both") || p.equals("none")) {
                 overrides.put("fill-mode", p);
-            }
-            // É direção?
-            else if (p.equals("normal") || p.equals("reverse") || p.equals("alternate") || p.equals("alternate-reverse")) {
+            } else if (p.equals("normal") || p.equals("reverse") || p.equals("alternate") || p.equals("alternate-reverse")) {
                 overrides.put("direction", p);
-            }
-            // É iterações?
-            else if (p.equals("infinite")) {
+            } else if (p.equals("infinite")) {
                 overrides.put("iterations", "-1");
             } else if (p.matches("\\d+")) {
                 overrides.put("iterations", p);
             }
-            // (Opcional: podes mapear o Easing aqui também, se precisares de o substituir)
         }
-
         return overrides;
     }
 
@@ -212,6 +215,9 @@ public abstract class NativeTag{
             if (sourceNode.textContent != null && !sourceNode.textContent.trim().isEmpty()) {
                 javafx.scene.control.Label inlineText = new javafx.scene.control.Label(sourceNode.textContent.trim());
 
+                // 🔖 O CARIMBO: Assinala que este Label é o texto interno da Div!
+                inlineText.getProperties().put("xpl_ghost_text", true);
+
                 // Transfere as regras de texto (Cor, Fonte) do contentor para o texto injetado!
                 if (resolvedStyles.textColor != 0xFF000000) {
                     inlineText.setStyle("-fx-text-fill: " + toJavaFxCssColor(resolvedStyles.textColor) + ";");
@@ -220,7 +226,7 @@ public abstract class NativeTag{
                     inlineText.setStyle(inlineText.getStyle() + "-fx-font-size: " + resolvedStyles.fontSize.toPixels(cssContext) + "px; ");
                 }
 
-                pane.getChildren().add(inlineText);
+                pane.getChildren().addFirst(inlineText);
             }
 
             // ⭐ 1. LÓGICA DO GRID (Calcula colunas automaticamente!)
@@ -325,6 +331,9 @@ public abstract class NativeTag{
                 css.append("-fx-background-color: ").append(generateGradientCSS(resolvedStyles.gradients.get(0))).append("; ");
             } else if (resolvedStyles.backgroundColor != 0x00000000) {
                 css.append("-fx-background-color: ").append(toJavaFxCssColor(resolvedStyles.backgroundColor)).append("; ");
+            } else {
+                // ⭐ A CURA DAS COLISÕES: Sem isto, as DIVs vazias são fantasmas para o rato!
+                css.append("-fx-background-color: transparent; ");
             }
 
             // Border

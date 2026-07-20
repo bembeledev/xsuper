@@ -59,7 +59,7 @@ public class XplElementUtils {
         element.fields.put("removeAttribute", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String name = intp.evaluate(args.get(0).expression).toString();
+                String name = intp.evaluate(args.getFirst().expression).toString();
                 element.removeAttribute(name);
                 return null;
             }
@@ -77,7 +77,7 @@ public class XplElementUtils {
         element.fields.put("appendChild", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                XplElement child = (XplElement) intp.evaluate(args.get(0).expression);
+                XplElement child = (XplElement) intp.evaluate(args.getFirst().expression);
                 element.appendChild(child);
                 return null;
             }
@@ -109,7 +109,7 @@ public class XplElementUtils {
         element.fields.put("removeChild", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                XplElement child = (XplElement) intp.evaluate(args.get(0).expression);
+                XplElement child = (XplElement) intp.evaluate(args.getFirst().expression);
                 element.removeChild(child);
                 return null;
             }
@@ -128,7 +128,7 @@ public class XplElementUtils {
         element.fields.put("cloneNode", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                boolean deep = (boolean) intp.evaluate(args.get(0).expression);
+                boolean deep = (boolean) intp.evaluate(args.getFirst().expression);
                 return element.cloneNode(deep);
             }
         });
@@ -146,7 +146,7 @@ public class XplElementUtils {
         element.fields.put("getElementsByClassName", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String cls = intp.evaluate(args.get(0).expression).toString();
+                String cls = intp.evaluate(args.getFirst().expression).toString();
                 return element.getElementsByClassName(cls);
             }
         });
@@ -155,7 +155,7 @@ public class XplElementUtils {
         element.fields.put("getElementsByTagName", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String tag = intp.evaluate(args.get(0).expression).toString();
+                String tag = intp.evaluate(args.getFirst().expression).toString();
                 return element.getElementsByTagName(tag);
             }
         });
@@ -164,7 +164,7 @@ public class XplElementUtils {
         element.fields.put("getElementsByName", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String name = intp.evaluate(args.get(0).expression).toString();
+                String name = intp.evaluate(args.getFirst().expression).toString();
                 return element.getElementsByName(name);
             }
         });
@@ -173,7 +173,7 @@ public class XplElementUtils {
         element.fields.put("querySelector", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String selector = intp.evaluate(args.get(0).expression).toString();
+                String selector = intp.evaluate(args.getFirst().expression).toString();
                 return element.querySelector(selector);
             }
         });
@@ -182,7 +182,7 @@ public class XplElementUtils {
         element.fields.put("querySelectorAll", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String selector = intp.evaluate(args.get(0).expression).toString();
+                String selector = intp.evaluate(args.getFirst().expression).toString();
                 return element.querySelectorAll(selector);
             }
         });
@@ -191,7 +191,7 @@ public class XplElementUtils {
         element.fields.put("getClosest", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String selector = intp.evaluate(args.get(0).expression).toString();
+                String selector = intp.evaluate(args.getFirst().expression).toString();
                 return element.getClosest(selector);
             }
         });
@@ -209,7 +209,7 @@ public class XplElementUtils {
         element.fields.put("addClass", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String cls = intp.evaluate(args.get(0).expression).toString();
+                String cls = intp.evaluate(args.getFirst().expression).toString();
                 element.addClass(cls);
                 return null;
             }
@@ -328,7 +328,7 @@ public class XplElementUtils {
         element.fields.put("appendText", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String text = intp.evaluate(args.get(0).expression).toString();
+                String text = intp.evaluate(args.getFirst().expression).toString();
                 element.appendText(text);
                 return null;
             }
@@ -338,7 +338,7 @@ public class XplElementUtils {
         element.fields.put("prependText", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String text = intp.evaluate(args.get(0).expression).toString();
+                String text = intp.evaluate(args.getFirst().expression).toString();
                 element.prependText(text);
                 return null;
             }
@@ -401,7 +401,7 @@ public class XplElementUtils {
         element.fields.put("dispatchEvent", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                XplEvent event = (XplEvent) intp.evaluate(args.get(0).expression);
+                XplEvent event = (XplEvent) intp.evaluate(args.getFirst().expression);
                 return element.dispatchEvent(event);
             }
         });
@@ -458,7 +458,7 @@ public class XplElementUtils {
         element.fields.put("contains", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                XplElement node = (XplElement) intp.evaluate(args.get(0).expression);
+                XplElement node = (XplElement) intp.evaluate(args.getFirst().expression);
                 return element.contains(node);
             }
         });

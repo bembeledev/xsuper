@@ -174,5 +174,5 @@ var json = repo::CallMethod("toJSON");
 println(" -> JSON do repositório: " + json);
 
 println("\n==================================================", "#00FFFF");
-println(" ✅ REFLEXÃO COMPLETA VALIDADA! ✅               ", "#00FFFF");
-println("==================================================", "#00FFFF");
+println(" ✅ REFLEXÃO COMPLETA VALIDADA! ✅                   ", "#00FFFF");
+println("====================================================", "#00FFFF");

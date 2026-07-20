@@ -26,6 +26,8 @@ public class XplNode {
     public XplNode parent = null;
     public XplInstance hostComponent = null;
 
+    public String rawTemplate;
+
     // ⭐ A ÂNCORA NATIVA: Guarda o nó JavaFX (ou web) que pertence a esta tag!
     public Object nativeNode;
 

@@ -12,6 +12,8 @@ import com.dic.xsuper.lang.ui.css.media.XplMediaNode;
 import com.dic.xsuper.lang.ui.document.*;
 import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
+import com.dic.xsuper.lang.ui.reactivity.XplReactiveState;
+import com.dic.xsuper.lang.ui.reactivity.XplReactivityRenderer;
 import com.dic.xsuper.lang.ui.window.MainWindow;
 
 import java.util.*;
@@ -46,6 +48,13 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     private XplUiBridge rendererBridge;         // A ponte para o Pintor (JavaFX)
     private final DomEvaluator evaluator;       // O purificador de árvores (@if, @for)
 
+
+
+    // ⭐ OS NOVOS PILARES DOS SIGNALS (REATIVIDADE)
+    private final XplReactivityRenderer reactivityRenderer;
+    private final XplReactiveState reactiveState;
+
+
     // ─── Estado da Aplicação ────────────────────────────────────────────────
 
     private XplNode staticRoot;    // A "Planta" original (com directivas @ intactas)
@@ -54,13 +63,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // ⭐ NOVO: Guarda todos os blocos de CSS carregados
     private final List<String> loadedStyles = new ArrayList<>();
 
-    public XplNode getActiveDom() {
-        return activeDom;
-    }
-
-    public XplNode getStaticRoot() {
-        return staticRoot;
-    }
+    // ─── Estado da Viewport ─────────────────────────────────────────────────
+    private double viewportWidth = 800; // Valores padrão de segurança
+    private double viewportHeight = 600;
 
     // ─── O Documento Global (injectado no XPL) ─────────────────────────────
     private final XplDocument document;
@@ -68,20 +73,48 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // ─── Registo de funções XPL para eventos da UI ────────────────────────
     public final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
 
-    // Instância global do Listener
-    private final JavaFxMediaListener mediaListener = new JavaFxMediaListener();
 
     public static XPLModel nativeModel;
 
     // Mapa que associa o nome da tag personalizada à sua classe XPL
     private final Map<String, XplClass> componentRegistry = new HashMap<>();
 
+
+    // Instâncias isoladas dos subsistemas de CSS
+    // Instância global do Listener
+    private final JavaFxMediaListener mediaListener = new JavaFxMediaListener();
+    private final com.dic.xsuper.lang.ui.animation.XplAnimationManager animationManager = new com.dic.xsuper.lang.ui.animation.XplAnimationManager();
+
+    public com.dic.xsuper.lang.ui.animation.XplAnimationManager getAnimationManager() {
+        return animationManager;
+    }
+
+    public XplNode getActiveDom() {
+        return activeDom;
+    }
+
+    public void setViewportSize(double width, double height) {
+        this.viewportWidth = width;
+        this.viewportHeight = height;
+    }
+
+    public double getViewportWidth() { return viewportWidth; }
+    public double getViewportHeight() { return viewportHeight; }
+
+    public XplNode getStaticRoot() {
+        return staticRoot;
+    }
+
     // ─── Construtor ─────────────────────────────────────────────────────────
     public SuperUiEngine(Interpreter interpreter, XplUiBridge rendererBridge) {
         instance = this;
         this.interpreter = interpreter;
         this.rendererBridge = rendererBridge;
-        this.evaluator = new DomEvaluator(interpreter, this);
+        // ⭐ 1. INSTÂNCIA O SISTEMA REACTIVO
+        this.reactivityRenderer = new XplReactivityRenderer(this);
+        this.reactiveState = new XplReactiveState(this.reactivityRenderer);
+
+        this.evaluator = new DomEvaluator(interpreter, this, this.reactiveState);
 
         // No construtor, após criar mediaListener
         mediaListener.setEngineRebuildTrigger(this::renderCycle);
@@ -151,8 +184,52 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             this.interpreter.globals.defineConst("ui", this.document);
         }
 
+        // =========================================================================
+        // ⭐ CONEXÃO DO SISTEMA NERVOSO DA UI
+        // A Interface Gráfica regista-se como um dos ouvintes globais do XPL
+        // =========================================================================
+        com.dic.xsuper.lang.Environment.addListener(new com.dic.xsuper.lang.Environment.XplEnvironmentListener() {
+            @Override
+            public void onVariableDeclared(String name, Object value, String scopeType) {
+                // Quando uma variável nasce (ex: let isDarkMode = true;), avisamos logo a UI
+                updateVariable(name, value);
+            }
+
+            @Override
+            public void onVariableMutated(String name, Object oldValue, Object newValue) {
+                // Quando o valor sofre mutação (ex: isDarkMode = false;), a UI faz o patch cirúrgico
+                updateVariable(name, newValue);
+            }
+
+            @Override
+            public void onVariableRead(String name, Object value) {
+                // A UI não precisa de reagir a leituras, portanto ignoramos este evento silenciosamente.
+                // (Mas um futuro Profiler ou Debugger usaria isto!)
+            }
+        });
+
         // canal de comunicação entre o JavaFx, o DOM e o Interpretador para a UI.
         com.dic.xsuper.lang.ui.event.eventbus.UiEventBusSubscriber.register(this);
+    }
+
+    // =========================================================================
+    // ⭐ A PORTA DE ENTRADA DO XPL PARA A REACTIVIDADE CIRÚRGICA
+    // =========================================================================
+    /**
+     * O teu interpretador XPL (Environment ou VisitAssignment) deve chamar este método
+     * sempre que o valor de uma variável mudar. (Ex: isOpen = false)
+     */
+    public void updateVariable(String varName, Object newValue) {
+        if (reactiveState != null) {
+            reactiveState.put(varName, newValue);
+        }
+    }
+
+    /**
+     * Getter para o Cirurgião aceder à lógica de avaliação do DOM
+     */
+    public DomEvaluator getDomEvaluator() {
+        return this.evaluator;
     }
 
     public void processPartialHtmlUpdate(String targetIdOrUid, String htmlContent) {
@@ -301,11 +378,12 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         XplNode rawCssAst = new XplCssParser(lexer.scanTokens()).parse();
         XplNode flatCssAst = XplCssEvaluator.evaluate(rawCssAst, xplContext);
 
-        // ⭐ NOVO: Alimentar o JavaFxMediaListener com os dados!
-        extractMediaQueries(flatCssAst);
 
-        //extrai as animações
-        extractKeyframes(flatCssAst);
+        // ⭐ 3.1: O Cofre das Animações puxa os @keyframes e apaga-os da árvore!
+        animationManager.extractKeyframes(flatCssAst);
+
+        //Alimentar o JavaFxMediaListener com os dados!
+        extractMediaQueries(flatCssAst);
 
         // 4. Extrair Tema Global (:root)
         XplCssResolver resolver = new XplCssResolver();
@@ -475,48 +553,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      */
     public boolean isComponent(String tagName) {
         return componentRegistry.containsKey(tagName);
-    }
-
-
-    public XplKeyframeAnimation getKeyframe(String name) {
-        return keyframesRegistry.get(name);
-    }
-
-    // 2. O Extractor de Keyframes (Adiciona perto do extractMediaQueries)
-    private void extractKeyframes(XplNode flatCssAst) {
-        if (flatCssAst == null || flatCssAst.children == null) return;
-
-        Iterator<XplNode> iterator = flatCssAst.children.iterator();
-        while (iterator.hasNext()) {
-            XplNode node = iterator.next();
-
-            // Se encontrar um bloco @keyframes
-            if ("@keyframes".equalsIgnoreCase(node.tag) || "keyframes".equalsIgnoreCase(node.tag)) {
-                String animName = node.attributes.getOrDefault("name", "").toString();
-                XplKeyframeAnimation animation = new XplKeyframeAnimation(animName);
-
-                // Varre os frames (ex: "0%", "100%", "from", "to")
-                for (XplNode frameNode : node.children) {
-                    if ("frame".equalsIgnoreCase(frameNode.tag) || "rule".equalsIgnoreCase(frameNode.tag)) {
-                        String position = frameNode.attributes.getOrDefault("selector", "0%").toString();
-                        XplKeyframe keyframe = new XplKeyframe(position);
-
-                        // Varre as propriedades de CSS do frame (opacity, transform, etc.)
-                        for (XplNode propNode : frameNode.children) {
-                            String propName = propNode.attributes.getOrDefault("name", "").toString();
-                            String propValue = extractDeepValue(propNode);
-                            keyframe.addStyle(propName, propValue);
-                        }
-                        animation.addKeyframe(keyframe);
-                    }
-                }
-
-                // Guarda no registo global e APAGA da árvore base para não poluir o CSS
-                keyframesRegistry.put(animName, animation);
-                System.out.println("[Engine] 🎬 Keyframe registado: " + animName);
-                iterator.remove();
-            }
-        }
     }
 
     // =========================================================================
@@ -692,8 +728,22 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                 // Restaurar atributos
                 for (Map.Entry<?, ?> entry : ((Map<String, Object>) attrs).entrySet()) {
                     String key = (String) entry.getKey();
+
+                    // ==========================================================
+                    // ⭐ O ESCUDO ANTI-SABOTAGEM (Adiciona estas 3 linhas!)
+                    // Se o atributo está ligado a uma variável (React Mode),
+                    // o motor não o pode reverter para o passado!
+                    // ==========================================================
+                    if (node.bindings.containsKey(key)) {
+                        continue;
+                    }
+
                     Object val = entry.getValue();
                     node.attributes.put(key, val);
+
+                    if ("class".equals(key)) {
+                        node.className = String.valueOf(val);
+                    }
                     // Se for 'value', também actualiza o liveElement se existir
                     if ("value".equals(key) && node.liveElement != null) {
                         node.liveElement.setAttributeSilently(key, val);

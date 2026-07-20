@@ -136,7 +136,7 @@ public class JavaFxRenderer implements XplUiBridge {
         int newSize = newParent.children != null ? newParent.children.size() : 0;
         int minSize = Math.min(oldSize, newSize);
 
-        // 1. ATUALIZAR nós que existem em ambas as árvores
+        // 1. ACTUALIZAR nós que existem em ambas as árvores
         for (int i = 0; i < minSize; i++) {
             XplNode oldChild = oldParent.children.get(i);
             XplNode newChild = newParent.children.get(i);
@@ -183,6 +183,7 @@ public class JavaFxRenderer implements XplUiBridge {
             // Removemos do fim para o início para não desalinhar os índices da lista
             for (int i = oldSize - 1; i >= newSize; i--) {
                 fxParentContainer.getChildren().remove(i);
+
             }
         }
     }
@@ -199,31 +200,71 @@ public class JavaFxRenderer implements XplUiBridge {
             }
         }
 
-        // B. Diff de CSS
-        String oldStyle = oldNode.attributes.getOrDefault("style", "").toString();
-        String newStyle = newNode.attributes.getOrDefault("style", "").toString();
-        if (!oldStyle.equals(newStyle)) {
-            fxNode.setStyle(newStyle);
+        // B. Diff de Classes
+        String oldClass = oldNode.attributes.getOrDefault("class", "").toString();
+        String newClass = newNode.attributes.getOrDefault("class", "").toString();
+
+        if (!oldClass.equals(newClass)) {
+            applyRawStyleToFxNode(fxNode, "class", newClass, newClass);
         }
 
-        // C. Diff de Atributos Críticos (ex: Disabled)
+        // =========================================================================
+        // ⭐ C. DIFF DE ESTILOS COMPUTADOS E TRANSIÇÕES (A peça em falta!)
+        // =========================================================================
+        String transitionConfig = newNode.style.get("transition");
+        if (transitionConfig == null) {
+            transitionConfig = (String) fxNode.getProperties().get("transition");
+        }
+
+        // 🧹 1. O EXTERMINADOR DE ESTILOS: Remove CSS que o nó antigo tinha mas o novo perdeu
+        for (String oldProp : oldNode.style.keySet()) {
+            if (!newNode.style.containsKey(oldProp)) {
+                // Passar uma string vazia força os teus switchs a reverterem a propriedade!
+                applyRawStyleToFxNode(fxNode, oldProp, "", null);
+            }
+        }
+
+        // 🎨 2. APLICAÇÃO CIRÚRGICA: Varre os estilos novos e aplica as diferenças
+        for (Map.Entry<String, String> newEntry : newNode.style.entrySet()) {
+            String prop = newEntry.getKey().toLowerCase();
+            String newVal = newEntry.getValue();
+            String oldVal = oldNode.style.get(prop);
+
+            if (!java.util.Objects.equals(oldVal, newVal)) {
+                // A propriedade visual mudou (Ex: background-color red -> blue)
+                if (transitionConfig != null && (transitionConfig.contains(prop) || transitionConfig.contains("all"))) {
+                    String physicalOldVal = oldVal != null ? oldVal : getCurrentFxPropertyValue(fxNode, prop);
+                    com.dic.xsuper.lang.ui.animation.XplAnimationEngine.applyTransition(
+                            fxNode, prop, physicalOldVal, newVal,
+                            new com.dic.xsuper.lang.ui.animation.XplTransition(transitionConfig)
+                    );
+                } else {
+                    // Se não tiver transição, aplica diretamente
+                    applyRawStyleToFxNode(fxNode, prop, newVal, newVal);
+                }
+            }
+        }
+
+        // D. Diff de Atributos Críticos (Disabled, Value, Checked)
         boolean oldDisabled = Boolean.parseBoolean(oldNode.attributes.getOrDefault("disabled", "false").toString());
         boolean newDisabled = Boolean.parseBoolean(newNode.attributes.getOrDefault("disabled", "false").toString());
-        if (oldDisabled != newDisabled) {
-            fxNode.setDisable(newDisabled);
-        }
+        if (oldDisabled != newDisabled) fxNode.setDisable(newDisabled);
 
-        // ⭐ D. DIFF DO VALUE E CHECKED (Fundamental para não perderes os dados!) ⭐
         String oldValue = oldNode.attributes.getOrDefault("value", "").toString();
         String newValue = newNode.attributes.getOrDefault("value", "").toString();
-        if (!oldValue.equals(newValue)) {
-            applyRawStyleToFxNode(fxNode, "value", newValue, newValue);
-        }
+        if (!oldValue.equals(newValue)) applyRawStyleToFxNode(fxNode, "value", newValue, newValue);
 
         String oldChecked = oldNode.attributes.getOrDefault("checked", "false").toString();
         String newChecked = newNode.attributes.getOrDefault("checked", "false").toString();
-        if (!oldChecked.equals(newChecked)) {
-            applyRawStyleToFxNode(fxNode, "checked", newChecked, newChecked);
+        if (!oldChecked.equals(newChecked)) applyRawStyleToFxNode(fxNode, "checked", newChecked, newChecked);
+    }
+
+    private void unregisterNodeRecursively(XplNode node) {
+        if (node == null) return;
+        fxNodeRegistry.remove(node.id);
+        fxNodeRegistry.remove(node._internalUid);
+        for (XplNode child : node.children) {
+            unregisterNodeRecursively(child);
         }
     }
 
@@ -382,6 +423,14 @@ public class JavaFxRenderer implements XplUiBridge {
                     labeled.setText(valStr);
                 } else if (fxNode instanceof javafx.scene.control.TextInputControl input) {
                     input.setText(valStr);
+                } else if (fxNode instanceof javafx.scene.layout.Pane pane) {
+                    // 👻 CAÇA AO FANTASMA: Procura o Label escondido e atualiza-o!
+                    for (Node child : pane.getChildren()) {
+                        if (Boolean.TRUE.equals(child.getProperties().get("xpl_ghost_text"))) {
+                            ((javafx.scene.control.Label) child).setText(valStr);
+                            break;
+                        }
+                    }
                 }
             }
 

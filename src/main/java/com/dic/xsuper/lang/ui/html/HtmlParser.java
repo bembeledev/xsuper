@@ -85,27 +85,47 @@ public class HtmlParser {
                 String varName = consume(HtmlTokenType.STRING, "Esperado variável do binding em aspas.").literal.toString();
                 node.bindings.put(bindName, varName);
             }
-            // ⭐ ATRIBUTO NORMAL OU EVENTO W3C: id="painel" ou onclick="funcao"
+            // ⭐ ATRIBUTO NORMAL, EVENTO OU BINDING REACT: id="painel" ou class={minhaVar}
             else if (check(HtmlTokenType.IDENTIFIER)) {
                 String attrName = advance().lexeme;
                 if (match(HtmlTokenType.EQUALS)) {
-                    String attrValue = consume(HtmlTokenType.STRING, "Esperado valor do atributo.").literal.toString();
 
-                    // UNIFICAÇÃO AQUI: Se for sintaxe web (começa com "on")
-                    if (attrName.toLowerCase().startsWith("on") && attrName.length() > 2) {
-                        // Tira o "on" (ex: "onclick" vira "click") e junta-se aos eventos do Angular!
-                        String eventName = attrName.substring(2).toLowerCase();
-                        node.events.put(eventName, attrValue);
+                    // =============================================================
+                    // ⚛️ MODO REACT: Suporta attr={variavel} ou attr={{variavel}}
+                    // =============================================================
+                    if (match(HtmlTokenType.LBRACE)) {
+                        boolean isDouble = match(HtmlTokenType.LBRACE);
+
+                        StringBuilder sb = new StringBuilder();
+                        // Lê tudo até encontrar a chave de fecho
+                        while (!isAtEnd() && !check(HtmlTokenType.RBRACE)) {
+                            sb.append(advance().lexeme);
+                        }
+                        String bindValue = sb.toString().trim();
+
+                        consume(HtmlTokenType.RBRACE, "Esperado '}' no fecho do binding React.");
+                        if (isDouble) consume(HtmlTokenType.RBRACE, "Esperado segundo '}' no fecho do binding duplo.");
+
+                        // ⭐ A JOGADA DE MESTRE: Transformamos isto num Data Binding Dinâmico!
+                        // A Engine vai avaliá-lo sempre no renderCycle() sem sofrer amnésia.
+                        node.bindings.put(attrName, bindValue);
                     }
-                    // Atalhos JS-like para a raiz do Node
-                    else if (attrName.equals("id")) {
-                        node.id = attrValue;
-                    }
-                    else if (attrName.equals("class")) {
-                        node.className = attrValue;
-                    }
+                    // =============================================================
+                    // 📜 MODO STRING W3C: Suporta " ", ' ' e ` `
+                    // =============================================================
                     else {
-                        node.attributes.put(attrName, attrValue);
+                        String attrValue = consume(HtmlTokenType.STRING, "Esperado valor em aspas ou binding {...}.").literal.toString();
+
+                        if (attrName.toLowerCase().startsWith("on") && attrName.length() > 2) {
+                            String eventName = attrName.substring(2).toLowerCase();
+                            node.events.put(eventName, attrValue);
+                        } else if (attrName.equals("id")) {
+                            node.id = attrValue;
+                        } else if (attrName.equals("class")) {
+                            node.className = attrValue;
+                        } else {
+                            node.attributes.put(attrName, attrValue);
+                        }
                     }
                 } else {
                     node.attributes.put(attrName, "true"); // Atributos booleanos (ex: disabled)

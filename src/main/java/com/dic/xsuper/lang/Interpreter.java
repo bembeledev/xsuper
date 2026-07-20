@@ -9,11 +9,8 @@ import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.poo.XplInterface;
 import com.dic.xsuper.lang.poo.relection.*;
-import com.dic.xsuper.lang.ui.document.XplNativeObject;
 import com.dic.xsuper.utils.ConsoleTheme;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+
 import java.nio.file.Path;
 import java.util.*;
 
@@ -61,26 +58,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // Ponteiro quântico para saber que módulo estamos a compilar neste momento
     private XplModule currentCompilingModule = null;
 
-
-
-    @Override
-    public Void visitModuleDeclStmt(Stmt.ModuleDecl stmt) {
-        if (currentCompilingModule != null) {
-            String importPath = currentCompilingModule.path; // Ex: "geometria.Ponto"
-            String declaredModule = stmt.modulePath;         // Ex: "geometria"
-
-            // ⭐ A FLEXIBILIDADE DOS NAMESPACES (Estilo Java) ⭐
-            // O ficheiro importado como "geometria.Ponto" pertence legitimamente ao namespace "geometria"?
-            // Sim! Passa na alfândega se for exatamente igual OU se começar por "geometria."
-            if (!importPath.equals(declaredModule) && !importPath.startsWith(declaredModule + ".")) {
-                throw new ControlFlow.RuntimeError(stmt.keyword,
-                        "Inconsistência de Namespace: O ficheiro físico declara pertencer ao módulo '" + declaredModule +
-                                "', mas foi importado sob o caminho '" + importPath + "'. A hierarquia não coincide.");
-            }
-        }
-        return null;
-    }
-
     public Interpreter(CommandRegistry registry, Path currentDirectory) {
 
         this.registry = registry;
@@ -89,288 +66,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // =========================================================================
         // ⭐ A VACINA DOS NATIVOS (No construtor do Interpreter.java) ⭐
         // =========================================================================
-
-        // Função Nativa: println
-        globals.defineConst("println", new XplCallable() {
-            @Override public int arity() { return -1; }
-
-            @Override
-            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-
-                // ⭐ 1. O FOGÃO: Cozinhamos os nós da AST transformando-os em matéria real!
-                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter,arguments);
-                /*for (Expr.CallArg arg : arguments) {
-                    // É ESTA INVOCACÃO QUE FAZ A SOMA DO "Nome: " + m.nome ACONTECER:
-                    argsCozinhados.add(interpreter.evaluate(arg.expression));
-                }*/
-
-                if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
-                    throw new RuntimeException("println espera 1 ou 2 argumentos.");
-                }
-
-                String texto = interpreter.stringify(argsCozinhados.get(0));
-
-                if (argsCozinhados.size() == 2) {
-                    System.out.println(hexToAnsi(interpreter.stringify(argsCozinhados.get(1))) + texto + ConsoleTheme.RESET);
-                } else {
-                    System.out.println(ConsoleTheme.TEXT + texto + ConsoleTheme.RESET);
-                }
-                return null;
-            }
-        });
-
-        // Função Nativa: print
-        globals.defineConst("print", new XplCallable() {
-            @Override public int arity() { return -1; }
-
-            @Override
-            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-
-                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter,arguments);
-                /*for (Expr.CallArg arg : arguments) {
-                    argsCozinhados.add(interpreter.evaluate(arg.expression));
-                }*/
-                if (argsCozinhados.isEmpty() || argsCozinhados.size() > 2) {
-                    throw new RuntimeException("print espera 1 ou 2 argumentos.");
-                }
-
-                String texto = interpreter.stringify(argsCozinhados.getFirst());
-                System.out.print(texto);
-                System.out.flush();
-                return null;
-            }
-        });
-
-        // Função Nativa: shell
-        globals.defineConst("shell", new XplCallable() {
-            @Override
-            public int arity() { return 1; }
-
-            @Override
-            public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments) {
-                // ⭐ A VACINA: Cozinha o CallArg transformando-o na string real ("ps", "ls", etc.)
-                java.util.List<Object> argsCozinhados = unpackNativeArgs(interpreter, arguments);
-                String commandStr = interpreter.stringify(argsCozinhados.getFirst());
-
-                PrintStream originalOut = System.out;
-                ByteArrayOutputStream memoryStream = new ByteArrayOutputStream();
-                try (PrintStream captureOut = new PrintStream(memoryStream, true, StandardCharsets.UTF_8)) {
-                    System.setOut(captureOut);
-                    interpreter.currentDirectory = interpreter.registry.executeCommand(commandStr, interpreter.currentDirectory);
-                } catch (Exception e) {
-                    return "Erro no shell: " + e.getMessage();
-                } finally {
-                    System.setOut(originalOut);
-                }
-                return memoryStream.toString(StandardCharsets.UTF_8).trim();
-            }
-        });
-
-        // =====================================================================
-        // ⭐ CONSTRUTORES DA API FLUIDA JIT (If, For, While, Do, Switch)
-        // =====================================================================
-
-        // =====================================================================
-        // ⭐ CONSTRUTORES DA API FLUIDA JIT (Limpos e Modularizados)
-        // =====================================================================
-
-        globals.defineConst("If", new XplCallable() {
-            @Override public int arity() { return 2; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Expr cond = extractExpression(interpreter.evaluate(args.get(0).expression));
-                Stmt.Block thenBlock = extractToBlock(interpreter.evaluate(args.get(1).expression));
-                // Chama a classe externa que criaste na pasta meta!
-                return new MetaIfBuilder(cond, thenBlock, interpreter);
-            }
-        });
-
-        globals.defineConst("For", new XplCallable() {
-            @Override public int arity() { return 4; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Stmt init = extractFirstStatement(interpreter.evaluate(args.get(0).expression));
-                Expr cond = extractExpression(interpreter.evaluate(args.get(1).expression));
-                Expr inc = extractExpression(interpreter.evaluate(args.get(2).expression));
-                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(3).expression));
-                // Chama a classe externa!
-                return new MetaForBuilder(init, cond, inc, body, interpreter);
-            }
-        });
-
-        // =====================================================================
-        // ⭐ CONSTRUTORES DE LOOPS E SWITCHES (API Fluida)
-        // =====================================================================
-
-        globals.defineConst("While", new XplCallable() {
-            @Override public int arity() { return 2; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Expr cond = extractExpression(interpreter.evaluate(args.get(0).expression));
-                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(1).expression));
-                return new MetaWhileBuilder(cond, body, interpreter);
-            }
-        });
-
-        globals.defineConst("Do", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Stmt.Block body = extractToBlock(interpreter.evaluate(args.get(0).expression));
-                return new MetaDoBuilder(body, interpreter);
-            }
-        });
-
-        globals.defineConst("Switch", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Expr target = extractExpression(interpreter.evaluate(args.get(0).expression));
-                return new MetaSwitchBuilder(target, interpreter);
-            }
-        });
-
-        globals.defineConst("Match", new XplCallable() {
-            @Override public int arity() { return 1; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                Expr target = extractExpression(interpreter.evaluate(args.get(0).expression));
-                return new MetaMatchBuilder(target, interpreter);
-            }
-        });
-
-        // =====================================================================
-        // ⭐ FÁBRICAS DE METAPROGRAMAÇÃO JIT (AST BUILDERS) ⭐
-        // =====================================================================
-
-        // 1. Param("nome", TYPES.INT) -> Constrói um Stmt.Param nativo da linguagem
-        globals.defineConst("Param", new XplCallable() {
-            @Override public int arity() { return 2; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                String nome = (String) interpreter.evaluate(args.get(0).expression);
-                String tipo = (String) interpreter.evaluate(args.get(1).expression);
-                return new Stmt.Param(
-                        new Token(TokenType.IDENTIFIER, nome, null, 0, 0),
-                        new TypeNode.Simple(new Token(TokenType.IDENTIFIER, tipo, null, 0, 0)),
-                        null
-                );
-            }
-        });
-
-        // 2. Func("nome", VISIBILITY.PUB, [Params], TYPES.VOID, corpo) -> Constrói a Função para injetar
-        globals.defineConst("Func", new XplCallable() {
-            @Override public int arity() { return 5; }
-            @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                String nome = (String) interpreter.evaluate(args.get(0).expression);
-                String visibilidade = (String) interpreter.evaluate(args.get(1).expression);
-                java.util.List<?> rawParams = (java.util.List<?>) interpreter.evaluate(args.get(2).expression);
-                String retorno = (String) interpreter.evaluate(args.get(3).expression);
-
-                // Extrai o bloco de dentro da Arrow Function () => { ... }
-                Object blocoVal = interpreter.evaluate(args.get(4).expression);
-                java.util.List<Stmt> corpoReal = new java.util.ArrayList<>();
-                if (blocoVal instanceof XplFunction xf) {
-                    corpoReal = xf.declaration.body;
-                }
-
-                // Converte a lista do XPL para a lista do Java
-                java.util.List<Stmt.Param> astParams = new java.util.ArrayList<>();
-                if (rawParams != null) {
-                    for (Object rp : rawParams) {
-                        if (rp instanceof Stmt.Param p) astParams.add(p);
-                    }
-                }
-
-                TokenType visType = visibilidade.equals("pub") ? TokenType.PUBLIC : TokenType.PRIVATE;
-                TypeNode retNode = retorno.equals("void") ? null : new TypeNode.Simple(new Token(TokenType.IDENTIFIER, retorno, null, 0, 0));
-
-                // Devolve a Árvore Sintática da Função pronta a ser injetada pela Reflexão (::injectMethod)
-                return new Stmt.Function(
-                        new Token(visType, visibilidade, null, 0, 0),
-                        false, false,
-                        new Token(TokenType.IDENTIFIER, nome, null, 0, 0),
-                        astParams, retNode, new java.util.ArrayList<>(),
-                        corpoReal, new java.util.ArrayList<>()
-                );
-            }
-        });
-
-        errorInject();
-
-        // Injecão do Decorador Base
-        decoratorInject();
-
-        native_values();
-
-        xpluiengine();
+        NativeVariables.registry(this);
 
         //registo de funções nativas
         NativeRegistry.InjectRegistry(this);
 
-    }
-
-    private void native_values() {
-        // =====================================================================
-        // ⭐ ENUMS NATIVOS DA LINGUAGEM (Matriz Exaustiva de Metaprogramação) ⭐
-        // =====================================================================
-
-        // 1. Tipos de Dados (Cobre todos os aliases do getPrimitiveTokenType)
-        Map<String, Object> typesEnum = new java.util.LinkedHashMap<>();
-        // Numéricos Inteiros
-        typesEnum.put("INT", "long");
-        //typesEnum.put("LONG", "long");
-        //typesEnum.put("SHORT", "short");
-        //typesEnum.put("BYTE", "byte");
-        // Numéricos Decimais
-        typesEnum.put("FLOAT", "double");
-        //typesEnum.put("DOUBLE", "double");
-        //typesEnum.put("NUMBER", "number");
-        // Textuais e Lógicos
-        typesEnum.put("STRING", "string");
-        //typesEnum.put("CHAR", "char");
-        typesEnum.put("BOOL", "bool");
-        //typesEnum.put("BOOLEAN", "boolean");
-        // Estruturas de Dados
-        typesEnum.put("ARRAY", "array");
-        typesEnum.put("LIST", "list");
-        typesEnum.put("OBJECT", "object");
-        typesEnum.put("MAP", "map");
-        //typesEnum.put("DICT", "dict");
-        // Especiais / Vácuo
-        typesEnum.put("VOID", "void");
-        typesEnum.put("ANY", "any");
-
-        globals.defineConst("TYPES", java.util.Collections.unmodifiableMap(typesEnum));
-
-        // 2. Modificadores de Visibilidade
-        Map<String, Object> visibilityEnum = new java.util.LinkedHashMap<>();
-        visibilityEnum.put("PUB", "pub");
-        visibilityEnum.put("PRIV", "priv");
-        visibilityEnum.put("PROT", "prot");
-
-        globals.defineConst("VISIBILITY", java.util.Collections.unmodifiableMap(visibilityEnum));
-
-        // 3. Modificadores de Comportamento (Para Metaprogramação JIT Avançada)
-        Map<String, Object> modifiersEnum = new java.util.LinkedHashMap<>();
-        modifiersEnum.put("STATIC", "static");
-        modifiersEnum.put("FINAL", "final");
-        modifiersEnum.put("READONLY", "readonly");
-        modifiersEnum.put("ABSTRACT", "abstract");
-        modifiersEnum.put("SEALED", "sealed");
-        globals.defineConst("MODIFIERS", java.util.Collections.unmodifiableMap(modifiersEnum));
-
-
-        java.util.Map<String, Object> controlEnum = new java.util.LinkedHashMap<>();
-        controlEnum.put("BREAK", "break");
-        controlEnum.put("CONTINUE", "continue");
-        globals.defineConst("CONTROL", java.util.Collections.unmodifiableMap(controlEnum));
-
-
-        // ⭐ CONSTANTES DE REDE E HTTP ⭐
-        java.util.Map<String, String> httpConsts = new java.util.LinkedHashMap<>();
-        httpConsts.put("GET", "GET");
-        httpConsts.put("POST", "POST");
-        httpConsts.put("PUT", "PUT");
-        httpConsts.put("DELETE", "DELETE");
-        httpConsts.put("PATCH", "PATCH");
-        httpConsts.put("HEAD", "HEAD");
-        httpConsts.put("OPTIONS", "OPTIONS");
-        globals.defineConst("HTTP", java.util.Collections.unmodifiableMap(httpConsts));
-
+        // Injecão do Decorador Base
+        errorInject();
+        decoratorInject();
+        xpluiengine();
     }
 
     private void decoratorInject() {
@@ -522,7 +226,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     if (hookFunc != null) {
                         try {
                             new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
-                        } catch (Exception e) {} // O Teardown de memória é estritamente silencioso
+                        } catch (Exception ignored) {} // O Teardown de memória é estritamente silencioso
                     }
                 }
             }
@@ -611,7 +315,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         XPLModel currentModel = null;
         try {
             currentModel = (XPLModel) environment.get("__current_model");
-        } catch (Exception e) {} // Se der erro, estamos no espaço global (script)
+        } catch (Exception ignored) {
+
+        } // Se der erro, estamos no espaço global (script)
 
         boolean isInsideClass = (currentModel != null && currentModel.name.equals(targetModel.name));
         boolean isSubclass = (currentModel != null && currentModel.isSubclassOf(targetModel.name));
@@ -641,6 +347,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         evaluate(stmt.expression);
         return null;
     }
+
+
+
+    @Override
+    public Void visitModuleDeclStmt(Stmt.ModuleDecl stmt) {
+        if (currentCompilingModule != null) {
+            String importPath = currentCompilingModule.path; // Ex: "geometria.Ponto"
+            String declaredModule = stmt.modulePath;         // Ex: "geometria"
+
+            // ⭐ A FLEXIBILIDADE DOS NAMESPACES (Estilo Java) ⭐
+            // O ficheiro importado como "geometria.Ponto" pertence legitimamente ao namespace "geometria"?
+            // Sim! Passa na alfândega se for exatamente igual OU se começar por "geometria."
+            if (!importPath.equals(declaredModule) && !importPath.startsWith(declaredModule + ".")) {
+                throw new ControlFlow.RuntimeError(stmt.keyword,
+                        "Inconsistência de Namespace: O ficheiro físico declara pertencer ao módulo '" + declaredModule +
+                                "', mas foi importado sob o caminho '" + importPath + "'. A hierarquia não coincide.");
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public Void visitVarDeclStmt(Stmt.VarDecl stmt) {
@@ -1220,7 +947,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // ⭐ 4. Instancia a classe e regista-a no escopo do Ficheiro Atual ⭐
         if (!activeModel.isDecorator) {
-            XplClass executableClass = new XplClass(activeModel, this.globals);
+            XplClass executableClass = new XplClass(activeModel, this.environment);
 
             if (stmt.aliasName == null) {
                 // ---> A FUSÃO QUÂNTICA <---
@@ -2418,29 +2145,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // 1. Criar a lista de parâmetros
         List<Stmt.Param> params = new ArrayList<>();
         if (expr.parameter != null) {
-            // Por simplicidade, usamos 'any' como tipo
             TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
             params.add(new Stmt.Param(expr.parameter, anyType, null));
         }
 
-        // 2. Construir o corpo da função (lista de Statements)
+        // 2. Construir o corpo da função
         List<Stmt> bodyStmts = new ArrayList<>();
-
         if (expr.body instanceof Expr.Block blockExpr) {
-            // ⭐ A CURA DO JIT (Padrão JS/TS) ⭐
-            // Se o utilizador usou um bloco { }, NÃO injetamos o 'return' fantasma!
-            // Mantemos a pureza absoluta da AST para que os Builders não rebentem.
             bodyStmts.addAll(blockExpr.statements);
         } else {
-            // Caso o corpo seja uma expressão simples sem chaves (ex: x => x * 2)
-            // Aí sim, transformamos num return da expressão!
             bodyStmts.add(new Stmt.Return(
                     new Token(TokenType.RETURN, "return", null, 0, 0),
                     expr.body
             ));
         }
 
-        // 3. Criar um nome sintético para a função (apenas para debug)
+        // ⭐ A CORRECÇÃO: Inferência automática de retorno ⭐
+        // Se o utilizador não definiu retorno explícito, o motor assume 'any'.
+        // Assim, o XplFunction deixa de disparar o erro de 'void returning long'.
+        TypeNode returnType = (expr.returnType != null) ? expr.returnType :
+                new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
+
+        // 3. Criar um nome sintético
         Token syntheticName = new Token(
                 TokenType.IDENTIFIER,
                 "_arrow_" + System.identityHashCode(expr),
@@ -2448,13 +2174,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 0, 0
         );
 
-        // 4. Construir a declaração da função
+        // 4. Construir a declaração da função com o tipo 'any' injectado
         Stmt.Function funcDecl = new Stmt.Function(
-                null, false, false, syntheticName, params, expr.returnType,
+                null, false, false, syntheticName, params, returnType, // Aqui está o segredo!
                 Collections.emptyList(), bodyStmts, Collections.emptyList()
         );
 
-        // 5. Retornar um XplFunction que guarda a AST pura
         return new XplFunction(funcDecl, closure, null);
     }
 
@@ -2638,7 +2363,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             // 4. Prepara a invocação!
             XPLModel owner = superclass.getOwnerOfMethod(expr.method.lexeme);
-            XplFunction function = new XplFunction(method, this.globals, owner);
+            Environment classClosure = ((XplInstance) currentInstance).klass.closure;
+            XplFunction function = new XplFunction(method, classClosure, owner);
 
             return function.bind((XplInstance) currentInstance);
 
@@ -2663,14 +2389,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         case Double aDouble -> {
                             return aDouble.longValue();
                         }
-                        case Long l -> {
+                        case Long ignored -> {
                             return value;
                         }
                         case String string -> {
                             return Long.parseLong(string);
                         }
-                        default -> {
-                        }
+                        default -> {}
                     }
                     break;
                 case T_FLOAT:
@@ -2678,14 +2403,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                         case Long l -> {
                             return l.doubleValue();
                         }
-                        case Double v -> {
+                        case Double ignored -> {
                             return value;
                         }
                         case String string -> {
                             return Double.parseDouble(string);
                         }
-                        default -> {
-                        }
+                        default -> {}
                     }
                     break;
                 case T_STRING:
@@ -2717,8 +2441,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         String targetType = expr.rightType.name.lexeme;
 
         if (expr.operator.type == TokenType.INSTANCE) {
-            if (left instanceof XplInstance) {
-                XplInstance inst = (XplInstance) left;
+            if (left instanceof XplInstance inst) {
                 // ⭐ VERIFICAÇÃO ADICIONADA
                 if (inst.klass == null) return false;
                 return inst.klass.model.name.equals(targetType);
@@ -2734,7 +2457,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 case Boolean b when targetType.equals("bool") -> true;
                 case List list when targetType.equals("array") -> true;
                 case XplInstance xplInstance -> xplInstance.klass.model.isSubclassOf(targetType); // O ADN bate certo?
-
                 default -> false;
             };
         }
@@ -2756,7 +2478,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (xplInstance.klass == null) yield "MetaInstance";
                 yield xplInstance.klass.model.name;
             }
-            case XplClass xplClass -> "class";
+            case XplClass ignored -> "class";
             default -> "unknown";
         };
     }
@@ -2764,11 +2486,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitIfExpr(Expr.If expr) {
         Object condValue = evaluate(expr.condition);
-
         Stmt branchToRun = isTruthy(condValue) ? expr.thenBranch : expr.elseBranch;
-
         if (branchToRun == null) return null;
-
         return evaluateBranchAsExpression(branchToRun);
     }
 
@@ -2782,7 +2501,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Se for '||' e a esquerda já for VERDADEIRA, a condição inteira já é verdadeira.
             // Ignoramos completamente a direita e devolvemos o valor esquerdo!
             if (isTruthy(left)) return left;
-
         } else {
             // Se não é OR, é AND ('&&').
             // Se for '&&' e a esquerda for FALSA, a condição inteira já falhou.
@@ -2790,7 +2508,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (!isTruthy(left)) return left;
         }
 
-        // 3. Se o curto-circuito não foi ativado (ex: 'falso || X' ou 'verdadeiro && X'),
+        // 3. Se o curto-circuito não foi activado (ex: 'falso || X' ou 'verdadeiro && X'),
         // a resposta final depende exclusivamente do lado direito.
         return evaluate(expr.right);
     }
@@ -2968,7 +2686,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
-    // O DETETOR DE METADADOS (Verifica se um Objeto Java pertence a um TypeNode)
+    // O DETECTOR DE METADADOS (Verifica se um Objecto Java pertence a um TypeNode)
     // =========================================================================
     boolean checkTypeMatch(Object obj, TypeNode typeNode) {
 
@@ -3020,7 +2738,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Para todos os tipos normais (não-opcionais), o null é estritamente PROIBIDO!
         if (obj == null) return false;
 
-        // ⭐ CORREÇÃO VITAL: Extrai o Token tanto de Simple (int) quanto de Generic (Caixa<T>)!
+        // ⭐ CORRECÇÃO VITAL: Extrai o Token tanto de Simple (int) quanto de Generic (Caixa<T>)!
         Token typeToken = typeNode.name;
 
         switch (typeToken.type) {
@@ -3053,7 +2771,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 // =============================================================
                 // ⭐ A REDE DE SEGURANÇA DOS TIPOS JAVA (Sem Token Próprio) ⭐
                 // Se o programador digitou 'var x: byte', o Lexer leu "byte"
-                // como um Identifier comum. Intercetamos os nomes nativos aqui!
+                // como um Identifier comum. Interceptamos os nomes nativos aqui!
                 // =============================================================
                 switch (customTypeName.toLowerCase()) {
                     case "long":
@@ -3080,7 +2798,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return modelo.isSubclassOf(customTypeName);
                 }
 
-                // Fallback para objetos Java nativos injetados no motor
+                // Fallback para objectos Java nativos injectados no motor
                 return obj.getClass().getSimpleName().equalsIgnoreCase(customTypeName);
 
             default:
@@ -3102,7 +2820,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         else if (node instanceof TypeNode.Optional) {
             TypeNode resolvedInner = resolveConcreteType(((TypeNode.Optional) node).innerType);
-
             // ⭐ Otimização de Garbage Collector: Se o miolo não era um alias, devolve a casca intacta!
             if (resolvedInner == ((TypeNode.Optional) node).innerType) {
                 return node;
@@ -3154,14 +2871,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return environment.get(expr.name.lexeme);
+        try {
+            return environment.get(expr.name.lexeme);
+        } catch (RuntimeException e) {
+            // ⭐ O ESCUDO DE TITÂNIO: Fallback para Modelos Globais
+            // Se a variável não estiver na memória, mas for uma Classe/Molde registado, entregamos a classe!
+            String varName = expr.name.lexeme;
+
+            if (registry_model.containsKey(varName)) {
+                XPLModel model = registry_model.get(varName);
+                if (model.hasBaseImplementation && !model.isDecorator) {
+                    return new XplClass(model, this.globals);
+                }
+                return model;
+            }
+            if (registry_generic_models.containsKey(varName)) return registry_generic_models.get(varName);
+            if (registry_Interfaces.containsKey(varName)) return registry_Interfaces.get(varName);
+
+            // Se não for classe nenhuma, explode o erro real!
+            throw e;
+        }
     }
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
 
-        // ⭐ O POLÍCIA INTERCETA A ATRIBUIÇÃO AQUI! ⭐
+        // ⭐ O POLÍCIA INTERCEPTA A ATRIBUIÇÃO AQUI! ⭐
         validateAssignmentType(expr.name, value);
 
         environment.assign(expr.name.lexeme, value);
@@ -3278,19 +3014,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Dentro do teu método Interpreter.visitCallExpr (ou similar)
         Object object = evaluate(expr.callee); // Aqui o objecto é o teu XplElement
 
-
-
-        // ⭐ PASSE DIRETO PURO (TRUE LAZY BINDING) ⭐
-        // Entregamos a fila de Expr.CallArg crua diretamente à função ou classe!
+        // ⭐ PASSE DIRECTO PURO (TRUE LAZY BINDING) ⭐
+        // Entregamos a fila de Expr.CallArg crua directamente à função ou classe!
         // Toda a complexidade de aridade, omissões e alinhamento de chaves é resolvida no XplFunction.call().
         try {
             return function.call(this, expr.arguments);
         } catch (ControlFlow.RuntimeError erroNativo) {
-            // Preserva a coordenada exata (linha/coluna) do erro disparado pelo Binder!
+            // Preserva a coordenada exacta (linha/coluna) do erro disparado pelo Binder!
             throw erroNativo;
         } catch (RuntimeException erroJava) {
             // ⭐ A VACINA DO DEBUGGER: Se a mensagem for nula (ex: NullPointerException),
-            // imprime o rasto no terminal para sabermos exatamente onde a bomba rebentou!
+            // imprime o rasto no terminal para sabermos exactamente onde a bomba rebentou!
             if (erroJava.getMessage() == null) {
                 erroJava.printStackTrace();
             }
@@ -3379,68 +3113,73 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // Converte literais do Java para representação XPL segura no terminal
     // ⭐ A MAGIA DO TO_STRING NATIVO (AGORA RECURSIVO!) ⭐
     public String stringify(Object object) {
-        if (object == null) return "null";
+        switch (object) {
+            case null -> {
+                return "null";
+            }
 
-        // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
-        if (object instanceof XplInstance instance) {
-            // ⭐ VACINA: É um MetaBuilder (Fantasma)?
-            if (instance.klass == null) return "<MetaInstance JIT>";
+            // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
+            case XplInstance instance -> {
+                // ⭐ VACINA: É um MetaBuilder (Fantasma)?
+                if (instance.klass == null) return "<MetaInstance JIT>";
 
-            Stmt.Function toStringMethod = instance.klass.model.findMethod("toString");
+                Stmt.Function toStringMethod = instance.klass.model.findMethod("toString");
 
-            if (toStringMethod != null && toStringMethod.params.isEmpty()) {
-                try {
-                    XPLModel owner = instance.klass.model.getOwnerOfMethod("toString");
-                    XplFunction func = new XplFunction(toStringMethod, instance.klass.closure, owner);
-                    Object result = func.bind(instance).call(this, new java.util.ArrayList<>());
-                    return String.valueOf(result);
-                } catch (Exception e) {
-                    return "<Erro ao executar toString() na Instância de " + instance.klass.model.name + ">";
+                if (toStringMethod != null && toStringMethod.params.isEmpty()) {
+                    try {
+                        XPLModel owner = instance.klass.model.getOwnerOfMethod("toString");
+                        XplFunction func = new XplFunction(toStringMethod, instance.klass.closure, owner);
+                        Object result = func.bind(instance).call(this, new ArrayList<>());
+                        return String.valueOf(result);
+                    } catch (Exception e) {
+                        return "<Erro ao executar toString() na Instância de " + instance.klass.model.name + ">";
+                    }
                 }
+                return "<Instância de " + instance.klass.model.name + ">";
             }
-            return "<Instância de " + instance.klass.model.name + ">";
-        }
 
-        // ⭐ 2. INJEÇÃO RECURSIVA EM LISTAS (Arrays) ⭐
-        if (object instanceof List<?> list) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("[");
-            for (int i = 0; i < list.size(); i++) {
-                sb.append(stringify(list.get(i))); // RECURSIVIDADE: Chama a magia de novo!
-                if (i < list.size() - 1) sb.append(", ");
+            // ⭐ 2. INJEÇÃO RECURSIVA EM LISTAS (Arrays) ⭐
+            case List<?> list -> {
+                StringBuilder sb = new StringBuilder();
+                sb.append("[");
+                for (int i = 0; i < list.size(); i++) {
+                    sb.append(stringify(list.get(i))); // RECURSIVIDADE: Chama a magia de novo!
+                    if (i < list.size() - 1) sb.append(", ");
+                }
+                sb.append("]");
+                return sb.toString();
             }
-            sb.append("]");
-            return sb.toString();
-        }
 
-        // ⭐ 3. INJEÇÃO RECURSIVA EM MAPAS (Dicionários/toObject) ⭐
-        if (object instanceof Map<?, ?> map) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("{");
-            int i = 0;
-            for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
-                sb.append(entry.getKey().toString()).append(": ").append(stringify(entry.getValue()));
-                if (i < map.size() - 1) sb.append(", ");
-                i++;
+            // ⭐ 3. INJEÇÃO RECURSIVA EM MAPAS (Dicionários/toObject) ⭐
+            case Map<?, ?> map -> {
+                StringBuilder sb = new StringBuilder();
+                sb.append("{");
+                int i = 0;
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    sb.append(entry.getKey().toString()).append(": ").append(stringify(entry.getValue()));
+                    if (i < map.size() - 1) sb.append(", ");
+                    i++;
+                }
+                sb.append("}");
+                return sb.toString();
             }
-            sb.append("}");
-            return sb.toString();
-        }
 
-        // 4. Comportamento numérico base
-        if (object instanceof Double) {
-            String text = object.toString();
-            if (text.endsWith(".0")) {
-                text = text.substring(0, text.length() - 2);
+            // 4. Comportamento numérico base
+            case Double v -> {
+                String text = object.toString();
+                if (text.endsWith(".0")) {
+                    text = text.substring(0, text.length() - 2);
+                }
+                return text;
             }
-            return text;
+            default -> {}
         }
 
         return object.toString();
     }
 
     // Converte "#RRGGBB" para Códigos ANSI True Color (24-bit)
-    private String hexToAnsi(String hex) {
+    String hexToAnsi(String hex) {
         if (hex != null && hex.startsWith("#") && hex.length() == 7) {
             try {
                 long r = Math.toIntExact(Long.valueOf(hex.substring(1, 3), 16));

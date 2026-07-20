@@ -70,12 +70,12 @@ public class XplFunction implements XplCallable {
         for (Expr.CallArg arg : passedArgs) {
             if (arg.name == null) { // É posicional (anónimo)
 
+                // ⭐ A CORRECÇÃO: Em vez de atirar erro, se não há ranhuras, simplesmente ignoramos!
                 if (remainingParams.isEmpty()) {
-                    throw new ControlFlow.RuntimeError(this.declaration.name,
-                            "Excesso de Argumentos: Foram passados mais argumentos posicionais do que as ranhuras disponíveis.");
+                    // Ignora este argumento extra (common pattern em Higher-Order Functions)
+                    continue;
                 }
 
-                // ⭐ A TUA REGRA MATEMÁTICA: Puxa estritamente o 1º da fila de sobreviventes!
                 Stmt.Param targetSlot = remainingParams.removeFirst();
                 Object evalVal = interpreter.evaluate(arg.expression);
 

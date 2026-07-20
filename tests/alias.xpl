@@ -17,9 +17,7 @@ declare FichaTecnica {
     pub peso: int;
 }
 
-implement FichaTecnica {
-
-}
+implement FichaTecnica {}
 
 type Documento = FichaTecnica;
 

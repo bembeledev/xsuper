@@ -84,14 +84,18 @@ public class XplTransition {
     public boolean isRunning() { return running; }
     public void setRunning(boolean running) { this.running = running; }
 
-    // Método auxiliar
+    // Método auxiliar corrigido
     private double parseTime(String token) {
-        token = token.replace("s", "").replace("ms", "");
-        double val = Double.parseDouble(token);
-        if (token.endsWith("ms") || token.contains("ms")) {
-            return val; // já em ms
-        } else {
-            return val * 1000; // converte segundos para ms
+        if (token == null || token.isEmpty()) return 0;
+
+        boolean isMs = token.toLowerCase().contains("ms");
+        String cleanToken = token.replaceAll("[a-zA-Z]", "").trim();
+
+        try {
+            double val = Double.parseDouble(cleanToken);
+            return isMs ? val : val * 1000;
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 }

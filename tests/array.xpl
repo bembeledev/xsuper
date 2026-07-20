@@ -109,5 +109,5 @@ fun ImprimirIndice(valor:int, idx:int) {
 num.forEach(ImprimirIndice);
 
 println("\n==========================================", "#00FFFF");
-println("             TESTES CONCLUIDOS            ", "#00FFFF");
-println("==========================================", "#00FFFF");
+println("             TESTES CONCLUIDOS              ", "#00FFFF");
+println("============================================", "#00FFFF");

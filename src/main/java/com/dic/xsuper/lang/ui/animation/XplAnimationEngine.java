@@ -1,7 +1,9 @@
 package com.dic.xsuper.lang.ui.animation;
 
 import javafx.animation.*;
+import javafx.beans.value.WritableValue;
 import javafx.scene.Node;
+import javafx.scene.layout.Region;
 import javafx.util.Duration;
 
 import java.util.*;
@@ -66,7 +68,7 @@ public class XplAnimationEngine {
      * Aplica uma animação de keyframes a um nó.
      * @param node O nó JavaFX
      * @param animation Objeto com a animação configurada
-     * @param propertyOverrides Mapa opcional de propriedades a sobrepor (ex: animation-duration)
+     * @param overrides Mapa opcional de propriedades a sobrepor (ex: animation-duration)
      */
     public static void applyKeyframeAnimation(Node node, XplKeyframeAnimation animation, Map<String, String> overrides) {
         if (node == null || animation == null || animation.getKeyframes().isEmpty()) return;
@@ -91,7 +93,7 @@ public class XplAnimationEngine {
         // Constrói os KeyFrames com base nos keyframes da animação
         for (XplKeyframe frame : animation.getKeyframes()) {
             double pos = frame.getPosition();
-            javafx.animation.KeyFrame keyFrame = new javafx.animation.KeyFrame(
+            KeyFrame keyFrame = new KeyFrame(
                     duration.multiply(pos),
                     createKeyValues(node, frame.getStyles())
             );
@@ -149,24 +151,37 @@ public class XplAnimationEngine {
     }
 
     private static double parseTime(String timeStr) {
-        timeStr = timeStr.replace("s", "").replace("ms", "");
-        double val = Double.parseDouble(timeStr);
-        if (timeStr.endsWith("ms")) return val;
-        else return val * 1000;
+        if (timeStr == null || timeStr.isEmpty()) return 0;
+
+        // Verifica a unidade ANTES de limpar a string!
+        boolean isMs = timeStr.toLowerCase().contains("ms");
+
+        // Limpa todas as letras para ficar só o número
+        String cleanStr = timeStr.replaceAll("[a-zA-Z]", "").trim();
+        try {
+            double val = Double.parseDouble(cleanStr);
+            return isMs ? val : val * 1000; // Se não tiver 'ms', assumimos segundos e convertemos para millis
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
-    private static javafx.beans.value.WritableValue<Number> getPropertyValue(Node node, String property) {
-        // Mapeia propriedades para propriedades JavaFX (ex: opacity, translateX, etc.)
-        switch (property) {
-            case "opacity": return node.opacityProperty();
-            case "translateX": return node.translateXProperty();
-            case "translateY": return node.translateYProperty();
-            case "scaleX": return node.scaleXProperty();
-            case "scaleY": return node.scaleYProperty();
-            case "rotate": return node.rotateProperty();
-            // Adicionar mais conforme necessário
-            default: return null;
-        }
+    private static WritableValue<Number> getPropertyValue(Node node, String property) {
+        // Mapeia propriedades CSS para propriedades JavaFX nativas
+        return switch (property.toLowerCase()) {
+            case "opacity" -> node.opacityProperty();
+            case "translatex" -> node.translateXProperty();
+            case "translatey" -> node.translateYProperty();
+            case "scalex", "scale" -> node.scaleXProperty();
+            case "scaley" -> node.scaleYProperty();
+            case "rotate" -> node.rotateProperty();
+
+            // ⭐ EXTRAS IMPORTANTES: Animar largura e altura se for um contentor!
+            case "width" -> node instanceof Region r ? r.prefWidthProperty() : null;
+            case "height" -> node instanceof Region r ? r.prefHeightProperty() : null;
+
+            default -> null;
+        };
     }
 
     private static KeyValue[] createKeyValues(Node node, Map<String, String> styles) {
@@ -174,7 +189,7 @@ public class XplAnimationEngine {
         for (Map.Entry<String, String> entry : styles.entrySet()) {
             String prop = entry.getKey();
             String val = entry.getValue();
-            javafx.beans.value.WritableValue<Number> target = getPropertyValue(node, prop);
+            WritableValue<Number> target = getPropertyValue(node, prop);
             if (target != null) {
                 double num = parseDouble(val);
                 if (!Double.isNaN(num)) {
@@ -189,7 +204,7 @@ public class XplAnimationEngine {
         for (Map.Entry<String, String> entry : styles.entrySet()) {
             String prop = entry.getKey();
             String val = entry.getValue();
-            javafx.beans.value.WritableValue<Number> target = getPropertyValue(node, prop);
+            WritableValue<Number> target = getPropertyValue(node, prop);
             if (target != null) {
                 double num = parseDouble(val);
                 if (!Double.isNaN(num)) {
