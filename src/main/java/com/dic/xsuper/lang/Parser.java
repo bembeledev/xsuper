@@ -84,11 +84,17 @@ public class Parser {
 
 
     private Stmt declaration() {
-        // ⭐ 1. O COLECIONADOR PROATIVO DE AUTOCOLANTES ⭐
-        // Varre e acumula todos os '@...' antes de ler a palavra-chave da declaração!
+        // ⭐ 1. AS DUAS MOCHILAS DE METADADOS ⭐
         java.util.List<Stmt.DecoratorNode> decorators = new java.util.ArrayList<>();
-        while (match(TokenType.AT)) {
-            decorators.add(parseDecoratorNode());
+        java.util.List<Stmt.DecoratorNode> listeners = new java.util.ArrayList<>();
+
+        // Permite ler `@Anotacao` e `&Listener` em qualquer ordem!
+        while (check(TokenType.AT) || check(TokenType.BIT_AND)) {
+            if (match(TokenType.AT)) {
+                decorators.add(parseDecoratorNode()); // O teu leitor original
+            } else if (match(TokenType.BIT_AND)) {
+                listeners.add(parseListenerNode());   // O novo leitor de Listeners
+            }
         }
 
         try {
@@ -97,45 +103,43 @@ public class Parser {
             if (match(TokenType.IMPORT)) return importDeclaration();
             if (match(TokenType.EXPORT)) return exportDeclaration();
 
-
+            // ⭐ 2. LER AS ESTRUTURAS DE BASE ⭐
             if (match(TokenType.DECORATOR)) {
-                if (!decorators.isEmpty()) throw error(previous(), "Definições de decoradores não podem ser decoradas.");
+                if (!decorators.isEmpty() || !listeners.isEmpty()) throw error(previous(), "Definições de @decorator não podem ser anotadas.");
                 return decoratorDeclaration();
             }
+            if (match(TokenType.LISTENER)) {
+                if (!decorators.isEmpty() || !listeners.isEmpty()) throw error(previous(), "Definições de &listener não podem ser anotadas.");
+                return listenerDeclaration();
+            }
+
             if (match(TokenType.TYPE)) return typeAliasDeclaration();
 
-            // Entregamos a mochila de decoradores capturada diretamente às declarações!
-            if (check(TokenType.FUN)) return functionDeclaration(decorators);
-            if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration(decorators);
+            // ⭐ 3. ENTREGAR AS DUAS MOCHILAS ÀS ASTs! ⭐
+            if (check(TokenType.FUN)) return functionDeclaration(decorators, listeners);
+            if (match(TokenType.VAR, TokenType.LET, TokenType.CONST)) return varDeclaration(decorators, listeners);
 
-            if (match(TokenType.INTERFACE)) return interfaceDeclaration();
-            // =========================================================
-            // ⭐ A LEITURA DO 'SEALED DECLARE' VS 'DECLARE' ABERTO ⭐
-            // =========================================================
+            if (match(TokenType.INTERFACE)) return interfaceDeclaration(decorators, listeners);
+
             boolean isSealed = match(TokenType.SEALED);
             if (isSealed || match(TokenType.DECLARE)) {
-                if (isSealed) {
-                    consumeSoft(TokenType.DECLARE, "declare", "Esperado 'declare' após o modificador 'sealed'.");
-                }
-                return declareDeclaration(isSealed); // Enviamos a flag para o construtor!
+                if (isSealed) consumeSoft(TokenType.DECLARE, "declare", "Esperado 'declare' após o modificador 'sealed'.");
+                return declareDeclaration(isSealed, decorators, listeners);
             }
 
             if (match(TokenType.ABSTRACT)) {
                 consumeSoft(TokenType.IMPLEMENT, "implement", "Esperado 'implement' após a palavra 'abstract'.");
-                return implementDeclaration(true);
+                return implementDeclaration(true, decorators, listeners);
             }
             if (match(TokenType.IMPLEMENT)) {
-                return implementDeclaration(false);
+                return implementDeclaration(false, decorators, listeners);
             }
 
             if (match(TokenType.T_ENUM)) return enumDeclaration();
 
-            if (!decorators.isEmpty()) {
-                throw error(decorators.get(0).name, "Decoradores só podem ser anexados a funções ou variáveis.");
+            if (!decorators.isEmpty() || !listeners.isEmpty()) {
+                throw error(previous(), "Anotações (@) e Listeners (&) devem estar anexados a uma declaração válida (var, fun, declare, interface...).");
             }
-
-
-
 
             return statement();
         } catch (ParseException e) {
@@ -234,6 +238,71 @@ public class Parser {
         return new Stmt.ImportDecl(path, symbols, isWildcard, prefixToken);
     }
 
+    // ⭐ CONSTRUTOR ESTRUTURAL DO LISTENER (listener Auditoria { pub id: int; }) ⭐
+    private Stmt listenerDeclaration() {
+        Token name = consumeIdentifierSoft("Esperado nome do listener.");
+        consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do listener.");
+
+        java.util.List<Stmt.FieldDecl> fields = new java.util.ArrayList<>();
+
+        while (!check(TokenType.RBRACE) && !isAtEnd()) {
+            Token accessModifier = null;
+            boolean isStatic = false, isFinal = false, isReadonly = false;
+
+            while (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
+                Token t = previous();
+                switch (t.type) {
+                    case PUBLIC: case PRIVATE: case PROTECTED:
+                        if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso.");
+                        accessModifier = t;
+                        break;
+                    case STATIC: isStatic = true; break;
+                    case FINAL: isFinal = true; break;
+                    case READONLY: isReadonly = true; break;
+                }
+            }
+
+            if (accessModifier == null) {
+                accessModifier = new Token(TokenType.PUBLIC, "pub", null, peek().line, peek().column);
+            }
+
+            Token memberName = consumeIdentifierSoft("Esperado nome da propriedade do listener.");
+            consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome da propriedade.");
+            TypeNode type = parseTypeAnnotation();
+            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final da declaração da propriedade.");
+
+            fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
+        }
+
+        consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do listener.");
+        // Reutilizamos o DecoratorDecl na AST, pois a estrutura de dados é idêntica!
+        return new Stmt.DecoratorDecl(name, fields);
+    }
+
+    // ⭐ COLHEITADOR DE LISTENERS (&Auditoria(id:12)) ⭐
+    private Stmt.DecoratorNode parseListenerNode() {
+        // O token '&' já foi consumido pelo match(TokenType.BIT_AND) no loop chamador!
+        Token name = consumeIdentifierSoft("Esperado identificador do listener após '&'.");
+
+        java.util.List<Expr.CallArg> arguments = new java.util.ArrayList<>();
+
+        if (match(TokenType.LPAREN)) {
+            if (!check(TokenType.RPAREN)) {
+                do {
+                    Token argName = null;
+                    if (check(TokenType.IDENTIFIER) && peekNext().type == TokenType.COLON) {
+                        argName = consumeIdentifierSoft("Esperado identificador do argumento do listener.");
+                        consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do argumento.");
+                    }
+                    arguments.add(new Expr.CallArg(argName, expression()));
+                } while (match(TokenType.COMMA));
+            }
+            consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos do listener.");
+        }
+
+        return new Stmt.DecoratorNode(name, arguments);
+    }
+
     // Lê: export declare... | export Cliente, Pessoa; | export all;
     // =========================================================================
     // ⭐ ACTUALIZAÇÃO: EXPORT DECLARATION BLINDADO E ESTRITO ⭐
@@ -302,7 +371,7 @@ public class Parser {
         return new Stmt.TypeAliasDecl(name, target);
     }
 
-    private Stmt declareDeclaration(boolean isSealed) {
+    private Stmt declareDeclaration(boolean isSealed, java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         Token name = consumeIdentifierSoft( "Esperado nome do modelo de dados (declare).");
 
         // =====================================================================
@@ -363,10 +432,10 @@ public class Parser {
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do declare.");
 
         // ⭐ NOTA: Atualiza a tua classe Stmt.DeclareDecl para deixar de pedir a lista de methods!
-        return new Stmt.DeclareDecl(isSealed,name, superclass, fields,typeParameters);
+        return new Stmt.DeclareDecl(isSealed,name, superclass, fields,typeParameters, decorators, listeners);
     }
 
-    private Stmt interfaceDeclaration() {
+    private Stmt interfaceDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         Token name = consumeIdentifierSoft( "Esperado nome da interface.");
         consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da interface.");
 
@@ -419,14 +488,13 @@ public class Parser {
         }
 
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo da interface.");
-        return new Stmt.InterfaceDecl(name, methods);
+        return new Stmt.InterfaceDecl(name, methods, decorators, listeners);
 
     }
 
-    private Stmt implementDeclaration(boolean isAbstractImplement) {
+    private Stmt implementDeclaration(boolean isAbstractImplement, java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         // 1. O Alvo Base (Ex: Mamifero ou Animal)
         Token targetName = consumeIdentifierSoft( "Esperado nome do modelo de dados base.");
-
 
         // =====================================================================
         // ⭐ ENXERTO QUÂNTICO: CAPTURA DO <T> NO IMPLEMENT ⭐
@@ -438,7 +506,6 @@ public class Parser {
             } while (match(TokenType.COMMA));
             consumeSoft(TokenType.GREATER, ">", "Esperado '>' para fechar os parâmetros genéricos.");
         }
-
 
         // 2. A Variante / Alias (Opcional - Ex: as Mam1)
         Token aliasName = null;
@@ -473,77 +540,52 @@ public class Parser {
             consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o bloco 'default'.");
         }
 
-
         java.util.List<Stmt.Function> methods = new java.util.ArrayList<>();
 
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
-
-            // ⭐ COLHE OS DECORADORES DO MÉTODO (Ex: @(Context.Init)) ⭐
+            // ⭐ MUDANÇA AQUI: Os Métodos também têm mochilas duplas!
             java.util.List<Stmt.DecoratorNode> methodDecorators = new java.util.ArrayList<>();
-            while (match(TokenType.AT)) {
-                methodDecorators.add(parseDecoratorNode());
+            java.util.List<Stmt.DecoratorNode> methodListeners = new java.util.ArrayList<>();
+
+            while (check(TokenType.AT) || check(TokenType.BIT_AND)) {
+                if (match(TokenType.AT)) methodDecorators.add(parseDecoratorNode());
+                else if (match(TokenType.BIT_AND)) methodListeners.add(parseListenerNode());
             }
 
-            // ⭐ 1. Modificadores de Acesso (pub / priv)
             Token modifier = null;
-            if (match(TokenType.PUBLIC, TokenType.PRIVATE)) {
-                modifier = previous();
-            }
+            if (match(TokenType.PUBLIC, TokenType.PRIVATE)) modifier = previous();
 
             boolean isStatic = match(TokenType.STATIC);
-            // ⭐ 2. Modificador de Abstração (abstract)
-            boolean isAbstract = false;
-            if (match(TokenType.ABSTRACT)) {
-                isAbstract = true;
-            }
+            boolean isAbstract = match(TokenType.ABSTRACT);
 
-            // ⭐ 3. A Palavra-chave OBRIGATÓRIA
             consumeSoft(TokenType.FUN, "fun", "Esperada a palavra-chave 'fun' para declarar um método.");
+            Token methodName = consumeIdentifierSoft("Esperado nome do método.");
 
-            // 4. Nome do Método
-            Token methodName = consumeIdentifierSoft( "Esperado nome do método.");
-
-            // 5. Parâmetros ( )
             consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome do método.");
             java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
             if (!check(TokenType.RPAREN)) {
                 do {
-                    if (parameters.size() >= 255) {
-                       throw error(peek(), "Não podes ter mais de 255 parâmetros.");
-                    }
-
-                    Token paramName = consumeIdentifierSoft( "Esperado nome do parâmetro.");
+                    if (parameters.size() >= 255) throw error(peek(), "Não podes ter mais de 255 parâmetros.");
+                    Token paramName = consumeIdentifierSoft("Esperado nome do parâmetro.");
                     consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome do parâmetro.");
-
-                    TypeNode type = parseTypeAnnotation(); // O nosso rei quântico!
-
+                    TypeNode type = parseTypeAnnotation();
                     Expr defaultValue = null;
-                    if (match(TokenType.ASSIGN)) { // Se o programador escreveu '= "825702255"'
-                        defaultValue = expression();
-                    }
-
+                    if (match(TokenType.ASSIGN)) defaultValue = expression();
                     parameters.add(new Stmt.Param(paramName, type, defaultValue));
-
                 } while (match(TokenType.COMMA));
             }
             consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após parâmetros.");
 
-            // ⭐ 6. Tipo de Retorno Delegado ao Rei Quântico ⭐
             TypeNode returnType = null;
-            if (match(TokenType.COLON)) {
-                returnType = parseTypeAnnotation();
-            }
+            if (match(TokenType.COLON)) returnType = parseTypeAnnotation();
 
-            // ⭐ 6.5 A NOVA CLÁUSULA THROWS (O Contrato de Segurança) ⭐
             java.util.List<Token> thrownExceptions = new java.util.ArrayList<>();
             if (match(TokenType.THROWS)) {
                 do {
-                    Token errorName = consumeIdentifierSoft( "Esperado nome da exceção após 'throws'.");
-                    thrownExceptions.add(errorName);
-                } while (match(TokenType.COMMA)); // Permite 'throws IOError, NetError'
+                    thrownExceptions.add(consumeIdentifierSoft("Esperado nome da exceção após 'throws'."));
+                } while (match(TokenType.COMMA));
             }
 
-            // ⭐ 7. A BIFURCAÇÃO: Abstrato vs Concreto ⭐
             java.util.List<Stmt> body = null;
             if (isAbstract) {
                 consumeSoft(TokenType.SEMICOLON, ";", "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
@@ -552,18 +594,16 @@ public class Parser {
                 body = block();
             }
 
-            // ⭐ 8. Instanciação Perfeita com o Novo Construtor!
-            // Nota: Passamos a lista 'thrownExceptions' para a AST.
-            methods.add(new Stmt.Function(modifier, isStatic, isAbstract, methodName, parameters, returnType, thrownExceptions, body,methodDecorators));
+            // ⭐ Enviamos as duas listas de metadados dos MÉTODOS
+            methods.add(new Stmt.Function(modifier, isStatic, isAbstract, methodName, parameters, returnType, thrownExceptions, body, methodDecorators, methodListeners));
         }
 
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do implement.");
 
-        return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, defaultState, methods,typeParameters);
+        return new Stmt.ImplementDecl(isAbstractImplement, targetName, aliasName, interfaces, defaultState, methods, typeParameters, decorators, listeners);
     }
 
-
-    private Stmt functionDeclaration(java.util.List<Stmt.DecoratorNode> decorators) {
+    private Stmt functionDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         // 1. Modificadores de Acesso (Opcionais - Se a tua AST já suportar)
         Token modifier = null;
         if (match(TokenType.PUBLIC, TokenType.PRIVATE)) {
@@ -620,18 +660,18 @@ public class Parser {
             consumeSoft(TokenType.SEMICOLON, ";", "Métodos abstratos não podem ter corpo '{}'. Esperado ';' no final da assinatura.");
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, thrownExceptions,null, decorators);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType, thrownExceptions,null, decorators,listeners);
         } else {
             // Se for um método concreto, EXIGE as chaves e o corpo de código!
             consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da função concreta.");
             List<Stmt> body = block();
 
             // ⭐ CORREÇÃO: Passamos o 'modifier' e o 'isAbstract' para o construtor!
-            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType,thrownExceptions, body, decorators);
+            return new Stmt.Function(modifier,false, isAbstract, name, parameters, returnType,thrownExceptions, body, decorators,listeners);
         }
     }
 
-    private Stmt varDeclaration(java.util.List<Stmt.DecoratorNode> decorators) {
+    private Stmt varDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         Token keyword = previous(); // Pode ser LET, VAR ou CONST
 
         if (keyword.type == TokenType.VAR && scopeDepth > 0) {
@@ -658,7 +698,7 @@ public class Parser {
         consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a declaração da variável.");
 
         // O teu VarDecl agora recebe o TypeNode estruturado com sucesso!
-        return new Stmt.VarDecl(keyword, name, typeAnnotation, initializer,decorators);
+        return new Stmt.VarDecl(keyword, name, typeAnnotation, initializer,decorators,listeners);
     }
 
     private TypeNode parseTypeAnnotation() {
@@ -820,7 +860,6 @@ public class Parser {
 
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
 
-
             if (match(TokenType.CASE)) {
                 java.util.List<Expr> values = new java.util.ArrayList<>();
                 // 1. Lê todos os valores do 'case' separados por vírgula
@@ -966,7 +1005,6 @@ public class Parser {
             return  forCStyleStatement();
         }
 
-
         // Exemplo temporário para não quebrar o código atual:
         return forInStatement();
     }
@@ -989,7 +1027,6 @@ public class Parser {
         // TODO: Criar o nó AST Stmt.ForCStyle no ficheiro Stmt.java e processar aqui!
         // Ex: for (let i = 0; i < 10; i = i + 1) { ... }
         consumeSoft(TokenType.LPAREN, "(","Esperado '(' após a definição do loop for-c-style.");
-
 
         Token keyword = consumeSoft(TokenType.LET, "let","Erro de declaração: Apenas a palavra chave 'let' é suportada para o loop for-c-style.");
 
@@ -1023,7 +1060,7 @@ public class Parser {
         consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o incremento do loop for-c-style.");
         consumeSoft(TokenType.LBRACE, "{", "Esperado '{' após a expressão do for-c-style.");
 
-        Stmt init = new Stmt.VarDecl(keyword, name, new TypeNode.Simple(typeAnnotation), initializer,null);
+        Stmt init = new Stmt.VarDecl(keyword, name, new TypeNode.Simple(typeAnnotation), initializer,null,null);
         Stmt body = new Stmt.Block(block());
 
         // Passamos o 'increment' diretamente como Expr para a AST!
@@ -1214,12 +1251,12 @@ public class Parser {
         );
     }
 
-    // ==========================================
+    // =============================================================
     // EXPRESSÕES (Cálculos de Valores)
     // A ESCADA DA PRECEDÊNCIA MATEMÁTICA E LÓGICA
     // Começamos na prioridade mais baixa (atribuição '=') e descemos
     // até à prioridade máxima (parêntesis '()' e literais como '10').
-    // ==========================================
+    // =============================================================
 
     private Expr expression() {
         return inlineIf(); // Inicia a escada
@@ -1912,7 +1949,7 @@ public class Parser {
                 // Adiciona as novas palavras-chave para ele saber onde parar de saltar!
                 case FUN: case VAR: case LET: case CONST:
                 case FOR: case IF: case INTERFACE: case DECLARE: case IMPLEMENT:
-                case MATCH: case DECORATOR: case SWITCH:
+                case MATCH: case DECORATOR: case SWITCH: case LISTENER:
                     return;
             }
             advance();

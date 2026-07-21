@@ -44,6 +44,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -59,6 +60,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -73,6 +75,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -84,6 +87,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -94,6 +98,7 @@ public class XplDocumentUtils {
                     Collections.emptyList(),
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -109,6 +114,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -119,6 +125,7 @@ public class XplDocumentUtils {
                     params2,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -134,6 +141,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -144,6 +152,7 @@ public class XplDocumentUtils {
                     params1,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -159,6 +168,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -169,6 +179,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -184,6 +195,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -194,6 +206,7 @@ public class XplDocumentUtils {
                     paramsSelector,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -206,6 +219,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -216,6 +230,7 @@ public class XplDocumentUtils {
                     params2,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -233,6 +248,7 @@ public class XplDocumentUtils {
                         null,
                         null,
                         Collections.emptyList(),
+                        Collections.emptyList(),
                         Collections.emptyList()
                 ));
             }
@@ -248,6 +264,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -256,6 +273,7 @@ public class XplDocumentUtils {
                     paramsWrite,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -272,6 +290,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -280,6 +299,7 @@ public class XplDocumentUtils {
                     paramsEventListener,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -292,6 +312,7 @@ public class XplDocumentUtils {
                     paramsEvent,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -308,6 +329,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             List<Stmt.Param> paramsNode = List.of(
@@ -320,6 +342,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -328,6 +351,7 @@ public class XplDocumentUtils {
                     Collections.emptyList(),
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -343,6 +367,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             List<Stmt.Param> paramsCmd = List.of(
@@ -355,6 +380,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -363,6 +389,7 @@ public class XplDocumentUtils {
                     paramsCmd,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -373,6 +400,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -381,6 +409,7 @@ public class XplDocumentUtils {
                     Collections.emptyList(),
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -396,6 +425,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
 
@@ -407,6 +437,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -416,6 +447,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -424,6 +456,7 @@ public class XplDocumentUtils {
                     Collections.emptyList(),
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -438,6 +471,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -447,6 +481,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -455,6 +490,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -469,6 +505,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -477,6 +514,7 @@ public class XplDocumentUtils {
                     paramsIterator,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -489,6 +527,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -498,6 +537,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -506,6 +546,7 @@ public class XplDocumentUtils {
                     Collections.emptyList(),
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -518,6 +559,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -526,6 +568,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -536,6 +579,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -544,6 +588,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -554,6 +599,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -562,6 +608,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -572,6 +619,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -580,6 +628,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -590,6 +639,7 @@ public class XplDocumentUtils {
                     null,
                     null,
                     Collections.emptyList(),
+                    Collections.emptyList(),
                     Collections.emptyList()
             ));
             XplDocument.nativeModel.addMethod(new Stmt.Function(
@@ -598,6 +648,7 @@ public class XplDocumentUtils {
                     paramsName,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));
@@ -612,6 +663,7 @@ public class XplDocumentUtils {
                     paramsProp,
                     null,
                     null,
+                    Collections.emptyList(),
                     Collections.emptyList(),
                     Collections.emptyList()
             ));

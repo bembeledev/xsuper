@@ -82,7 +82,8 @@ public class XplFunction implements XplCallable {
                 if (!interpreter.checkTypeMatch(evalVal, targetSlot.typeNode)) {
                     throw new ControlFlow.RuntimeError(this.declaration.name,
                             "Erro de Tipo no argumento posicional para '" + targetSlot.name.lexeme +
-                                    "': esperava " + targetSlot.typeNode.toString() + ", mas recebeu " + evalVal.getClass().getSimpleName());
+                                    "': esperava " + targetSlot.typeNode.toString() + ", mas recebeu " +
+                                    (evalVal == null ? "null" : evalVal.getClass().getSimpleName()));
                 }
 
                 resolvedValues.put(targetSlot.name.lexeme, evalVal);

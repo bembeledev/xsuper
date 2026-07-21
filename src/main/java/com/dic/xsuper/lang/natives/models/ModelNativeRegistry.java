@@ -63,5 +63,9 @@ public class ModelNativeRegistry {
         SerialNativeModel.Registry(interpreter);
 
         UrlNativeModel.Registry(interpreter);
+
+        ObserverNativeModel.Registry(interpreter);
+
+        EventLoopNativeModel.Registry(interpreter);
     }
 }

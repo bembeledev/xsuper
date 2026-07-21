@@ -60,7 +60,7 @@ public class TestHeadlessEngine {
         // um CommandRegistry. Podemos passar null e tratar os nulos.
 
 
-        SuperUiEngine engine = new SuperUiEngine(null, consoleBridge);
+        SuperUiEngine engine = new SuperUiEngine(mockInterpreter, consoleBridge);
         // Mas o construtor da SuperUiEngine espera um Interpreter não nulo.
         // Vamos criar um Interpreter mínimo para o teste.
 

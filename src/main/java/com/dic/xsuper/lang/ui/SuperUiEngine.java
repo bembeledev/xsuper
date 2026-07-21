@@ -184,33 +184,33 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             this.interpreter.globals.defineConst("ui", this.document);
         }
 
-        // =========================================================================
-        // ⭐ CONEXÃO DO SISTEMA NERVOSO DA UI
-        // A Interface Gráfica regista-se como um dos ouvintes globais do XPL
-        // =========================================================================
-        com.dic.xsuper.lang.Environment.addListener(new Environment.XplEnvironmentListener() {
+// =========================================================================
+// ⭐ CONEXÃO DO SISTEMA NERVOSO DA UI
+// A Interface Gráfica regista-se como um dos ouvintes globais do XPL
+// =========================================================================
+
+// 👇 A MUDANÇA É AQUI: Usamos 'interpreter.globals' em vez de 'Environment'
+        interpreter.globals.addListener(new com.dic.xsuper.lang.Environment.XplEnvironmentListener() {
             @Override
             public void onVariableDeclared(String name, Object value, String scopeType) {
-                // Quando uma variável nasce (ex: let isDarkMode = true;), avisamos logo a UI
                 updateVariable(name, value);
             }
 
             @Override
             public void onVariableMutated(String name, Object oldValue, Object newValue) {
-                // Quando o valor sofre mutação (ex: isDarkMode = false;), a UI faz o patch cirúrgico
                 updateVariable(name, newValue);
             }
 
             @Override
             public void onVariableRead(String name, Object value) {
-                // A UI não precisa de reagir a leituras, portanto ignoramos este evento silenciosamente.
-                // (Mas um futuro Profiler ou Debugger usaria isto!)
+                // Ignorado pela UI
             }
 
             @Override
-            public void onVariableRemove(String name, Object value) {}
+            public void onVariableRemove(String name, Object value) {
+                // (Opcional) Podes querer avisar a UI para apagar o componente visual se a variável for destruída!
+            }
         });
-
         // canal de comunicação entre o JavaFx, o DOM e o Interpretador para a UI.
         com.dic.xsuper.lang.ui.event.eventbus.UiEventBusSubscriber.register(this);
     }

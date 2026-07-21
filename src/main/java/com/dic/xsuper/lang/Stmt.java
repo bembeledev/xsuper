@@ -61,13 +61,15 @@ public abstract class Stmt {
         public final TypeNode typeAnnotation; // ⭐ A EVOLUÇÃO: Agora usa a árvore de tipos!
         public final Expr initializer;
         public final java.util.List<DecoratorNode> decorators;
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
 
-        public VarDecl(Token keyword, Token name, TypeNode typeAnnotation, Expr initializer, List<DecoratorNode> decorators) {
+        public VarDecl(Token keyword, Token name, TypeNode typeAnnotation, Expr initializer, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.keyword = keyword;
             this.name = name;
             this.typeAnnotation = typeAnnotation;
             this.initializer = initializer;
             this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -81,6 +83,7 @@ public abstract class Stmt {
                     ", typeAnnotation=" + typeAnnotation +
                     ", initializer=" + initializer +
                     ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }
@@ -211,10 +214,11 @@ public abstract class Stmt {
         public final List<Token> thrownExceptions;
         public final List<Stmt> body;      // Será 'null' se isAbstract for verdadeiro!
         public final java.util.List<DecoratorNode> decorators;
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
 
         // Atualiza o construtor com os novos campos
         public Function(Token accessModifier, boolean isStatic, boolean isAbstract, Token name,
-                        List<Param> params, TypeNode returnType, List<Token> thrownExceptions, List<Stmt> body, List<DecoratorNode> decorators) {
+                        List<Param> params, TypeNode returnType, List<Token> thrownExceptions, List<Stmt> body, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.accessModifier = accessModifier;
             this.isStatic = isStatic;
             this.isAbstract = isAbstract;
@@ -224,6 +228,7 @@ public abstract class Stmt {
             this.thrownExceptions = thrownExceptions;
             this.body = body;
             this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -242,6 +247,8 @@ public abstract class Stmt {
                     ", returnType=" + returnType +
                     ", thrownExceptions=" + thrownExceptions +
                     ", body=" + body +
+                    ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }
@@ -389,14 +396,17 @@ public abstract class Stmt {
         public final java.util.List<FieldDecl> fields;
         // ⭐ A NOVA RANHURA DA AST: Guarda os parâmetros de tipo (ex: [T, U])
         public final java.util.List<Token> typeParameters;
+        public final List<Stmt.DecoratorNode> decorators; // Os metadados (@)
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
 
-
-        public DeclareDecl(boolean isSealed, Token name, Token superclass, java.util.List<FieldDecl> fields, List<Token> typeParameters) {
+        public DeclareDecl(boolean isSealed, Token name, Token superclass, java.util.List<FieldDecl> fields, List<Token> typeParameters, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.isSealed = isSealed;
             this.name = name;
             this.superclass = superclass;
             this.fields = fields;
             this.typeParameters = typeParameters;
+            this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -410,6 +420,8 @@ public abstract class Stmt {
                     ", superclass=" + superclass +
                     ", fields=" + fields +
                     ", typeParameters=" + typeParameters +
+                    ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }
@@ -417,10 +429,13 @@ public abstract class Stmt {
     public static class InterfaceDecl extends Stmt {
         public final Token name;
         public final java.util.List<FunctionSig> methods;
-
-        public InterfaceDecl(Token name, java.util.List<FunctionSig> methods) {
+        public final List<Stmt.DecoratorNode> decorators; // Os metadados (@)
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
+        public InterfaceDecl(Token name, java.util.List<FunctionSig> methods, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.name = name;
             this.methods = methods;
+            this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -433,6 +448,8 @@ public abstract class Stmt {
             return "InterfaceDecl{" +
                     "name=" + name +
                     ", methods=" + methods +
+                    ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }
@@ -446,9 +463,10 @@ public abstract class Stmt {
         public final boolean isAbstract;
         // ⭐ NOVA RANHURA: Guarda os parâmetros genéricos do implement (ex: [T])
         public final java.util.List<Token> typeParameters;
-
+        public final List<Stmt.DecoratorNode> decorators; // Os metadados (@)
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
         public ImplementDecl(boolean isAbstract, Token targetName, Token aliasName,
-                             List<Token> interfaces, Map<String, Expr> defaultState, List<Stmt.Function> methods, List<Token> typeParameters) {
+                             List<Token> interfaces, Map<String, Expr> defaultState, List<Stmt.Function> methods, List<Token> typeParameters, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.isAbstract = isAbstract;
             this.targetName = targetName;
             this.aliasName = aliasName;
@@ -456,6 +474,8 @@ public abstract class Stmt {
             this.interfaces = interfaces;
             this.methods = methods;
             this.typeParameters = typeParameters;
+            this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -473,6 +493,8 @@ public abstract class Stmt {
                     ", methods=" + methods +
                     ", isAbstract=" + isAbstract +
                     ", typeParameters=" + typeParameters +
+                    ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }

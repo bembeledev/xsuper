@@ -222,12 +222,20 @@ public class XplEvent extends XplInstance implements XplNativeObject {
 
             nativeModel.addMethod(new Stmt.Function(getAccessModifier(), false, false,
                     new Token(TokenType.IDENTIFIER, "preventDefault", null, 0, 0),
-                    Collections.emptyList(), null, null, Collections.emptyList(), Collections.emptyList()
+                    Collections.emptyList(), null, null,
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList()
             ));
 
             nativeModel.addMethod(new Stmt.Function(getAccessModifier(), false, false,
                     new Token(TokenType.IDENTIFIER, "stopPropagation", null, 0, 0),
-                    Collections.emptyList(), null, null, Collections.emptyList(), Collections.emptyList()
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList()
             ));
         }
         return nativeModel;

@@ -3,7 +3,6 @@ import com.dic.xsuper.core.CommandRegistry;
 import com.dic.xsuper.lang.helpers.ArrayMethods;
 import com.dic.xsuper.lang.helpers.ObjectMethods;
 import com.dic.xsuper.lang.helpers.StringMethods;
-import com.dic.xsuper.lang.natives.functions.NativeRegistry;
 import com.dic.xsuper.lang.natives.models.ModelNativeRegistry;
 import com.dic.xsuper.lang.natives.variables.NativeVariables;
 import com.dic.xsuper.lang.poo.XPLModel;
@@ -70,12 +69,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // =========================================================================
         NativeVariables.registry(this);
 
-        //registo de funções nativas
-        NativeRegistry.InjectRegistry(this);
 
         //registo de declares nativos
         ModelNativeRegistry.InjectRegistry(this);
-
 
         decoratorInject();
 
@@ -220,18 +216,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof Long || value instanceof Integer || value instanceof Short || value instanceof Byte) return "int";
         if (value instanceof Double || value instanceof Float) return "float";
         if (value instanceof String || value instanceof Character) return "string";
-        if (value instanceof Boolean) return "bool";
+        return switch (value) {
+            case Boolean b -> "bool";
 
-        // Estruturas
-        if (value instanceof List) return "array";
-        if (value instanceof Map) return "object";
+            // Estruturas
+            case List list -> "array";
+            case Map map -> "object";
 
-        // POO XPL
-        if (value instanceof XplInstance inst) return (inst.klass != null) ? inst.klass.model.name : "MetaInstance";
-        if (value instanceof XplClass) return "class";
-        if (value instanceof XplCallable) return "function";
+            // POO XPL
+            case XplInstance inst -> (inst.klass != null) ? inst.klass.model.name : "MetaInstance";
+            case XplClass xplClass -> "class";
+            case XplCallable xplCallable -> "function";
+            default -> "any";
+        };
 
-        return "any"; // Fallback quântico
     }
 
     public Object evaluate(Expr expr) {
@@ -1491,7 +1489,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 newReturn, // <-- Injetado o retorno transmutado!
                 oldFunc.thrownExceptions,
                 oldFunc.body, // O corpo desce igual
-                oldFunc.decorators // (Mantemos a mochila de decoradores que criámos ontem!)
+                oldFunc.decorators, // (Mantemos a mochila de decoradores que criámos ontem!)
+                oldFunc.listeners
         );
     }
 
@@ -2138,8 +2137,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // 4. Construir a declaração da função final
         Stmt.Function funcDecl = new Stmt.Function(
-                null, false, false, syntheticName, params, inferredReturnType,
-                java.util.Collections.emptyList(), bodyStmts, java.util.Collections.emptyList()
+                null,
+                false,
+                false,
+                syntheticName,
+                params,
+                inferredReturnType,
+                java.util.Collections.emptyList(),
+                bodyStmts,
+                java.util.Collections.emptyList(),
+                java.util.Collections.emptyList()
         );
 
         return new XplFunction(funcDecl, closure, null);
@@ -2697,7 +2704,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // Para todos os tipos normais (não-opcionais), o null é estritamente PROIBIDO!
-        if (obj == null) return false;
+        if (obj == null) return typeNode.name.lexeme.equals("any");
 
         // ⭐ CORRECÇÃO VITAL: Extrai o Token tanto de Simple (int) quanto de Generic (Caixa<T>)!
         Token typeToken = typeNode.name;

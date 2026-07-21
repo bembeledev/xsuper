@@ -74,6 +74,7 @@ public class Lexer {
         keywords.put("none", TokenType.NONE);
         keywords.put("match", TokenType.MATCH);
         keywords.put("decorator", TokenType.DECORATOR);
+        keywords.put("listener", TokenType.BIT_AND);
         keywords.put("module", TokenType.MODULE);
         keywords.put("import", TokenType.IMPORT);
         keywords.put("export", TokenType.EXPORT);

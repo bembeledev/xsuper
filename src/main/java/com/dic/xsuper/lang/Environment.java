@@ -32,15 +32,15 @@ public class Environment {
     }
 
     // Lista estática e Thread-Safe para múltiplos ouvintes globais (UI, Debugger, Profiler...)
-    private static final List<XplEnvironmentListener> globalListeners = new CopyOnWriteArrayList<>();
+    private final List<XplEnvironmentListener> globalListeners = new CopyOnWriteArrayList<>();
 
-    public static void addListener(XplEnvironmentListener listener) {
+    public void addListener(XplEnvironmentListener listener) {
         if (!globalListeners.contains(listener)) {
             globalListeners.add(listener);
         }
     }
 
-    public static void removeListener(XplEnvironmentListener listener) {
+    public void removeListener(XplEnvironmentListener listener) {
         globalListeners.remove(listener);
     }
 
@@ -76,18 +76,24 @@ public class Environment {
     // 📢 NOTIFICADORES INTERNOS (Alta Performance)
     // =========================================================================
     private void notifyDeclared(String name, Object value, String scopeType) {
-        if (globalListeners.isEmpty()) return;
-        for (XplEnvironmentListener l : globalListeners) l.onVariableDeclared(name, value, scopeType);
+        Environment root = this;
+        while (root.enclosing != null) root = root.enclosing; // Sobe até ao topo global
+        if (root.globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : root.globalListeners) l.onVariableDeclared(name, value, scopeType);
     }
 
     private void notifyMutated(String name, Object oldValue, Object newValue) {
-        if (globalListeners.isEmpty()) return;
-        for (XplEnvironmentListener l : globalListeners) l.onVariableMutated(name, oldValue, newValue);
+        Environment root = this;
+        while (root.enclosing != null) root = root.enclosing;
+        if (root.globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : root.globalListeners) l.onVariableMutated(name, oldValue, newValue);
     }
 
     private void notifyRead(String name, Object value) {
-        if (globalListeners.isEmpty()) return;
-        for (XplEnvironmentListener l : globalListeners) l.onVariableRead(name, value);
+        Environment root = this;
+        while (root.enclosing != null) root = root.enclosing;
+        if (root.globalListeners.isEmpty()) return;
+        for (XplEnvironmentListener l : root.globalListeners) l.onVariableRead(name, value);
     }
 
     public void defineLet(String name, Object value) {

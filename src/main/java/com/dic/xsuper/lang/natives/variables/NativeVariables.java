@@ -202,7 +202,9 @@ public class NativeVariables {
                         false, false,
                         new Token(TokenType.IDENTIFIER, nome, null, 0, 0),
                         astParams, retNode, new java.util.ArrayList<>(),
-                        corpoReal, new java.util.ArrayList<>()
+                        corpoReal,
+                        java.util.Collections.emptyList(), // ⭐ decorators (Tipado!)
+                        java.util.Collections.emptyList()  // ⭐ listeners (Tipado!)
                 );
             }
         });
