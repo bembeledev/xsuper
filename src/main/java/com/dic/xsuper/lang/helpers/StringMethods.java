@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.helpers;
 
+import com.dic.xsuper.lang.ControlFlow;
 import com.dic.xsuper.lang.Expr;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.XplCallable;
@@ -377,6 +378,19 @@ public class StringMethods {
                             chars.add(String.valueOf(c));
                         }
                         return chars;
+                    }
+                };
+
+
+            case "fromJson":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter intp, java.util.List<Expr.CallArg> args) {
+                        try {
+                            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(text, Object.class);
+                        } catch (Exception e) {
+                            throw new ControlFlow.RuntimeError(null, "Erro ao fazer parse de JSON: " + e.getMessage());
+                        }
                     }
                 };
 

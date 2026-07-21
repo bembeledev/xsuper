@@ -3,7 +3,9 @@ import com.dic.xsuper.core.CommandRegistry;
 import com.dic.xsuper.lang.helpers.ArrayMethods;
 import com.dic.xsuper.lang.helpers.ObjectMethods;
 import com.dic.xsuper.lang.helpers.StringMethods;
-import com.dic.xsuper.lang.natives.NativeRegistry;
+import com.dic.xsuper.lang.natives.functions.NativeRegistry;
+import com.dic.xsuper.lang.natives.models.ModelNativeRegistry;
+import com.dic.xsuper.lang.natives.variables.NativeVariables;
 import com.dic.xsuper.lang.poo.XPLModel;
 import com.dic.xsuper.lang.poo.XplClass;
 import com.dic.xsuper.lang.poo.XplInstance;
@@ -71,10 +73,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         //registo de funções nativas
         NativeRegistry.InjectRegistry(this);
 
-        // Injecão do Decorador Base
-        errorInject();
+        //registo de declares nativos
+        ModelNativeRegistry.InjectRegistry(this);
+
+
         decoratorInject();
-        xpluiengine();
+
     }
 
     private void decoratorInject() {
@@ -91,73 +95,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return evaluated;
     }
-
-    private void errorInject() {
-        // =========================================================================
-        // ⭐ O GÉNESIS DA CLASSE 'Error' NATÍVA (Com Modificador de Visibilidade) ⭐
-        // =========================================================================
-        XPLModel baseErrorModel = new XPLModel("Error", null);
-        baseErrorModel.hasBaseImplementation = true;
-
-        // ⭐ A ARMA DESARMADA: Fabricamos um Token de visibilidade 'pub' legítimo!
-        // (Nota: Se no teu TokenType o modificador público se chamar PUBLIC em vez de PUB, altera abaixo)
-        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
-
-        Token msgToken = new Token(TokenType.IDENTIFIER, "message", null, 0, 0);
-
-        // Injetamos o 'pubToken' no 1º argumento em vez de 'null'!
-        baseErrorModel.addField(new Stmt.FieldDecl(
-                pubToken,
-                false, false, false,
-                msgToken,
-                new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0))
-        ));
-
-        this.registry_model.put("Error", baseErrorModel);
-        this.environment.defineConst("Error", new XplClass(baseErrorModel, this.environment));
-    }
-
-    private void xpluiengine() {
-        // =========================================================================
-        // ⭐ O GÉNESIS DA CLASSE 'XplElement' NATIVA (Pai dos Componentes) ⭐
-        // =========================================================================
-        XPLModel baseElementModel = new XPLModel("XplElement", null);
-        baseElementModel.hasBaseImplementation = true; // É nativo, não precisa de código XPL!
-
-        // Criamos os tokens de visibilidade para construir a AST nativa
-        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
-
-        // (Opcional) Podemos injetar propriedades nativas base que todos os elementos terão.
-        // Exemplo: 'pub id: string'
-        Token idToken = new Token(TokenType.IDENTIFIER, "id", null, 0, 0);
-        baseElementModel.addField(new Stmt.FieldDecl(
-                pubToken,
-                false, false, false,
-                idToken,
-                new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0))
-        ));
-
-        // 1. Registar o Modelo na AST para o Resolver / Type-Checker aprovar o 'extends'
-        this.registry_model.put("XplElement", baseElementModel);
-
-        // 2. Registar a Classe na memória Runtime para permitir instanciar e herdar
-        this.environment.defineConst("XplElement", new XplClass(baseElementModel, this.environment));
-
-
-        // =========================================================================
-        // ⭐ A INJEÇÃO DO OBJETO GLOBAL '__ui_engine' ⭐
-        // =========================================================================
-        // Precisamos que o __ui_engine exista no compilador para não dar "Variável indefinida"
-
-        // Se tens uma classe wrapper nativa em Java para o teu UI Engine (que interceta o loadView),
-        // tu injetas a instância dela aqui. Exemplo genérico:
-
-        // Object nativeUiEngineInstance = ... (a tua instância do SuperUiEngine ou wrapper XplInstance)
-        // this.environment.defineConst("__ui_engine", nativeUiEngineInstance);
-
-        // Nota: O compilador só precisa que a variável exista no environment global!
-    }
-
 
     // ⭐ A CURA DA CONCORRÊNCIA: Fork do Interpretador ⭐
     // Cria um clone perfeito do motor para ser usado em Threads em Background,
@@ -177,8 +114,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         return threadEngine;
     }
-
-
 
     // =========================================================================
     // ⭐ MÁQUINAS DE EXTRAÇÃO DE AST (Para Metaprogramação)
@@ -1911,11 +1846,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // =========================================================================
         // ⭐ A PONTE DINÂMICA NATIVA (A MÁGICA DOS MÉTODOS) ⭐
         // =========================================================================
-
-
-
-
-
         if (object instanceof com.dic.xsuper.lang.ui.document.XplNativeObject nativeObj) {
 
             // 1. Tenta ler uma propriedade direta (ex: document.body)
@@ -2014,6 +1944,28 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     };
                 }
 
+                // ⭐ INJEÇÃO NATIVA: O Método toJson() ⭐
+                // Converte qualquer Instância POO diretamente num texto JSON formatado!
+                if (expr.name.lexeme.equals("toJson")) {
+                    return new XplCallable() {
+                        @Override public int arity() { return 0; }
+                        @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
+                            try {
+                                // Fazemos uma cópia limpa da memória da instância
+                                java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
+
+                                // Removemos variáveis internas do motor (como funções ou referências de classe) para o JSON ficar limpo
+                                snapshot.keySet().removeIf(k -> k.startsWith("_") || snapshot.get(k) instanceof XplCallable || snapshot.get(k) instanceof com.dic.xsuper.lang.poo.XplClass);
+
+                                return new com.fasterxml.jackson.databind.ObjectMapper()
+                                        .enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT)
+                                        .writeValueAsString(snapshot);
+                            } catch (Exception e) {
+                                throw new ControlFlow.RuntimeError(expr.name, "Erro ao converter a Instância para JSON: " + e.getMessage());
+                            }
+                        }
+                    };
+                }
 
 
                 // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'GET' ⭐
@@ -2143,46 +2095,55 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Environment closure = this.environment;
 
         // 1. Criar a lista de parâmetros
-        List<Stmt.Param> params = new ArrayList<>();
-        if (expr.parameter != null) {
-            TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
-            params.add(new Stmt.Param(expr.parameter, anyType, null));
+        java.util.List<Stmt.Param> params = new java.util.ArrayList<>();
+        TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
+
+        if (expr.parameters != null) {
+            for (Stmt.Param p : expr.parameters) {
+                TypeNode resolvedType = (p.typeNode != null) ? p.typeNode : anyType;
+                params.add(new Stmt.Param(p.name, resolvedType, p.defaultValue));
+            }
         }
 
-        // 2. Construir o corpo da função
-        List<Stmt> bodyStmts = new ArrayList<>();
+        // 2. Construir o corpo
+        java.util.List<Stmt> bodyStmts = new java.util.ArrayList<>();
+
+        // Assumimos SEMPRE 'any' por padrão para não colidir com o Type Checker rigoroso
+        TypeNode inferredReturnType = (expr.returnType != null) ? expr.returnType : anyType;
+
         if (expr.body instanceof Expr.Block blockExpr) {
+            // Copia todo o código escrito pelo utilizador
             bodyStmts.addAll(blockExpr.statements);
+
+            // ⭐ A JOGADA DE MESTRE: Injetamos um 'return null;' silencioso no final! ⭐
+            // Assim o Interpretador nunca reclama de "Falta de Retorno" e o 'null' encaixa no 'any'.
+            bodyStmts.add(new Stmt.Return(
+                    new Token(TokenType.RETURN, "return", null, 0, 0),
+                    new Expr.Literal(null)
+            ));
         } else {
+            // Expressões diretas (ex: a => a * 2) já ganham o seu return nativo
             bodyStmts.add(new Stmt.Return(
                     new Token(TokenType.RETURN, "return", null, 0, 0),
                     expr.body
             ));
         }
 
-        // ⭐ A CORRECÇÃO: Inferência automática de retorno ⭐
-        // Se o utilizador não definiu retorno explícito, o motor assume 'any'.
-        // Assim, o XplFunction deixa de disparar o erro de 'void returning long'.
-        TypeNode returnType = (expr.returnType != null) ? expr.returnType :
-                new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
-
-        // 3. Criar um nome sintético
+        // 3. Criar um nome sintético único
         Token syntheticName = new Token(
                 TokenType.IDENTIFIER,
                 "_arrow_" + System.identityHashCode(expr),
-                null,
-                0, 0
+                null, 0, 0
         );
 
-        // 4. Construir a declaração da função com o tipo 'any' injectado
+        // 4. Construir a declaração da função final
         Stmt.Function funcDecl = new Stmt.Function(
-                null, false, false, syntheticName, params, returnType, // Aqui está o segredo!
-                Collections.emptyList(), bodyStmts, Collections.emptyList()
+                null, false, false, syntheticName, params, inferredReturnType,
+                java.util.Collections.emptyList(), bodyStmts, java.util.Collections.emptyList()
         );
 
         return new XplFunction(funcDecl, closure, null);
     }
-
     @Override
     public Object visitObjectLiteralExpr(Expr.ObjectLiteral expr) {
         // Usamos LinkedHashMap para manter a ordem de inserção das chaves
@@ -3179,7 +3140,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // Converte "#RRGGBB" para Códigos ANSI True Color (24-bit)
-    String hexToAnsi(String hex) {
+    public String hexToAnsi(String hex) {
         if (hex != null && hex.startsWith("#") && hex.length() == 7) {
             try {
                 long r = Math.toIntExact(Long.valueOf(hex.substring(1, 3), 16));

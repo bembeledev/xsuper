@@ -28,6 +28,7 @@ public class Environment {
         void onVariableDeclared(String name, Object value, String scopeType); // scopeType: "let", "var", "const"
         void onVariableMutated(String name, Object oldValue, Object newValue);
         void onVariableRead(String name, Object value);
+        void onVariableRemove(String name, Object value);
     }
 
     // Lista estática e Thread-Safe para múltiplos ouvintes globais (UI, Debugger, Profiler...)

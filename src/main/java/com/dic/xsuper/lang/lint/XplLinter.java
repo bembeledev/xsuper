@@ -579,9 +579,9 @@ public class XplLinter {
         }
         @Override public Void visitArrowFunctionExpr(Expr.ArrowFunction expr) {
             scopes.push(new TypeScope());
-            if (expr.parameter != null) {
+            /*if (expr.parameter != null) {
                 scopes.peek().put(expr.parameter.lexeme, null);
-            }
+            }*/
             expr.body.accept(this);
             scopes.pop();
             return null;

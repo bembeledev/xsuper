@@ -1253,43 +1253,63 @@ public class Parser {
 
     private Expr assignment() {
 
-        // ⭐ 1. Detetar Arrow Function SEM parâmetros: () => { ... } OU (): tipo => { ... }
-        if (check(TokenType.LPAREN) && peekNext().type == TokenType.RPAREN) {
+        // =====================================================================
+        // ⭐ 1. O DETETOR UNIVERSAL DE ARROW FUNCTIONS (Múltiplos Parâmetros)
+        // Suporta: () => {}, (a, b) => {}, (req: object, res: object): void => {}
+        // =====================================================================
+        if (check(TokenType.LPAREN)) {
+            int lookahead = current;
+            boolean isArrow = false;
 
-            // Espreitamos o 3º token de forma segura
-            TokenType thirdToken = (current + 2 < tokens.size()) ? tokens.get(current + 2).type : null;
+            // Olha para a frente até encontrar a seta (=>) ou um limite (, ; {)
+            while (lookahead < tokens.size() && tokens.get(lookahead).type != TokenType.EOF && tokens.get(lookahead).type != TokenType.SEMICOLON && tokens.get(lookahead).type != TokenType.LBRACE) {
+                if (tokens.get(lookahead).type == TokenType.FAT_ARROW) {
+                    isArrow = true;
+                    break;
+                }
+                lookahead++;
+            }
 
-            // Se o 3º token for a Seta (=>) OU os Dois Pontos (:) indicando tipo, é uma Arrow Function!
-            if (thirdToken == TokenType.FAT_ARROW || thirdToken == TokenType.COLON) {
-
+            if (isArrow) {
                 consumeSoft(TokenType.LPAREN, "(", "Esperado '(' no início da Arrow Function.");
-                consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após o '(' na Arrow Function vazia.");
 
-                // ⭐ A NOVA ALFÂNDEGA DE TIPO ⭐
+                java.util.List<Stmt.Param> arrowParams = new java.util.ArrayList<>();
+                if (!check(TokenType.RPAREN)) {
+                    do {
+                        Token paramName = consumeIdentifierSoft("Esperado nome do parâmetro da Arrow Function.");
+                        TypeNode type = null;
+                        if (match(TokenType.COLON)) {
+                            type = parseTypeAnnotation();
+                        }
+                        arrowParams.add(new Stmt.Param(paramName, type, null));
+                    } while (match(TokenType.COMMA));
+                }
+                consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os parâmetros da Arrow Function.");
+
                 TypeNode returnType = null;
                 if (match(TokenType.COLON)) {
-                    // ⚠️ A CURA: Usamos advance() para capturar qualquer que seja o Token (Keyword ou Identifier)
-                    Token typeToken = advance();
-                    // Segurança: Se o programador se esqueceu do tipo e escreveu (): =>
-                    if (typeToken.type == TokenType.FAT_ARROW) {
-                        throw error(typeToken, "Esperado o tipo de retorno após o ':'."); // Usa a tua função de erro
-                    }
-                    returnType = new TypeNode.Simple(typeToken);
+                    returnType = parseTypeAnnotation();
                 }
+
                 consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após a assinatura da função anónima.");
                 Expr body = parseArrowBody();
 
-                // Passamos o returnType para a AST!
-                return new Expr.ArrowFunction(null, body, returnType);
+                return new Expr.ArrowFunction(arrowParams, body, returnType);
             }
         }
 
-        // ⭐ Detetar Arrow Function de 1 parâmetro (Ex: e => e.toUpperCase()) [INTACTO!]
+        // =====================================================================
+        // ⭐ 2. DETETAR ARROW FUNCTION CURTA (Sem parêntesis: e => e.nome)
+        // =====================================================================
         if (check(TokenType.IDENTIFIER) && current + 1 < tokens.size() && tokens.get(current + 1).type == TokenType.FAT_ARROW) {
-            Token param = consumeIdentifierSoft( "Esperado nome do parâmetro da Arrow Function.");
+            Token paramName = advance(); // Consome o identificador
             consumeSoft(TokenType.FAT_ARROW, "=>", "Esperado '=>' após o parâmetro.");
-            Expr body = expression();
-            return new Expr.ArrowFunction(param, body, null);
+            Expr body = parseArrowBody();
+
+            java.util.List<Stmt.Param> singleParam = new java.util.ArrayList<>();
+            singleParam.add(new Stmt.Param(paramName, null, null));
+
+            return new Expr.ArrowFunction(singleParam, body, null);
         }
 
         // ⭐ A PONTE DE ENGENHARIA: Em vez de equality(), chamamos o topo da hierarquia lógica!

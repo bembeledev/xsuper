@@ -1,5 +1,6 @@
 package com.dic.xsuper.lang.helpers;
 
+import com.dic.xsuper.lang.ControlFlow;
 import com.dic.xsuper.lang.Expr;
 import com.dic.xsuper.lang.Interpreter;
 import com.dic.xsuper.lang.XplCallable;
@@ -110,6 +111,20 @@ public class ObjectMethods {
                         checkArgCount(args, 1, methodName);
                         String key = args.get(0).toString();
                         return map.getOrDefault(key, null);
+                    }
+                };
+
+            case "toJson":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter intp, java.util.List<Expr.CallArg> args) {
+                        try {
+                            return new com.fasterxml.jackson.databind.ObjectMapper()
+                                    .enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT)
+                                    .writeValueAsString(map);
+                        } catch (Exception e) {
+                            throw new ControlFlow.RuntimeError(null, "Erro ao converter objeto para JSON: " + e.getMessage());
+                        }
                     }
                 };
 

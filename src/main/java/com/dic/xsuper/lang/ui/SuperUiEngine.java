@@ -188,7 +188,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         // ⭐ CONEXÃO DO SISTEMA NERVOSO DA UI
         // A Interface Gráfica regista-se como um dos ouvintes globais do XPL
         // =========================================================================
-        com.dic.xsuper.lang.Environment.addListener(new com.dic.xsuper.lang.Environment.XplEnvironmentListener() {
+        com.dic.xsuper.lang.Environment.addListener(new Environment.XplEnvironmentListener() {
             @Override
             public void onVariableDeclared(String name, Object value, String scopeType) {
                 // Quando uma variável nasce (ex: let isDarkMode = true;), avisamos logo a UI
@@ -206,6 +206,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
                 // A UI não precisa de reagir a leituras, portanto ignoramos este evento silenciosamente.
                 // (Mas um futuro Profiler ou Debugger usaria isto!)
             }
+
+            @Override
+            public void onVariableRemove(String name, Object value) {}
         });
 
         // canal de comunicação entre o JavaFx, o DOM e o Interpretador para a UI.

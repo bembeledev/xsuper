@@ -1,11 +1,13 @@
-package com.dic.xsuper.lang;
+package com.dic.xsuper.lang.natives.variables;
 
+import com.dic.xsuper.lang.*;
 import com.dic.xsuper.lang.poo.relection.*;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class NativeVariables {
@@ -262,20 +264,6 @@ public class NativeVariables {
         controlEnum.put("CONTINUE", "continue");
         interpreter.globals.defineConst("CONTROL", java.util.Collections.unmodifiableMap(controlEnum));
 
-
-        // ⭐ CONSTANTES DE REDE E HTTP ⭐
-        java.util.Map<String, String> httpConsts = new java.util.LinkedHashMap<>();
-        httpConsts.put("GET", "GET");
-        httpConsts.put("POST", "POST");
-        httpConsts.put("PUT", "PUT");
-        httpConsts.put("DELETE", "DELETE");
-        httpConsts.put("PATCH", "PATCH");
-        httpConsts.put("HEAD", "HEAD");
-        httpConsts.put("OPTIONS", "OPTIONS");
-        interpreter.globals.defineConst("HTTP", java.util.Collections.unmodifiableMap(httpConsts));
-
     }
-
-
 
 }
