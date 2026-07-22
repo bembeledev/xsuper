@@ -113,7 +113,8 @@ public class Parser {
                 return listenerDeclaration();
             }
 
-            if (match(TokenType.TYPE)) return typeAliasDeclaration();
+            // ⭐ AGORA O TYPE TAMBÉM RECEBE AS MOCHILAS!
+            if (match(TokenType.TYPE)) return typeAliasDeclaration(decorators, listeners);
 
             // ⭐ 3. ENTREGAR AS DUAS MOCHILAS ÀS ASTs! ⭐
             if (check(TokenType.FUN)) return functionDeclaration(decorators, listeners);
@@ -147,6 +148,7 @@ public class Parser {
             return null;
         }
     }
+
 
     private Stmt globalDeclaration() {
         Token name = consumeIdentifierSoft( "Esperado nome da variável global.");
@@ -238,45 +240,72 @@ public class Parser {
         return new Stmt.ImportDecl(path, symbols, isWildcard, prefixToken);
     }
 
-    // ⭐ CONSTRUTOR ESTRUTURAL DO LISTENER (listener Auditoria { pub id: int; }) ⭐
+    // ⭐ CONSTRUTOR ESTRUTURAL DO LISTENER COM FUNÇÕES LIVRES ⭐
     private Stmt listenerDeclaration() {
         Token name = consumeIdentifierSoft("Esperado nome do listener.");
         consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo do listener.");
 
         java.util.List<Stmt.FieldDecl> fields = new java.util.ArrayList<>();
+        java.util.List<Stmt.Function> methods = new java.util.ArrayList<>();
 
         while (!check(TokenType.RBRACE) && !isAtEnd()) {
+
+            // 1. Ler as Mochilas (Metadados como @(Listen.Set))
+            java.util.List<Stmt.DecoratorNode> methodDecorators = new java.util.ArrayList<>();
+            while (check(TokenType.AT)) {
+                methodDecorators.add(parseDecoratorNode());
+            }
+
+            // 2. Ler Modificadores
             Token accessModifier = null;
             boolean isStatic = false, isFinal = false, isReadonly = false;
-
             while (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.STATIC, TokenType.FINAL, TokenType.READONLY)) {
                 Token t = previous();
                 switch (t.type) {
-                    case PUBLIC: case PRIVATE: case PROTECTED:
-                        if (accessModifier != null) throw error(t, "Apenas podes usar um modificador de acesso.");
-                        accessModifier = t;
-                        break;
+                    case PUBLIC: case PRIVATE: case PROTECTED: accessModifier = t; break;
                     case STATIC: isStatic = true; break;
                     case FINAL: isFinal = true; break;
                     case READONLY: isReadonly = true; break;
                 }
             }
+            if (accessModifier == null) accessModifier = new Token(TokenType.PUBLIC, "pub", null, peek().line, peek().column);
 
-            if (accessModifier == null) {
-                accessModifier = new Token(TokenType.PUBLIC, "pub", null, peek().line, peek().column);
+            // 3. É uma FUNÇÃO ou uma VARIÁVEL?
+            if (match(TokenType.FUN)) {
+                Token methodName = consumeIdentifierSoft("Esperado nome do método.");
+                consumeSoft(TokenType.LPAREN, "(", "Esperado '(' após o nome do método.");
+
+                java.util.List<Stmt.Param> parameters = new java.util.ArrayList<>();
+                if (!check(TokenType.RPAREN)) {
+                    do {
+                        Token paramName = consumeIdentifierSoft("Esperado nome do parâmetro.");
+                        consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome.");
+                        TypeNode type = parseTypeAnnotation();
+                        parameters.add(new Stmt.Param(paramName, type, null));
+                    } while (match(TokenType.COMMA));
+                }
+                consumeSoft(TokenType.RPAREN, ")", "Esperado ')'.");
+
+                TypeNode returnType = match(TokenType.COLON) ? parseTypeAnnotation() : null;
+
+                consumeSoft(TokenType.LBRACE, "{", "Esperado '{' antes do corpo da função.");
+                java.util.List<Stmt> body = block();
+
+                // Guarda a função com os seus metadados (methodDecorators)
+                methods.add(new Stmt.Function(accessModifier, isStatic, false, methodName, parameters, returnType, new java.util.ArrayList<>(), body, methodDecorators, new java.util.ArrayList<>()));
+
+            } else {
+                // É UMA VARIÁVEL NORMAL DO LISTENER
+                Token memberName = consumeIdentifierSoft("Esperado nome da propriedade.");
+                consumeSoft(TokenType.COLON, ":", "Esperado ':'.");
+                TypeNode type = parseTypeAnnotation();
+                consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';'.");
+                fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
             }
-
-            Token memberName = consumeIdentifierSoft("Esperado nome da propriedade do listener.");
-            consumeSoft(TokenType.COLON, ":", "Esperado ':' após o nome da propriedade.");
-            TypeNode type = parseTypeAnnotation();
-            consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' no final da declaração da propriedade.");
-
-            fields.add(new Stmt.FieldDecl(accessModifier, isStatic, isFinal, isReadonly, memberName, type));
         }
 
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do listener.");
-        // Reutilizamos o DecoratorDecl na AST, pois a estrutura de dados é idêntica!
-        return new Stmt.DecoratorDecl(name, fields);
+        return new Stmt.DecoratorDecl(name, fields, methods);
     }
 
     // ⭐ COLHEITADOR DE LISTENERS (&Auditoria(id:12)) ⭐
@@ -359,7 +388,7 @@ public class Parser {
     }
 
     // ⭐ O CONSTRUTOR SINTÁTICO DO ALIAS ⭐
-    private Stmt typeAliasDeclaration() {
+    private Stmt typeAliasDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         Token name = consumeIdentifierSoft( "Esperado identificador para o nome do Alias.");
         consumeSoft(TokenType.ASSIGN, "=", "Esperado '=' após o nome do Alias.");
 
@@ -368,7 +397,8 @@ public class Parser {
 
         consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a definição do sinónimo de tipo.");
 
-        return new Stmt.TypeAliasDecl(name, target);
+        // ⭐ Repassa as duas listas de metadados para a AST!
+        return new Stmt.TypeAliasDecl(name, target, decorators, listeners);
     }
 
     private Stmt declareDeclaration(boolean isSealed, java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
@@ -1689,7 +1719,7 @@ public class Parser {
         }
 
         consumeSoft(TokenType.RBRACE, "}", "Esperado '}' após o corpo do decorador.");
-        return new Stmt.DecoratorDecl(name, fields);
+        return new Stmt.DecoratorDecl(name, fields, new java.util.ArrayList<>());
     }
 
     // ⭐ COLHEITADOR DE METADADOS (Bivalente: @Logging(...) vs @(Context.Init)) ⭐

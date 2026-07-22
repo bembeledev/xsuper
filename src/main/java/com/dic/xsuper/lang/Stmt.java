@@ -595,10 +595,14 @@ public abstract class Stmt {
     public static class TypeAliasDecl extends Stmt {
         public final Token name;
         public final TypeNode targetType;
+        public final List<Stmt.DecoratorNode> decorators; // Os metadados (@)
+        public final List<Stmt.DecoratorNode> listeners;  // Os reativos (&)
 
-        public TypeAliasDecl(Token name, TypeNode targetType) {
+        public TypeAliasDecl(Token name, TypeNode targetType, List<DecoratorNode> decorators, List<DecoratorNode> listeners) {
             this.name = name;
             this.targetType = targetType;
+            this.decorators = decorators;
+            this.listeners = listeners;
         }
 
         @Override
@@ -611,6 +615,8 @@ public abstract class Stmt {
             return "TypeAliasDecl{" +
                     "name=" + name +
                     ", targetType=" + targetType +
+                    ", decorators=" + decorators +
+                    ", listeners=" + listeners +
                     '}';
         }
     }
@@ -619,10 +625,12 @@ public abstract class Stmt {
     public static class DecoratorDecl extends Stmt {
         public final Token name;
         public final java.util.List<Stmt.FieldDecl> fields;
+        public final java.util.List<Stmt.Function> methods;
 
-        public DecoratorDecl(Token name, java.util.List<Stmt.FieldDecl> fields) {
+        public DecoratorDecl(Token name, java.util.List<Stmt.FieldDecl> fields, List<Function> methods) {
             this.name = name;
             this.fields = fields;
+            this.methods = methods;
         }
 
         @Override
@@ -635,6 +643,7 @@ public abstract class Stmt {
             return "DecoratorDecl{" +
                     "name=" + name +
                     ", fields=" + fields +
+                    ", methods=" + methods +
                     '}';
         }
     }

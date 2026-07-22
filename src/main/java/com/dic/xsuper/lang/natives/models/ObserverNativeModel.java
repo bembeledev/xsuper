@@ -115,7 +115,6 @@ public class ObserverNativeModel {
                         }
                         catch (Exception e) {
                             System.err.println("[Observable] Crash Interno (" + nome + "): " + e.getMessage());
-                            e.printStackTrace();
                         } finally {
                             flag.set(false);
                         }

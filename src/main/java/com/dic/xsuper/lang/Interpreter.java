@@ -29,6 +29,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
+
+    // Guarda o Metadado completo dos Tipos para podermos executar Listeners/Validadores!
+    public final java.util.Map<String, Stmt.TypeAliasDecl> typeAliasMetadata = new java.util.HashMap<>();
+
+
     // =========================================================================
     // ⭐ CÂMARA CRIOGÉNICA DE GENÉRICOS (Monomorfização) ⭐
     // Guarda o nó cru da AST exatamente como o utilizador o digitou!
@@ -145,26 +150,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
-    // ⭐ DESCASCADOR QUÂNTICO DE TEARDOWN (@Context.End) ⭐
+    // ⭐ DESCASCADOR QUÂNTICO DE TEARDOWN (@Listen.End) ⭐
     // =========================================================================
     private void triggerEndHooksRecursively(Object obj) {
-        if (obj instanceof XplInstance proxy && Boolean.TRUE.equals(proxy.fields.get("_isDecoratorProxy"))) {
-            Object decObj = proxy.fields.get("_decoratorInstance");
-            if (decObj instanceof XplInstance dec) {
-                XPLModel decModel = dec.klass.model;
-                if (decModel.metaEndHook != null) {
-                    Stmt.Function hookFunc = decModel.findMethod(decModel.metaEndHook);
-                    if (hookFunc != null) {
-                        try {
-                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
-                        } catch (Exception ignored) {} // O Teardown de memória é estritamente silencioso
+        if (obj instanceof XplInstance instance) {
+            // Se o objeto real tem Vigilantes nativos colados a ele:
+            if (instance.fields.containsKey("__active_listeners__")) {
+                @SuppressWarnings("unchecked")
+                List<XplInstance> listeners = (List<XplInstance>) instance.fields.get("__active_listeners__");
+                for (XplInstance dec : listeners) {
+                    if (dec.klass.model.metaEndHook != null) {
+                        Stmt.Function hookFunc = dec.klass.model.findMethod(dec.klass.model.metaEndHook);
+                        if (hookFunc != null) {
+                            try {
+                                new XplFunction(hookFunc, dec.klass.closure, dec.klass.model).bind(dec).call(this, java.util.Collections.emptyList());
+                            } catch (Exception ignored) {} // O Teardown de memória é estritamente silencioso
+                        }
                     }
                 }
             }
-            triggerEndHooksRecursively(proxy.fields.get("_val")); // Desce na Matryoshka
         }
     }
-
     public void interpret(List<Stmt> statements) {
         try {
             // ⭐ NOVO: CADEIA DE GLOBAIS AUTOMÁTICA PARA O SCRIPT PRINCIPAL ⭐
@@ -186,6 +192,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 int line = (rtError.token != null) ? rtError.token.line : 0;
                 int col = (rtError.token != null) ? rtError.token.column : 0;
                 System.err.println(ConsoleTheme.ERROR + path + ":" + line + ":" + col + ":\n\t Erro de Execução: " + rtError.getMessage() + ConsoleTheme.RESET);
+            }// =====================================================================
+            // ⭐ NOVO: Apanha os 'throw' do XPL que não tiveram 'try/catch'
+            // =====================================================================
+            else if (error instanceof ControlFlow.ThrowException throwError) {
+                System.err.println(ConsoleTheme.ERROR + "Erro Fatal Não Capturado (Uncaught Exception): " + stringify(throwError.value) + ConsoleTheme.RESET);
             } else {
                 error.printStackTrace(); // Para erros profundos do Java
             }
@@ -314,52 +325,53 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // =====================================================================
-        // ⭐ METAPROGRAMAÇÃO: EXECUÇÃO DOS DECORADORES ANEXADOS ⭐
+        // ⭐ NOVA ERA: INJEÇÃO NATIVA DE LISTENERS (Sem Proxies!) ⭐
         // =====================================================================
-        if (stmt.decorators != null && !stmt.decorators.isEmpty()) {
-            for (Stmt.DecoratorNode adorno : stmt.decorators) {
-                String decName = adorno.name.lexeme;
-                XPLModel decModel = registry_model.get(decName);
+        if (stmt.listeners != null && !stmt.listeners.isEmpty()) {
+            List<XplInstance> objectListeners = new ArrayList<>();
 
-                if (decModel == null || !decModel.isDecorator) {
-                    throw new ControlFlow.RuntimeError(adorno.name, "O identificador '" + decName + "' não designa um decorador válido.");
+            for (Stmt.DecoratorNode adorno : stmt.listeners) {
+                String listenerName = adorno.name.lexeme;
+                XPLModel listenerModel = registry_model.get(listenerName);
+
+                if (listenerModel == null) {
+                    throw new ControlFlow.RuntimeError(adorno.name, "O identificador '" + listenerName + "' não designa um Listener válido.");
                 }
 
-                XplClass decClass = null;
-                try {
-                    decClass = (XplClass) environment.get(decName);
-                } catch (Exception e) {
-                    decClass = new XplClass(decModel, this.globals);
-                }
-                XplInstance decInstance = new XplInstance(decClass);
+                XplClass listenerClass;
+                try { listenerClass = (XplClass) environment.get(listenerName); }
+                catch (Exception e) { listenerClass = new XplClass(listenerModel, this.globals); }
 
-                // 1. EMBRULHA NO CONTEXTO PROXY
-                String varTypeStr = (stmt.typeAnnotation != null) ? stmt.typeAnnotation.name.lexeme : "object";
-                XplInstance objetoCtx = createXplContextObject(value, stmt.name.lexeme, varTypeStr);
-                decInstance.fields.put("ctx", objetoCtx);
-                // ⭐ A AMARRAÇÃO VITAL: O proxy guarda o 'Monitor' vivo na sua mochila!
-                objetoCtx.fields.put("_decoratorInstance", decInstance);
+                XplInstance listenerInstance = new XplInstance(listenerClass);
+                // =====================================================================
+                // ⭐ INJEÇÃO DE CONTEXTO: O Listener passa a conhecer o seu dono! ⭐
+                // =====================================================================
+                listenerInstance.fields.put("target", value);
+                listenerInstance.fields.put("targetName", stmt.name.lexeme); // Guarda também o nome da variável!
 
-                // 2. A ALFÂNDEGA DE ENTRADA: init(...)
-                Stmt.Function initFunc = decModel.findMethod("init");
-                if (initFunc != null) {
-                    XplFunction initCallable = new XplFunction(initFunc, decClass.closure, decModel);
-                    initCallable.bind(decInstance).call(this, adorno.arguments);
+                // ⭐ 1. O CONSTRUTOR (A Alfândega de Argumentos: Ex: value: 10)
+                Stmt.Function construtor = listenerModel.findMethod("init");
+                if (construtor != null) {
+                    new XplFunction(construtor, listenerClass.closure, listenerModel).bind(listenerInstance).call(this, adorno.arguments);
                 } else if (adorno.arguments != null && !adorno.arguments.isEmpty()) {
-                    throw new ControlFlow.RuntimeError(adorno.name, "O decorador '" + decName + "' recebeu argumentos, mas não possui um método init(...) declarado.");
+                    throw new ControlFlow.RuntimeError(adorno.name, "O listener '" + listenerName + "' recebeu argumentos, mas não possui um construtor 'init' declarado.");
                 }
 
-                // 3. O GATILHO SOBERANO: @(Context.Init)
-                if (decModel.metaInitHook != null) {
-                    Stmt.Function hookFunc = decModel.findMethod(decModel.metaInitHook);
+                // ⭐ 2. O GATILHO DE CICLO DE VIDA: @(Listen.Init)
+                if (listenerModel.metaInitHook != null) {
+                    Stmt.Function hookFunc = listenerModel.findMethod(listenerModel.metaInitHook);
                     if (hookFunc != null) {
-                        XplFunction hookCallable = new XplFunction(hookFunc, decClass.closure, decModel);
-                        hookCallable.bind(decInstance).call(this, java.util.Collections.emptyList());
+                        new XplFunction(hookFunc, listenerClass.closure, listenerModel).bind(listenerInstance).call(this, java.util.Collections.emptyList());
                     }
                 }
 
-                // A variável real passa a ser a própria caixa proxy do Contexto!
-                value = objetoCtx;
+                objectListeners.add(listenerInstance);
+            }
+
+            // ⭐ INJEÇÃO ESTRUTURAL NO OBJETO POO ⭐
+            // Em vez de um Proxy sujo, colamos os vigilantes na memória interna nativa do próprio objeto!
+            if (value instanceof XplInstance inst) {
+                inst.fields.put("__active_listeners__", objectListeners);
             }
         }
 
@@ -385,6 +397,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Tranca a variável no cofre de tipos!
         environment.lockType(name, lockedType);
 
+        // ⭐ NOVO: Ativa a blindagem do tipo imediatamente ao nascer!
+        if (value != null) {
+            fireTypeListeners(lockedType, value, stmt.name);
+        }
+
         return null;
     }
 
@@ -406,6 +423,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new ControlFlow.RuntimeError(nameToken,
                     "Violação de Tipagem Estrita: A variável '" + nameToken.lexeme + "' foi trancada como '" + expectedType + "'. Não podes atribuir um valor do tipo '" + actualType + "'.");
         }
+
+        // ⭐ NOVO: A Tipagem Estrita passou? Ótimo! Dispara a validação comportamental!
+        fireTypeListeners(expectedType, newValue, nameToken);
     }
 
     @Override
@@ -432,9 +452,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    // =========================================================================
-    // ⭐ O MONOMORFIZADOR (Impressora 3D de Reificação C++ / Rust) ⭐
-    // =========================================================================
+
     // =========================================================================
     // ⭐ O MONOMORFIZADOR (Impressora 3D de Reificação C++ / Rust) ⭐
     // =========================================================================
@@ -740,9 +758,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // ⭐ A ALFÂNDEGA DE HOOKS (VIA DECORADORES DE MÉTODO) ⭐
             for (Stmt.Function method : stmt.methods) {
 
-                // 1. O método tem algum autocolante @(...) em cima dele?
-                if (method.decorators != null) {
-                    for (Stmt.DecoratorNode dec : method.decorators) {
+                // 1. O método tem algum autocolante de Listener &(...) em cima dele?
+                if (method.listeners != null) {
+                    for (Stmt.DecoratorNode dec : method.listeners) {
                         String hookName = dec.name.lexeme;
 
                         // 2. Mapeia a anotação para o sistema nervoso central do XPL!
@@ -954,17 +972,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     "Erro de Semântica: O identificador '" + aliasName + "' já designa um tipo existente.");
         }
 
-        // Regra 2: Proibição estrita de referências circulares (ex: type A = B; type B = A;).
+        // Regra 2: Proibição estrita de referências circulares
         if (detectCircularAlias(aliasName, stmt.targetType)) {
             throw new ControlFlow.RuntimeError(stmt.name,
                     "Referência Circular Proibida: O alias '" + aliasName + "' aponta para si mesmo num ciclo infinito.");
         }
 
+        // 1. Regista o atalho simples (para a Alfândega de Tipos normal)
         typeAliases.put(aliasName, stmt.targetType);
+
+        // 2. ⭐ Regista o nó completo na RAM (Para executarmos Listeners depois!)
+        typeAliasMetadata.put(aliasName, stmt);
+
         return null;
     }
     // =========================================================================
-    // ⭐ VISITAÇÃO DA DECLARAÇÃO DO DECORADOR (A alocação de RAM) ⭐
+    // ⭐ VISITAÇÃO DA DECLARAÇÃO DO DECORADOR / LISTENER (A alocação de RAM) ⭐
     // =========================================================================
     @Override
     public Void visitDecoratorDeclStmt(Stmt.DecoratorDecl stmt) {
@@ -984,10 +1007,32 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             this.registry_model.put(decName, modelo);
         }
 
-        // ⭐ LÊ ESTRITAMENTE OS DADOS (FIELDS) ⭐
+        // ⭐ LÊ OS DADOS (FIELDS) ⭐
         if (stmt.fields != null) {
             for (Stmt.FieldDecl campo : stmt.fields) {
                 modelo.fields.put(campo.name.lexeme, campo);
+            }
+        }
+
+        // ⭐ LÊ OS MÉTODOS E MAPEIA OS HOOKS LIVRES (A MAGIA!) ⭐
+        if (stmt.methods != null) {
+            for (Stmt.Function method : stmt.methods) {
+                // Procura os metadados @(Listen.Set), @(Listen.Init)...
+                if (method.decorators != null) {
+                    for (Stmt.DecoratorNode dec : method.decorators) {
+                        String hookName = dec.name.lexeme;
+                        if (hookName.equals("Listen.Init")) {
+                            modelo.metaInitHook = method.name.lexeme; // Grava o nome que o Dev escolheu!
+                        } else if (hookName.equals("Listen.Set")) {
+                            modelo.metaSetHook = method.name.lexeme;
+                        } else if (hookName.equals("Listen.Get")) {
+                            modelo.metaGetHook = method.name.lexeme;
+                        } else if (hookName.equals("Listen.End")) {
+                            modelo.metaEndHook = method.name.lexeme;
+                        }
+                    }
+                }
+                modelo.addMethod(method); // Regista a função no modelo
             }
         }
 
@@ -995,6 +1040,78 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment.defineConst(decName, classeDecoradora);
 
         return null;
+    }
+
+    // =========================================================================
+    // ⭐ MOTOR DE VALIDAÇÃO DE TIPOS REFINADOS (Refinement Types) ⭐
+    // =========================================================================
+    private void fireTypeListeners(String typeName, Object value, Token originToken) {
+        Stmt.TypeAliasDecl aliasNode = typeAliasMetadata.get(typeName);
+        if (aliasNode == null || aliasNode.listeners == null) return;
+
+        for (Stmt.DecoratorNode listenerNode : aliasNode.listeners) {
+            String listenerName = listenerNode.name.lexeme;
+            XPLModel listenerModel = registry_model.get(listenerName);
+
+            if (listenerModel == null || !listenerModel.isDecorator) {
+                throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' não foi encontrado.");
+            }
+
+            XplClass listenerClass;
+            try { listenerClass = (XplClass) environment.get(listenerName); }
+            catch (Exception e) { listenerClass = new XplClass(listenerModel, this.globals); }
+
+            XplInstance listenerInstance = new XplInstance(listenerClass);
+
+            // =====================================================================
+            // ⭐ INJEÇÃO DE CONTEXTO: O Listener passa a conhecer o seu dono! ⭐
+            // =====================================================================
+            listenerInstance.fields.put("target", value);
+            listenerInstance.fields.put("targetName", typeName); // Guarda o nome do tipo (ex: Email)
+
+            // =====================================================================
+            // ⭐ 1. O CONSTRUTOR (A Alfândega de Argumentos do Tipo Refinado) ⭐
+            // =====================================================================
+            Stmt.Function construtor = listenerModel.findMethod("init");
+            if (construtor != null) {
+                XplFunction initCallable = new XplFunction(construtor, listenerClass.closure, listenerModel);
+                initCallable.bind(listenerInstance).call(this, listenerNode.arguments);
+            } else if (listenerNode.arguments != null && !listenerNode.arguments.isEmpty()) {
+                throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' recebeu argumentos, mas não possui um construtor 'init' declarado.");
+            }
+
+            // =====================================================================
+            // ⭐ 2. O GATILHO DE CICLO DE VIDA: @(Listen.Init) ⭐
+            // =====================================================================
+            if (listenerModel.metaInitHook != null) {
+                Stmt.Function hookFunc = listenerModel.findMethod(listenerModel.metaInitHook);
+                if (hookFunc != null) {
+                    XplFunction hookCallable = new XplFunction(hookFunc, listenerClass.closure, listenerModel);
+                    hookCallable.bind(listenerInstance).call(this, java.util.Collections.emptyList());
+                }
+            }
+
+            // ⭐ 3. Dispara o Hook de Atribuição: @(Listen.Set)
+            if (listenerModel.metaSetHook != null) {
+                Stmt.Function onAssignFunc = listenerModel.findMethod(listenerModel.metaSetHook);
+                if (onAssignFunc != null) {
+                    XplFunction onAssignCallable = new XplFunction(onAssignFunc, listenerClass.closure, listenerModel);
+                    java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
+                    hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value)));
+
+                    try {
+                        onAssignCallable.bind(listenerInstance).call(this, hookArgs);
+                    } catch (ControlFlow.RuntimeError e) {
+                        throw new ControlFlow.RuntimeError(originToken, "Validação de Tipo Falhou (" + listenerName + "): " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        // Recursividade: Se o alias apontar para outro alias (ex: type B = A)
+        if (aliasNode.targetType instanceof TypeNode.Simple simpleType) {
+            fireTypeListeners(simpleType.name.lexeme, value, originToken);
+        }
     }
 
     @Override
@@ -1923,72 +2040,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ⭐ É uma instância da nossa POO? ⭐
         if (object instanceof XplInstance instance) {
 
-            // ⭐ O BURACO NEGRO DO DECORADOR (VIA CHAVE OCULTA) ⭐
-            // Verificamos de forma segura se a propriedade oculta existe e é verdadeira
-            if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
-
-
-                // 🚀0. INJEÇÃO NATIVA: O Método toObject() (Apenas como Fallback!) 🚀
-                if (expr.name.lexeme.equals("toObject") && !instance.fields.containsKey("toObject")) {
-                    // Devolve uma função nativa anónima para ser executada ()
-                    return new XplCallable() {
-                        @Override
-                        public int arity() { return 0; }
-
-                        @Override
-                        public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                            java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
-                            return java.util.Collections.unmodifiableMap(snapshot);
-                        }
-                    };
-                }
-
-                // ⭐ INJEÇÃO NATIVA: O Método toJson() ⭐
-                // Converte qualquer Instância POO diretamente num texto JSON formatado!
-                if (expr.name.lexeme.equals("toJson")) {
-                    return new XplCallable() {
-                        @Override public int arity() { return 0; }
-                        @Override public Object call(Interpreter interpreter, java.util.List<Expr.CallArg> args) {
-                            try {
-                                // Fazemos uma cópia limpa da memória da instância
-                                java.util.Map<String, Object> snapshot = new java.util.HashMap<>(instance.fields);
-
-                                // Removemos variáveis internas do motor (como funções ou referências de classe) para o JSON ficar limpo
-                                snapshot.keySet().removeIf(k -> k.startsWith("_") || snapshot.get(k) instanceof XplCallable || snapshot.get(k) instanceof com.dic.xsuper.lang.poo.XplClass);
-
-                                return new com.fasterxml.jackson.databind.ObjectMapper()
-                                        .enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT)
-                                        .writeValueAsString(snapshot);
-                            } catch (Exception e) {
-                                throw new ControlFlow.RuntimeError(expr.name, "Erro ao converter a Instância para JSON: " + e.getMessage());
-                            }
-                        }
-                    };
-                }
-
-
-                // ⭐ 1. ACORDA O VIGILANTE DESTA CAMADA PARA O 'GET' ⭐
-                Object decObj = instance.fields.get("_decoratorInstance");
-                if (decObj instanceof XplInstance dec) {
-                    XPLModel decModel = dec.klass.model;
-                    if (decModel.metaGetHook != null) {
-                        Stmt.Function hookFunc = decModel.findMethod(decModel.metaGetHook);
+            // =====================================================================
+            // ⭐ A NOVA INTERCEÇÃO REATIVA (GET) ⭐
+            // =====================================================================
+            if (instance.fields.containsKey("__active_listeners__")) {
+                @SuppressWarnings("unchecked")
+                List<XplInstance> listeners = (List<XplInstance>) instance.fields.get("__active_listeners__");
+                for (XplInstance dec : listeners) {
+                    if (dec.klass.model.metaGetHook != null) {
+                        Stmt.Function hookFunc = dec.klass.model.findMethod(dec.klass.model.metaGetHook);
                         if (hookFunc != null) {
-                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
+                            new XplFunction(hookFunc, dec.klass.closure, dec.klass.model).bind(dec).call(this, java.util.Collections.emptyList());
                         }
-                    }
-                }
-
-                // 2. Reencaminha a leitura para o miolo real:
-                String lex = expr.name.lexeme;
-                if (!lex.equals("get") && !lex.equals("set") && !lex.equals("targetName") && !lex.equals("targetType") && !lex.equals("_val") && !lex.equals("_decoratorInstance")) {
-                    Object wrappedObj = instance.fields.get("_val");
-                    if (wrappedObj != null) {
-                        return visitGetExpr(new Expr.Get(new Expr.Literal(wrappedObj), expr.name));
                     }
                 }
             }
-
 
             // 🚀0. INJEÇÃO NATIVA: O Método toObject() 🚀
             if (expr.name.lexeme.equals("toObject")) {
@@ -2014,10 +2080,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     Stmt.FieldDecl field = instance.klass.model.fields.get(expr.name.lexeme);
                     if (field != null) {
                         checkAccess(expr.name, field, instance.klass.model, false);
-                    }
-                    if (instance.klass.model.metaGetHook != null) {
-                        Stmt.Function hookFunc = instance.klass.model.findMethod(instance.klass.model.metaGetHook);
-                        new XplFunction(hookFunc, instance.klass.closure, instance.klass.model).bind(instance).call(this, java.util.Collections.emptyList());
                     }
                 }
 
@@ -2262,27 +2324,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // 2. É Atribuição numa Instância POO? (Ex: leao.nome = "Simba")
         if (object instanceof XplInstance instance) {
 
-            // ⭐ DELEGAÇÃO TRANSPARENTE DE ESCRITA (VIA CHAVE OCULTA) ⭐
-            if (Boolean.TRUE.equals(instance.fields.get("_isDecoratorProxy"))) {
-                Object decObj = instance.fields.get("_decoratorInstance");
-                if (decObj instanceof XplInstance dec) {
-                    XPLModel decModel = dec.klass.model;
-                    if (decModel.metaSetHook != null) {
-                        Stmt.Function hookFunc = decModel.findMethod(decModel.metaSetHook);
+            // ⭐ A NOVA INTERCEÇÃO REATIVA (SET) ⭐
+            // =====================================================================
+            if (instance.fields.containsKey("__active_listeners__")) {
+                @SuppressWarnings("unchecked")
+                List<XplInstance> listeners = (List<XplInstance>) instance.fields.get("__active_listeners__");
+                for (XplInstance dec : listeners) {
+                    if (dec.klass.model.metaSetHook != null) {
+                        Stmt.Function hookFunc = dec.klass.model.findMethod(dec.klass.model.metaSetHook);
                         if (hookFunc != null) {
-                            new XplFunction(hookFunc, dec.klass.closure, decModel).bind(dec).call(this, java.util.Collections.emptyList());
+                            XplFunction hookCallable = new XplFunction(hookFunc, dec.klass.closure, dec.klass.model);
+                            java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
+                            hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value))); // Envia o novo valor!
+                            hookCallable.bind(dec).call(this, hookArgs);
                         }
                     }
                 }
-                String lex = expr.name.lexeme;
-                if (!lex.equals("_val")) {
-                    Object wrappedObj = instance.fields.get("_val");
-                    if (wrappedObj != null) {
-                        return visitSetExpr(new Expr.Set(new Expr.Literal(wrappedObj), expr.name, expr.value));
-                    }
-                }
             }
-
             // ⭐ A VACINA DO JIT: Escrita direta para MetaBuilders (sem classe) ⭐
             if (instance.klass == null) {
                 instance.fields.put(expr.name.lexeme, value);
@@ -2293,11 +2351,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (field != null) {
                 // 🛑 CHAMA A POLÍCIA ANTES DE ESCREVER! 🛑
                 checkAccess(expr.name, field, instance.klass.model, true);
-
-                if (instance.klass.model.metaSetHook != null) {
-                    Stmt.Function hookFunc = instance.klass.model.findMethod(instance.klass.model.metaSetHook);
-                    new XplFunction(hookFunc, instance.klass.closure, instance.klass.model).bind(instance).call(this, java.util.Collections.emptyList());
-                }
 
                 instance.set(expr.name, value);
                 return value;

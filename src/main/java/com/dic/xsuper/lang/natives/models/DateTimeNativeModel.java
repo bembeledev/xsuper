@@ -43,7 +43,7 @@ public class DateTimeNativeModel {
 
         // DateTime.fromUnix(1710000000000)
         model.staticFields.put("fromUnix", buildCallable(1, (i, a) -> {
-            long ms = ((Number) i.evaluate(a.get(0).expression)).longValue();
+            long ms = ((Number) i.evaluate(a.getFirst().expression)).longValue();
             ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ms), ZoneId.systemDefault());
             return createInstance(dtClass, zdt, i);
         }));
@@ -145,7 +145,7 @@ public class DateTimeNativeModel {
 
         // .toTimezone("America/New_York")
         inst.fields.put("toTimezone", buildCallable(1, (intp, args) -> {
-            String zoneName = intp.stringify(intp.evaluate(args.get(0).expression));
+            String zoneName = intp.stringify(intp.evaluate(args.getFirst().expression));
             ZonedDateTime currentZdt = (ZonedDateTime) inst.fields.get("_zdt");
 
             ZonedDateTime newZdt = currentZdt.withZoneSameInstant(ZoneId.of(zoneName));
