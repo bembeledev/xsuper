@@ -78,7 +78,7 @@ public abstract class NativeTag{
         applyTagSpecificStyles();
 
         // Usamos new HashMap<> para compatibilidade entre Map<String, String> e Map<String, Object>
-        //com.dic.xsuper.lang.ui.helpers.StyleTransformUtils.applyTransforms(fxNode, new HashMap<>(this.style));
+        com.dic.xsuper.lang.ui.helpers.StyleTransformUtils.applyTransforms(fxNode, new HashMap<>(this.style));
         addChildren();
         bindEvents();
 
@@ -113,7 +113,6 @@ public abstract class NativeTag{
                 if (anim != null) {
                     // Constrói os overrides (duração, easing, etc.) a partir da string
                     Map<String, String> overrides = extractAnimationOverrides(parts);
-
                     // Dispara o motor!
                     com.dic.xsuper.lang.ui.animation.XplAnimationEngine.applyKeyframeAnimation(fxNode, anim, overrides);
                 } else {

@@ -214,21 +214,21 @@ public class DomEvaluator {
     // =========================================================================
     // 🧪 RESOLVEDOR DE ATRIBUTOS (Preserva Objetos Reais!)
     // =========================================================================
-    private Object resolveAttributeValue(String text, XplNode componentNode) { // ⭐ 1. Adicionado o parâmetro
+    private Object resolveAttributeValue(String text, XplNode componentNode) {
         if (text == null) return null;
 
         // Se for EXATAMENTE uma única expressão (ex: "{{pessoa}}") sem texto à volta
         if (text.startsWith("{{") && text.endsWith("}}") && text.indexOf("{{", 2) == -1) {
             String expr = text.substring(2, text.length() - 2).trim();
 
-            // ⭐ 2. Magia dos sinais aplicada também às Props dos Componentes!
+            // ⭐ CORREÇÃO DE ARQUITETURA: Usa track() para registar dependências
+            // e depois usa evaluateExpressionXPL para resolver a expressão matemática/lógica!
             if (reactiveState != null && componentNode != null) {
-                return reactiveState.getAndTrack(expr, componentNode);
+                reactiveState.track(expr, componentNode);
             }
             return evaluateExpressionXPL(expr);
         }
 
-        // ⭐ 3. A CORREÇÃO DO ERRO: Passamos o nó para a função!
         return resolveBindings(text, componentNode);
     }
 
@@ -239,46 +239,42 @@ public class DomEvaluator {
         List<XplNode> result = new ArrayList<>();
         String conditionCode = ifNode.attributes.get("condition").toString();
 
-
-        // ⭐ A MAGIA DOS SINAIS AQUI TAMBÉM!
-        // Ocultamente, o Map Reativo regista que o nó estático @if tem "ouvidos" nesta condição!
-        Object conditionResult;
+        // ⭐ CORREÇÃO DE ARQUITETURA: Track + Evaluate isolados!
         if (reactiveState != null) {
-            // Passamos o ifNode inteiro para que ele seja o alvo enviado para o Nível 3!
-            conditionResult = reactiveState.getAndTrack(conditionCode, ifNode);
-        } else {
-            conditionResult = evaluateExpressionXPL(conditionCode);
+            reactiveState.track(conditionCode, ifNode);
         }
-
+        Object conditionResult = evaluateExpressionXPL(conditionCode);
 
         // 1. Testa a condição do @if principal
         boolean isTrue = isTruthy(conditionResult);
 
         if (isTrue) {
-            // Se for verdade, pega APENAS nos filhos normais (ignora os blocos @else/elseif)
             for (XplNode child : ifNode.children) {
                 if (!child.tag.equals("@else") && !child.tag.equals("@elseif")) {
                     result.addAll(evaluateNode(child));
                 }
             }
-            return result; // Sai imediatamente, não avalia mais nada!
+            return result;
         }
 
         // 2. Se o IF falhou, procura pelos @elseif
         for (XplNode child : ifNode.children) {
             if (child.tag.equals("@elseif")) {
                 String elseIfCond = child.attributes.get("condition").toString();
+
+                // Track no elseif também!
+                if (reactiveState != null) reactiveState.track(elseIfCond, child);
+
                 if (isTruthy(evaluateExpressionXPL(elseIfCond))) {
-                    // Este @elseif é verdadeiro! Avalia os filhos dele.
                     for (XplNode elseIfChild : child.children) {
                         result.addAll(evaluateNode(elseIfChild));
                     }
-                    return result; // Sai após o primeiro verdadeiro!
+                    return result;
                 }
             }
         }
 
-        // 3. Se nenhum @if ou @elseif bateu certo, procura a rota de fuga (@else)
+        // 3. Procura a rota de fuga (@else)
         for (XplNode child : ifNode.children) {
             if (child.tag.equals("@else")) {
                 for (XplNode elseChild : child.children) {
@@ -288,40 +284,34 @@ public class DomEvaluator {
             }
         }
 
-        return result; // Retorna vazio se a condição falhou e não havia else
+        return result;
     }
 
     private List<XplNode> evaluateForBlock(XplNode forNode) {
         List<XplNode> result = new ArrayList<>();
-        String expr = forNode.attributes.get("expression").toString(); // Ex: "let item of lista"
+        String expr = forNode.attributes.get("expression").toString();
 
-        // Parse simples da expressão "let X of Y"
         String[] parts = expr.split(" of ");
         if (parts.length != 2) throw new RuntimeException("Expressão @for inválida: " + expr);
 
         String varName = parts[0].replace("let ", "").trim();
         String listName = parts[1].trim();
 
-        // ⭐ SINAIS NO @FOR: Registamos a lista!
-        Object listObject;
+        // ⭐ CORREÇÃO DE ARQUITETURA: Track + Evaluate isolados!
         if (reactiveState != null) {
-            listObject = reactiveState.getAndTrack(listName, forNode);
-        } else {
-            listObject = evaluateExpressionXPL(listName);
+            reactiveState.track(listName, forNode);
         }
+        Object listObject = evaluateExpressionXPL(listName);
 
-
-        // ⭐ A CURA DOS ARRAYS (O motivo da lista não imprimir!)
         List<Object> items = new ArrayList<>();
         if (listObject instanceof Iterable<?> iterable) {
             for (Object o : iterable) items.add(o);
         } else if (listObject instanceof Object[] arr) {
-            items.addAll(java.util.Arrays.asList(arr)); // Se for um Array puro, convertemos para Lista!
+            items.addAll(java.util.Arrays.asList(arr));
         }
 
         if (!items.isEmpty()) {
             for (Object item : items) {
-                // ⭐ MAGIA DE ESCOPO: Injetamos a variável temporária no ambiente
                 interpreter.environment.defineLet(varName, item);
 
                 for (XplNode child : forNode.children) {
@@ -331,7 +321,6 @@ public class DomEvaluator {
                 }
             }
         } else {
-            // Bloco @empty
             for (XplNode child : forNode.children) {
                 if (child.tag.equals("@empty")) {
                     for (XplNode emptyChild : child.children) {
@@ -402,8 +391,11 @@ public class DomEvaluator {
         if (expressao == null || expressao.trim().isEmpty()) return null;
 
         try {
-            // ⭐ TRUQUE: Adicionamos um ';' invisível para o teu Parser aceitar a expressão como um Statement!
-            String codigoInjetado = expressao.trim();
+            // ⭐ A CURA DAS ASPAS SIMPLES:
+            // O HTML usa frequentemente aspas simples. Como o XPL Core exige aspas duplas,
+            // substituímos silenciosamente antes de entregar ao Interpretador!
+            String codigoInjetado = expressao.trim().replace("'", "\"");
+
             if (!codigoInjetado.endsWith(";")) {
                 codigoInjetado += ";";
             }
@@ -412,26 +404,18 @@ public class DomEvaluator {
             List<com.dic.xsuper.lang.Token> tokens = lexer.tokenize();
 
             com.dic.xsuper.lang.Parser parser = new com.dic.xsuper.lang.Parser(tokens);
-
-            // O teu parser devolve a lista de Statements
             List<com.dic.xsuper.lang.Stmt> statements = parser.parse();
 
             if (!statements.isEmpty()) {
                 com.dic.xsuper.lang.Stmt primeiroStmt = statements.getFirst();
 
-                // Se a AST gerou uma ExpressionStmt (ex: 'isLogado == true;')
                 if (primeiroStmt instanceof com.dic.xsuper.lang.Stmt.ExpressionStmt exprStmt) {
-                    // Extraímos a Expr pura e avaliamos no Interpretador!
                     return interpreter.evaluate(exprStmt.expression);
-                }
-                // Caso a AST tenha gerado um Return (ex: 'return isLogado;')
-                else if (primeiroStmt instanceof com.dic.xsuper.lang.Stmt.Return retStmt) {
+                } else if (primeiroStmt instanceof com.dic.xsuper.lang.Stmt.Return retStmt) {
                     return interpreter.evaluate(retStmt.value);
                 }
             }
-
             return null;
-
         } catch (Exception e) {
             System.err.println("[DomEvaluator] Erro ao avaliar a expressão '" + expressao + "': " + e.getMessage());
             return null;

@@ -34,7 +34,12 @@ public class AttachJavaFxListener {
             case MOUSEUP -> fxNode.setOnMouseReleased(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
             case MOUSEENTER -> fxNode.setOnMouseEntered(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
             case MOUSELEAVE -> fxNode.setOnMouseExited(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
-            case MOUSEMOVE -> fxNode.setOnMouseMoved(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
+            case MOUSEMOVE -> {
+                // ⭐ MAGIA W3C: Na Web, o mousemove dispara mesmo quando o rato está premido a desenhar.
+                // No JavaFX, temos de escutar os dois comportamentos para imitar o browser perfeitamente!
+                fxNode.setOnMouseMoved(e -> fireXplEvent(sourceNode, type, e, scriptCallback));
+                fxNode.setOnMouseDragged(e -> fireXplEvent(sourceNode, type, e, scriptCallback));
+            }
             case MOUSEOVER -> fxNode.setOnMouseEntered(e -> fireXplEvent( sourceNode,type, e, scriptCallback)); // alias
             case MOUSEOUT -> fxNode.setOnMouseExited(e -> fireXplEvent( sourceNode,type, e, scriptCallback));   // alias
             case DRAG -> fxNode.setOnMouseDragged(e -> fireXplEvent( sourceNode,type, e, scriptCallback));
@@ -305,9 +310,16 @@ public class AttachJavaFxListener {
         // 1. Cria a instância nativa do evento XPL com o Alvo Real
         XplEvent xplEvent = new XplEvent(type.getWebName(), targetElement, targetElement);
 
+        // ⭐ A CURA DO ERRO DE TIPO: Carimbar a instância física com a Classe da Máquina Virtual!
+        if (com.dic.xsuper.lang.ui.UINativeRegistry.EVENT_CLASS != null) {
+            xplEvent.klass = com.dic.xsuper.lang.ui.UINativeRegistry.EVENT_CLASS;
+        }
+
         // 2. Tira os dados à medida do tipo de objecto recebido
         if (eventData != null) {
             if (eventData instanceof javafx.scene.input.MouseEvent me) {
+                xplEvent.setDetail("x", me.getX());
+                xplEvent.setDetail("y", me.getY());
                 xplEvent.setDetail("clientX", me.getSceneX());
                 xplEvent.setDetail("clientY", me.getSceneY());
                 xplEvent.setDetail("screenX", me.getScreenX());

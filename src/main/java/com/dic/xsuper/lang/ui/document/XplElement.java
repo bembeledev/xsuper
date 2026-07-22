@@ -6,6 +6,7 @@ import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
 import com.dic.xsuper.lang.ui.document.helpers.XplElementUtils;
 import com.dic.xsuper.lang.ui.event.XplEvent;
+import javafx.scene.canvas.GraphicsContext;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -410,6 +411,18 @@ public class XplElement extends XplInstance implements XplNativeObject{
         oldNode.parentNode = null;
         oldNode.parentElement = null;
         updateSiblings();
+    }
+
+    /**
+     * Retorna o contexto de renderização (ex: "2d") se a UI tiver injetado um.
+     * 100% Desacoplado do motor gráfico.
+     */
+    public Object getContext(String type) {
+        if (type == null || type.isEmpty()) return null;
+
+        // Lê a propriedade oculta injetada pela TagFactory/Renderer
+
+        return this.getAttribute("__ctx_" + type.toLowerCase());
     }
 
     public void removeChild(XplElement child) {

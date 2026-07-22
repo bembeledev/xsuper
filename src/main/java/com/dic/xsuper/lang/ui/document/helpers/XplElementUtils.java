@@ -935,6 +935,16 @@ public class XplElementUtils {
                 return null;
             }
         });
+
+        // getContext
+        element.fields.put("getContext", new XplCallable() {
+            @Override public int arity() { return 1; }
+            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
+                String type = intp.evaluate(args.getFirst().expression).toString();
+                // A chamada direta para o teu XplElement (camada core) agnóstico
+                return element.getContext(type);
+            }
+        });
     }
 
     public static XPLModel buildNativeModel() {
@@ -1644,6 +1654,21 @@ public class XplElementUtils {
                     null, false, false,
                     new Token(TokenType.IDENTIFIER, "getProperty", null, 0, 0),
                     paramsPropName,
+                    null,
+                    null,
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            ));
+
+            // getContext(type)
+            List<Stmt.Param> paramsType = List.of(
+                    new Stmt.Param(new Token(TokenType.IDENTIFIER, "type", null, 0, 0), null, null)
+            );
+            XplElement.nativeModel.addMethod(new Stmt.Function(
+                    null, false, false,
+                    new Token(TokenType.IDENTIFIER, "getContext", null, 0, 0),
+                    paramsType,
                     null,
                     null,
                     Collections.emptyList(),

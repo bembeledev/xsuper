@@ -92,15 +92,8 @@ public class LabelTag extends NativeTag {
             fxCss.append("-fx-font-family: '").append(family).append("'; ");
         }
 
-        // Font Size
-        if (styles.containsKey("font-size")) {
-            fxCss.append("-fx-font-size: ").append(styles.get("font-size")).append("; ");
-        }
-
-        // Font Weight
-        if (styles.containsKey("font-weight")) {
-            fxCss.append("-fx-font-weight: ").append(styles.get("font-weight")).append("; ");
-        }
+        // ⭐ REMOVIDOS: Font-Size, Font-Weight e Color!
+        // A classe pai (NativeTag) já os aplicou corretamente no super.applyCommonStyles()
 
         // Font Style
         if (styles.containsKey("font-style")) {
@@ -114,17 +107,12 @@ public class LabelTag extends NativeTag {
             if (dec.contains("line-through")) fxCss.append("-fx-strikethrough: true; ");
         }
 
-        // Color
-        if (styles.containsKey("color")) {
-            fxCss.append("-fx-text-fill: ").append(styles.get("color")).append("; ");
-        }
-
         // Line Height (Web) → JavaFX (-fx-line-spacing)
         if (styles.containsKey("line-height")) {
             try {
                 double fontSize = 14.0;
                 if (styles.containsKey("font-size")) {
-                    fontSize = Double.parseDouble(styles.get("font-size").replace("px", "").trim());
+                    fontSize = Double.parseDouble(styles.get("font-size").replace("px", "").replace("rem", "").trim());
                 }
                 double lh = Double.parseDouble(styles.get("line-height").replace("px", "").trim());
                 double spacing = lh - fontSize;
@@ -198,7 +186,6 @@ public class LabelTag extends NativeTag {
 
         // ─── 5. Background (deixar para o pai, ou aplicar se não houver pai) ──
         if (styles.containsKey("background-color") && (styles.get("background-color") != null)) {
-            // Se for um inline (span, a) ou qualquer elemento que precise de fundo
             fxLabel.setStyle(fxLabel.getStyle() + "-fx-background-color: " + styles.get("background-color") + "; ");
             if (styles.containsKey("padding")) {
                 fxLabel.setStyle(fxLabel.getStyle() + "-fx-padding: " + styles.get("padding") + "; ");

@@ -126,6 +126,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
             // 1. Injeta os tipos todos de uma vez (Pode até ser chamado antes, no arranque do Interpretador!)
             UINativeRegistry.inject(this.interpreter);
 
+            ContextNativeRegistry.inject(this.interpreter);
+
             // =================================================================
             // ⭐ A PRÓPRIA ENGINE ASSUME A SUA IDENTIDADE (__ui_engine)
             // =================================================================

@@ -14,13 +14,13 @@ public interface XplUiBridge {
     // =====================================================================
 
     /**
-     * Recebe a Árvore VDOM limpa (ativa) gerada pelo DomEvaluator e desenha-a no ecrã.
+     * Recebe a Árvore VDOM limpa (activa) gerada pelo DomEvaluator e desenha-a no ecrã.
      * O Renderizador deve apagar a tela anterior e desenhar esta nova estrutura.
      */
     void renderView(XplNode activeDomRoot);
 
     /**
-     * Atualização Cirúrgica (Otimização de Performance).
+     * Actualização Cirúrgica (Otimização de Performance).
      * Em vez de redesenhar a tela toda, a Engine pode mandar mudar apenas uma propriedade.
      * Ex: updateProperty("btn-1", "disabled", "true")
      */
@@ -33,7 +33,7 @@ public interface XplUiBridge {
     /**
      * O Renderizador não tem cérebro, por isso precisa de saber a quem "gritar"
      * quando o utilizador clica num botão ou digita num input.
-     * A Engine vai injetar-se a si mesma aqui.
+     * A Engine vai injectar-se a si mesma aqui.
      */
     void setEngineCallback(EngineCallback callback);
 

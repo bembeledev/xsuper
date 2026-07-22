@@ -106,6 +106,10 @@ public class TagFactory {
             case "menubar" -> new MenubarTag(node);
             case "contextmenu" -> new ContextMenuTag(node);
 
+            // Scripting
+            case "canvas" -> new CanvasTag(node); // ⭐ INJETADO AQUI
+            case "svg", "math" -> new ContainerTag(node); // Futuramente farás o SVGTag!
+
             default -> new ContainerTag(node);
         };
     }
