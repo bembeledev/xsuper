@@ -15,6 +15,7 @@ import com.dic.xsuper.lang.ui.tags.list.UlTag;
 import com.dic.xsuper.lang.ui.tags.media.AudioTag;
 import com.dic.xsuper.lang.ui.tags.media.VideoTag;
 import com.dic.xsuper.lang.ui.tags.navigation.*;
+import com.dic.xsuper.lang.ui.tags.shapes.*;
 import com.dic.xsuper.lang.ui.tags.table.TableCellTag;
 import com.dic.xsuper.lang.ui.tags.table.TableGroupTag;
 import com.dic.xsuper.lang.ui.tags.table.TableRowTag;
@@ -108,7 +109,20 @@ public class TagFactory {
 
             // Scripting
             case "canvas" -> new CanvasTag(node); // ⭐ INJETADO AQUI
-            case "svg", "math" -> new ContainerTag(node); // Futuramente farás o SVGTag!
+            // ─── Contentores Vetoriais (SVG) ───
+            case "svg" -> new SvgTag(node);
+
+            // ─── Shapes W3C ───
+            case "path" -> new PathTag(node);
+            case "circle" -> new CircleTag(node);
+            case "rect" -> new RectangleTag(node);
+            case "line" -> new LineTag(node);
+            case "polygon" -> new PolygonTag(node);
+            case "polyline" -> new PolylineTag(node);
+            case "ellipse" -> new EllipseTag(node);
+            case "arc" -> new ArcTag(node);
+            case "quadcurve" -> new QuadCurveTag(node);
+            case "cubiccurve" -> new CubicCurveTag(node);
 
             default -> new ContainerTag(node);
         };

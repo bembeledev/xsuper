@@ -4,54 +4,322 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(ui): parse and populate node.style map in transform test demos[cite: 3]&#10;&#10;- Update `createTransformDemo` in `StyleTransformTest` to split and populate the `node.style` map from CSS declaration strings[cite: 3]&#10;- Ensure `StyleTransformUtils` correctly receives individual and compound transform properties from `XplNode.style`[cite: 3]&#10;- Enable proper visual evaluation of 2D/3D transformations in functional UI tests[cite: 3]">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/debug/XplNodeDebugger.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/animation/StyleAnimationUtils.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssCompiler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssEvaluator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssMatcher.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssResolver.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplStyleEngine.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/cursor/StyleCursorUtils.java" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/ArcTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/CircleTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/CubicCurveTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/EllipseTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/LineTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PathTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PolygonTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PolylineTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/QuadCurveTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/RectangleTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/SvgTag.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeAssert.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCompress.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeConsole.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoAdvanced.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCryptoExtended.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeDatabase.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeFileSystem.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHardware.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHttp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeHttpServer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeInterop.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeJson.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeLogging.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeMath.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeMongoDB.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeMutex.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeNetwork.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeOS.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegex.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeRegistry.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeScheduler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeSecurity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeSerial.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeSmtp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeStream.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeTask.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeWebSocket.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/TestXplCss.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssLexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssParser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssTokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssTokenType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssCompiler.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplDocument.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/XplElement.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventAdapter.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventBind.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventListener.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/events/XplEvent.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlParser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/XplNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/XplNode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/NativeTag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/NativeTag.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/RunApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/RunApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestSelect.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestSelect.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIInputRender.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIInputRender.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/size/LayoutBox.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TagFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TagFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/xsuper/RunXplCmd$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/xsuper/RunXplCmd$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ReturnException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ReturnException.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$RuntimeError.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$RuntimeError.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ThrowException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ThrowException.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$ArrowFunction.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$ArrowFunction.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Block.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Block.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Cast.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Cast.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$If.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$If.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Logical.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Logical.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Match.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Match.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$MatchArm.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$MatchArm.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$MetaAccess.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$MetaAccess.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$New.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$New.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$NullCoalesce.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$NullCoalesce.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$ObjectLiteral.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$ObjectLiteral.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$OptionalCall.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$OptionalCall.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$OptionalChaining.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$OptionalChaining.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Set.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Set.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Super.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Super.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Switch.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Switch.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$SwitchCase.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$SwitchCase.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Ternary.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Ternary.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$TypeCheck.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$TypeCheck.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Typeof.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Typeof.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Unwrap.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Expr$Unwrap.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Parser$ParseException.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Block.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Block.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Break.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Break.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$CatchClause.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$CatchClause.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Continue.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Continue.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DeclareDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DeclareDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DecoratorDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DecoratorDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DecoratorNode.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DecoratorNode.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DoWhile.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$DoWhile.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Enum.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Enum.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ExportDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ExportDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$FieldDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$FieldDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForCStyle.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForCStyle.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForIn.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForIn.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForInRange.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ForInRange.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Function.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Function.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$FunctionSig.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$FunctionSig.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$GlobalDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$GlobalDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImplementDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImplementDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImportDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImportDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImportSymbol.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ImportSymbol.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$InterfaceDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$InterfaceDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ModuleDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$ModuleDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Param.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Param.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Return.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Return.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Throw.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Throw.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Try.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$Try.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$TypeAliasDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$TypeAliasDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$VarDecl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$VarDecl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$While.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/Stmt$While.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/TestXPL.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$14.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$14.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$15.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$15.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$16.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$16.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$17.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$17.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$18.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$18.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$19.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$19.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$20.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$20.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$21.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$21.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$22.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$22.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$23.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$23.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$24.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$24.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$25.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$25.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$26.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$26.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$27.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$27.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$28.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$28.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$29.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$29.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$30.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$30.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$31.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$31.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$32.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$32.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$33.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$33.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$34.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$34.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ArrayMethods$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$14.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$14.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$15.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$15.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$16.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$16.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$17.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$17.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$18.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$18.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$19.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$19.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$20.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$20.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/ObjectMethods$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$14.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$14.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$15.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$15.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$16.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$16.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$17.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$17.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$18.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$18.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$19.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$19.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$20.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$20.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$21.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$21.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$22.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$22.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$23.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$23.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$24.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$24.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$25.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$25.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$26.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$26.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$27.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$27.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$28.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$28.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeConsole$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeConsole$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeConsole.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeFileSystem$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeFileSystem$NativeAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeFileSystem.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeHttp$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeHttp$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeHttp$NativeAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeHttp.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMath$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMath$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMath$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMath$MathAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMath.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMutex$1$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMutex$1$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMutex$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeMutex.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeNetwork$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeNetwork$NativeAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeNetwork.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeRegex$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeRegex$NativeAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeRegex.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$2$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeTask.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl$NativeAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$10.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$11.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$2.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$3.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$4.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$5.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$6.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$7.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$8.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$9.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$9.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/TestXplCss.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssLexer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssLexer.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssParser.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssParser.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssTokenType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/XplCssTokenType.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$30.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$30.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$59.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$59.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$13.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$14.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$15.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$16.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$17.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$18.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$19.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$20.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$21.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$22.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$23.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$24.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$25.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$26.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$27.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$28.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$29.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$30.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$31.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$32.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$33.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$34.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$35.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$36.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$37.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$38.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$39.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$40.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$41.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$42.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$43.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$44.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$45.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$46.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$47.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$48.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$49.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$50.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$51.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$52.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$53.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$54.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$55.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$56.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$57.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$58.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$59.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$60.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$61.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$62.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$63.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$64.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$65.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$66.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$67.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$68.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$69.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$70.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$9.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$1.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$10.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$11.class" beforeDir="false" />
@@ -65,12 +333,9 @@
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$8.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$9.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlParser.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlParser.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlTagUtils.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlTagUtils.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/XplNode.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/XplNode.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/xsuper-xplorer.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/element.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/element.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/test.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/xsuper-xplorer.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/xsuper-xplorer.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,8 +345,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Interface" />
         <option value="FxmlFile" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -94,7 +359,7 @@
   </component>
   <component name="KotlinScriptingSettings" supportWarning="false" />
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -108,6 +373,9 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.AnimandoNodeEControl.executor&quot;: &quot;Run&quot;,
+    &quot;Application.AnimationDemo.executor&quot;: &quot;Run&quot;,
+    &quot;Application.FileExplorerCLI.executor&quot;: &quot;Run&quot;,
     &quot;Application.Main.executor&quot;: &quot;Run&quot;,
     &quot;Application.RunApp.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestHeadlessEngine.executor&quot;: &quot;Run&quot;,
@@ -140,6 +408,7 @@
     &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
   }
 }</component>
@@ -162,52 +431,53 @@
     </key>
   </component>
   <component name="RunManager" selected="Application.Main">
+    <configuration name="AnimandoNodeEControl" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.AnimandoNodeEControl" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="AnimationDemo" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.AnimationDemo" />
+      <module name="FileManager" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="FileExplorerCLI" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.FileExplorerCLI" />
+      <module name="FileManager" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.Main" />
       <module name="FileManager" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.dic.xsuper.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="RunApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.RunApp" />
-      <module name="FileManager" />
-      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TestUIInputRender" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.TestUIInputRender" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="TestXplCss" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.css.TestXplCss" />
-      <module name="FileManager" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.tests.css.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -230,19 +500,19 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Application.TestUIInputRender" />
-      <item itemvalue="Application.TestXplCss" />
+      <item itemvalue="Application.AnimandoNodeEControl" />
+      <item itemvalue="Application.AnimationDemo" />
+      <item itemvalue="Application.FileExplorerCLI" />
       <item itemvalue="Application.UIFromHTML" />
       <item itemvalue="Application.Main" />
-      <item itemvalue="Application.RunApp" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Main" />
+        <item itemvalue="Application.AnimandoNodeEControl" />
+        <item itemvalue="Application.AnimationDemo" />
+        <item itemvalue="Application.FileExplorerCLI" />
         <item itemvalue="Application.UIFromHTML" />
-        <item itemvalue="Application.RunApp" />
-        <item itemvalue="Application.TestUIInputRender" />
-        <item itemvalue="Application.TestXplCss" />
       </list>
     </recent_temporary>
   </component>
@@ -535,13 +805,116 @@
       <option name="project" value="LOCAL" />
       <updated>1783875097922</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="fix(ui): corrige aplicação de estilos CSS e duplicação no ciclo de renderização&#10;&#10;- Corrige XplCssMatcher.matchesSelector para ler id e className diretamente&#10;  do XplNode, em vez do mapa attributes (onde não eram preenchidos).&#10;- Ajusta ordem no renderCycle: aplica CSS (applyStylesToActiveDom) antes&#10;  de serializar estilos (serializeComputedStyles) para que as cores finais&#10;  sejam copiadas para o atributo style.&#10;- Adiciona chamada a renderCycle dentro de showWindow após definir a bridge,&#10;  garantindo que a UI é desenhada imediatamente.&#10;- Remove duplicação do script full.xpl (conteúdo repetido três vezes).&#10;- Adiciona seletor universal * com border e padding para depuração visual.&#10;&#10;Com estas correções, os estilos carregados via loadStyles são agora&#10;aplicados corretamente aos nós da árvore DOM e a janela é renderizada&#10;uma única vez, com o layout e as cores esperadas.">
+      <option name="closed" value="true" />
+      <created>1783975790306</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1783975790306</updated>
+    </task>
+    <task id="LOCAL-00037" summary="fix(ui): resolve media query evaluation, cascade repainting, and ghost size in JavaFX engine&#10;&#10;- Implement JavaFxMediaListener to handle dynamic viewport width changes and avoid initial phantom sizing issues[cite: 5].&#10;- Add unified cascade repainting logic in the media listener to prevent state clobbering during window resizing[cite: 5].&#10;- Integrate deep CSS property value extraction and media query processing into SuperUiEngine[cite: 3].&#10;- Update XplMediaNode conditions parser and evaluation logic[cite: 5].">
+      <option name="closed" value="true" />
+      <created>1783985784311</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1783985784311</updated>
+    </task>
+    <task id="LOCAL-00038" summary="fix(ui): preserve media query states and enable structural hard reflow&#10;&#10;- Fix XplMediaNode state retention (`isActive`) in JavaFxMediaListener.addMediaNode during virtual DOM re-creations.&#10;- Connect media listener triggers to MainWindow.forceLayoutRebuild for seamless structural layout updates (hard reflow) on window resize breakpoints.&#10;- Isolate and correctly apply active media query rules to the virtual DOM tree before layout evaluation.">
+      <option name="closed" value="true" />
+      <created>1784069755771</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1784069755771</updated>
+    </task>
+    <task id="LOCAL-00039" summary="refactor(ui): implement atomic internal UIDs and fix DOM re-rendering&#10;&#10;- refactor: replace fragile ID-based lookups with AtomicLong-based '_internalUid' &#10;  for robust and collision-free element tracking.&#10;- fix(renderer): implement efficient &quot;Internal Transplant&quot; (clear/rebuild) in &#10;  JavaFxRenderer to respect LayoutEngine boundaries and flexbox calculations.&#10;- fix: resolve UI event loss during re-renders by syncing inline events &#10;  from Live DOM to Virtual DOM during the synchronization pass.&#10;- fix: resolve 'UnsupportedOperationException' by using internal element &#10;  cleanup methods instead of unmodifiable collection manipulation.&#10;- perf: optimize DOM hydration by preserving event listeners and &#10;  host components during layout updates.">
+      <option name="closed" value="true" />
+      <created>1784395485482</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1784395485482</updated>
+    </task>
+    <task id="LOCAL-00040" summary="fix(ui): resolve infinite layout loops and CSS state contamination&#10;&#10;- fix: prevent infinite resize loops in MediaListener by switching from Scene width &#10;  (affected by scrollbars) to Window width.&#10;- refactor(engine): remove CSS style caching in SuperUiEngine to prevent state &#10;  contamination between responsive breakpoints.&#10;- feat(renderer): implement full &quot;Hard Reflow&quot; in JavaFxRenderer to properly &#10;  recreate layout structures (HBox/VBox) upon media query transitions.&#10;- fix: ensure accurate reconciliation of UI components and event listeners during &#10;  total layout rebuilds.">
+      <option name="closed" value="true" />
+      <created>1784397894753</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1784397894753</updated>
+    </task>
+    <task id="LOCAL-00041" summary="feat: implement fine-grained reactivity and stabilize engine core&#10;&#10;- Implement XplEnvironmentWatcher decorator for non-intrusive reactivity hooks in Environment&#10;- Integrate XplReactiveState and XplReactivityRenderer for fine-grained DOM patching&#10;- Resolve scope capture issues in XplFunction and POO instantiation logic&#10;- Optimize JavaFxRenderer reconciliation to handle ghost text nodes and dynamic CSS updates&#10;- Fix arity validation errors in higher-order functions (callbacks)&#10;- Stabilize engine global scoping and type inference for generic templates">
+      <option name="closed" value="true" />
+      <created>1784576042846</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1784576042846</updated>
+    </task>
+    <task id="LOCAL-00042" summary="refactor!: migrate standard library to object-oriented native models &amp; parser core&#10;&#10;- Refactor global functions and variables into clean, namespaced OOP native models (Http, Console, Task, Log, Assert, HttpServer, Security, Database, Smtp, Scheduler, Stream, Serial, Crypto, Mongo, Regex, Buffer, Channel, etc.).&#10;- Clean up global scope pollution in NativeVariables and NativeRegistry, encapsulating constants within their respective model structures.&#10;- Update Parser and Interpreter (visitArrowFunctionExpr) to fully support multi-parameter arrow functions ((req, res) =&gt; {}) with robust type inference.&#10;- Consolidate all standard library injections and execution pipelines through ModelNativeRegistry.">
+      <option name="closed" value="true" />
+      <created>1784653323606</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1784653323606</updated>
+    </task>
+    <task id="LOCAL-00043" summary="feat(runtime): implement EventLoop native model, refine reactive Observer and fix AST/interpreter bugs&#10;&#10;- Add EventLoopNativeModel supporting nextTick, defer, setTimeout, setInterval, and queue processing.&#10;- Refine Observer architecture with targeted `Observer.observable(name, type)` instances and streamlined (evento, velho, novo) callbacks.&#10;- Fix Parser dual-backpack system for independent `@` decorators and `&amp;` listeners.&#10;- Prevent memory leaks and zombie listeners by scoping environment listeners directly to interpreter instances.&#10;- Fix type-matching and null-safety for `any` types during dynamic function calls in XplFunction.">
+      <option name="closed" value="true" />
+      <created>1784669426855</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1784669426855</updated>
+    </task>
+    <task id="LOCAL-00044" summary="feat(interpreter): implement native observer pattern and error stringification&#10;&#10;- Replace fragile proxy-based wrappers with native `__active_listeners__` injection for POO instances.&#10;- Inject `target` and `targetName` context into listener instances for deep state introspection and rules validation.&#10;- Clean up legacy auto-triggering hooks in `visitGetExpr` and `visitSetExpr` to prevent infinite recursion/loops.&#10;- Add native `toString()` method to `ErrorNativeModel` to properly format error outputs.&#10;- Update top-level exception handling in `Interpreter.interpret` to cleanly display uncaught error messages.">
+      <option name="closed" value="true" />
+      <created>1784678438656</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1784678438656</updated>
+    </task>
+    <task id="LOCAL-00045" summary="refactor(ui): extract native component registration into UINativeRegistry&#10;&#10;- Create `UINativeRegistry` to handle native model definition, compilation registry mapping, and global environment injection for UI elements (`XplElement`, `XplDocument`, `SuperUiEngine`, `XplEvent`).&#10;- Clean up `SuperUiEngine` initialization by delegating native setup to `UINativeRegistry.inject()`.&#10;- Improve separation of concerns for the UI subsystem startup lifecycle.">
+      <option name="closed" value="true" />
+      <created>1784715455426</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1784715455427</updated>
+    </task>
+    <task id="LOCAL-00046" summary="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS.">
+      <option name="closed" value="true" />
+      <created>1784728973950</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1784728973950</updated>
+    </task>
+    <option name="localTasksCounter" value="47" />
     <servers />
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.xpl" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
@@ -552,11 +925,16 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="origin/main" />
                       </list>
                     </value>
                   </entry>
                 </map>
+              </option>
+              <option name="TEXT_FILTER_SETTINGS">
+                <TextFilterSettings>
+                  <option name="REGEX" value="true" />
+                </TextFilterSettings>
               </option>
             </State>
           </value>
@@ -565,17 +943,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(core): implementar toString() implícito e congelamento imutável toObject()&#10;&#10;- Adiciona invocação nativa do método `toString()` a instâncias XPL no método interno `stringify()`.&#10;- Implementa a funcionalidade `toObject()`, exportando um snapshot estritamente imutável (Read-Only) da memória do objeto via `Collections.unmodifiableMap`.&#10;- Bloqueia as atribuições (`visitSetExpr`) em mapas imutáveis gerados por `toObject()`, lançando um `RuntimeError` para proteger a integridade dos dados.&#10;- Atualiza o `stringify()` para ser recursivo, garantindo que o `toString()` personalizado das instâncias seja respeitado mesmo quando estas estão aninhadas dentro de Arrays ou Dicionários." />
-    <MESSAGE value="feat(core): implementar operador de cast estrito 'as' com suporte a primitivos e upcasting&#10;&#10;- Adiciona a palavra-chave `as` ao Lexer e introduz o nó sintático `Expr.Cast` na AST.&#10;- Atualiza o Parser para injetar o cast com alta precedência (imediatamente acima de operadores unários), permitindo resoluções complexas sem ambiguidade.&#10;- Desenvolve o motor de conversão no Interpretador (`visitCastExpr`), suportando:&#10;  * Conversões numéricas seguras (truncamento de double para long, e expansão de long para double).&#10;  * Parsing dinâmico de Strings em tempo de execução (usado em loops e coleções).&#10;  * Invocação implícita da cadeia `toString()` para casts de texto.&#10;  * Validação estrutural de Upcasting em instâncias POO, recorrendo ao rastreador genealógico (`isSubclassOf`), garantindo heranças seguras e compatibilidade com o congelamento `toObject()`." />
-    <MESSAGE value="feat(core): implementar operadores de reflexão e cast seguro/forçado&#10;&#10;- Adiciona os operadores `typeof`, `type` e `instance` para inspeção avançada de tipos e validação de herança em tempo de execução.&#10;- Implementa os nós sintáticos `Expr.Typeof` e `Expr.TypeCheck` na AST.&#10;- Expande o operador de cast na gramática e no interpretador para suportar duas modalidades de segurança estrutural:&#10;  * Cast Seguro (`as`): Tenta a conversão e devolve `null` de forma silenciosa em caso de falha.&#10;  * Cast Forçado (`as!`): Atua como um contrato estrito, lançando um `RuntimeError` (ClassCastException) imediato caso os tipos sejam incompatíveis.&#10;- Refina as regras de extração do `Lexer` para reconhecer e processar o token `BANG` (`!`) isolado de forma correta, resolvendo o bloqueio de Parsing." />
-    <MESSAGE value="feat(parser): introduzir operador de potência, cleanup de dead-code e suporte a implicit return&#10;&#10;- Implementa o nó `power()` na hierarquia de precedência do Parser (entre `unary` e `factor`), resolvendo o parse error em operações com `**`.&#10;- Remove código zombie/duplicado de avaliação do nó `If` no método `primary()`.&#10;- Atualiza a mecânica de `expressionStatement` para adotar a semântica do Rust (Implicit Yielding), perdoando a ausência de `;` antes de fechamentos de bloco `}` para facilitar o retorno automático em expressões Orientadas a Bloco." />
-    <MESSAGE value="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição." />
-    <MESSAGE value="feat(core): implementar expressão de pattern matching ('match') com guardas lógicas&#10;&#10;- Adiciona as estruturas `Expr.Match` e `MatchArm` à AST para desconstrução avançada de dados.&#10;- Habilita 5 frentes de inspeção no Parser: verificação de tipo (`type T`), literais exatos, guardas compostas (`if cond`), guardas puras e fallback semântico (`none:` / `default:`).&#10;- Padroniza o fechamento de cada braço com ponto e vírgula (`;`) para garantir estabilidade máxima na fiação sintática.&#10;- Implementa o motor de metadados em tempo de execução (`checkTypeMatch`) capaz de resolver coerção entre tipos primitivos da JVM e instâncias de classes XPL.&#10;- Acopla a estrutura ao mecanismo de Implicit Yielding para ejeção limpa do valor calculado no braço vencedor." />
-    <MESSAGE value="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)" />
-    <MESSAGE value="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)" />
-    <MESSAGE value="feat(engine): reestruturação do barramento de chamadas para True Lazy Binding, Binder Quântico e Transmutação (v22)&#10;&#10;Revisão completa do ciclo de vida de invocações da JVM, fazendo a transição de um modelo de &quot;avaliação ansiosa por valor&quot; para &quot;entrega preguiçosa de AST&quot;, eliminando computação desnecessária e blindando contratos de tipagem.&#10;&#10;DESTAQUES ARQUITETURAIS:&#10;&#10;* True Lazy Binding: Promovida a interface `XplCallable.call` para receber a AST crua (`List&lt;Expr.CallArg&gt;`). Expressões de valores padrão atingem o estado de abstração de custo zero (Zero-Cost Lazy Defaults).&#10;* Algoritmo de Binder Quântico (3 Fases): Implementada a resolução híbrida de argumentos no `XplFunction`. Permite invocações nomeadas fora de ordem mantendo a integridade posicional estrita dos parâmetros sobreviventes.&#10;* Alfândega de Transmutação: Substituída a verificação estática por coerção ergonómica proativa (`coerceToTargetType`). Primitivos e instâncias com gancho `to_string()` são transmutados em texto nativamente.&#10;* As 3 Leis do Contrato de Retorno: Implementada guilhotina de execução para intercetar retornos intrusos em funções dinâmicas/void e promessas falhadas (atingir o '}' sem disparar return).&#10;* Blindagem do Prelude: Injetado desempacotador de AST (`unpackNativeArgs`) para proteger funções nativas Java (`println`, `shell`, `Map`, `ArrayMethods`) contra vazamento de referências de memória.&#10;* Correções Forenses: Resolvida a hidratação de AST em Arrow Functions e ativado o Lookahead Quântico no Parser para chamadas de navegação opcional (`?.()`).&#10;&#10;BREAKING CHANGE: Funções e classes nativas do Prelude implementadas em Java puro passam a receber a AST crua e são obrigadas a invocar `Interpreter.unpackNativeArgs()` na primeira linha." />
-    <MESSAGE value="feat(core/parser): implementar First-Class Functions e fechar validação em `tests/generic.xpl`&#10;&#10;- Adicionada a interceção sintática no Parser para assinaturas estruturais do tipo `(Param) -&gt; Return`.&#10;- Implementado o nó `TypeNode.FunctionType` na AST para tipagem forte de funções passadas como argumento.&#10;- Atualizada a alfândega de tipos no Interpreter (`checkTypeMatch`) para validar aridade e assinaturas biométricas de objetos `XplCallable`.&#10;- Validada a estabilidade e eliminação de overhead quântico através do script de teste complexo `tests/generic.xpl`.&#10;- Infraestrutura de callbacks nativos para o reator gráfico SuperUI 100% operacional." />
-    <MESSAGE value="feat(core/modules): concluir sistema de modularidade e isolamento de escopo de ficheiros&#10;&#10;- Adicionado construtor especializado em `Environment` para forçar `depth = 0` na raiz de módulos externos, corrigindo o falso positivo do validador de `var`.&#10;- Corrigido o registo no `visitImplementDeclStmt` para injetar classes diretamente no `this.environment` local, permitindo a captura pelo motor de exportações.&#10;- Refatorados os métodos `visitExportDeclStmt` e `visitImportDeclStmt` para cruzar dados estruturais (POO) entre os registros globais (`registry_model`) e o escopo local de importação.&#10;- Implementada a resolução universal de caminhos de arquivos e tolerância flexível de namespaces baseada na hierarquia de pastas.&#10;- Sucesso absoluto de integração validado através do script de teste em `lib/main.xpl`." />
     <MESSAGE value="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`)." />
     <MESSAGE value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
     <MESSAGE value="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança." />
@@ -590,6 +957,17 @@
     <MESSAGE value="feat(ui): implementa sistema de menus completo (menubar, menu, menuitem, contextmenu, nav)&#10;&#10; Nova Arquitetura de Menus e Navegação:&#10;&#10;- **Menubar** (`&lt;menubar&gt;`): Barra de menu de topo estilo desktop (JavaFX MenuBar nativo)&#10;- **Menu** (`&lt;menu&gt;`): Sub‑menu com suporte a aninhamento (JavaFX Menu)&#10;- **MenuItem** (`&lt;menuitem&gt;`): Item de menu com ícone, atalho, separador e estado disabled&#10;- **ContextMenu** (`&lt;contextmenu&gt;`): Menu de contexto (botão direito) com suporte a sub‑menus&#10;- **Nav** (`&lt;nav&gt;`): Barra de navegação horizontal/vertical (estilo web, sem sub‑menus)&#10;&#10;✨ Funcionalidades Suportadas:&#10;&#10;- Sub‑menus aninhados (qualquer profundidade)&#10;- Ícones personalizados (emoji, classe CSS, ou imagem)&#10;- Atalhos de teclado (ex: Ctrl+S, Ctrl+O)&#10;- Separadores (`separator=&quot;true&quot;`)&#10;- Itens desativados (`disabled=&quot;true&quot;`)&#10;- Ação ao clicar (dispara evento &quot;click&quot; com href ou callback)&#10;- Menu de contexto anexado a elementos alvo (`target=&quot;id&quot;`)&#10;&#10;️ Integração com JavaFX:&#10;&#10;- `MenubarTag` → `MenuBar` nativo&#10;- `MenuTag` → `Menu` nativo&#10;- `MenuItemTag` → `MenuItem` / `SeparatorMenuItem` / `Menu` (para sub‑menus)&#10;- `ContextMenuTag` → `ContextMenu` nativo (com suporte a `target`)&#10;- `NavTag` → `HBox`/`VBox` com botões estilizados&#10;&#10; Testes e Exemplos:&#10;&#10;- `TestMenus.java`: exemplo completo com menubar, contextmenu, nav e menu vertical&#10;- Validação visual e interativa de todos os tipos de menu&#10;- Demonstração de sub‑menus, ícones, atalhos e separadores&#10;&#10; Correções:&#10;&#10;- Corrigida importação de `XplEvent` (pacote `com.dic.xsuper.lang.ui.event`)&#10;- Adicionados getters em `MenuItemTag` (`getLabel()`, `getIcon()`, `getShortcut()`, `isDisabled()`, `isSeparator()`, `getHref()`)&#10;- Ajustada compatibilidade entre `MenuTag` e `MenuItemTag` no `MenubarTag`&#10;- Separadas responsabilidades: `menubar` para desktop, `nav` para web&#10;&#10; Estrutura das Tags:&#10;&#10;| Tag | Uso | JavaFX correspondente |&#10;|-----|-----|----------------------|&#10;| `&lt;menubar&gt;` | Barra de menu topo (desktop) | `MenuBar` |&#10;| `&lt;menu&gt;` | Sub‑menu (dentro de menubar ou contextmenu) | `Menu` |&#10;| `&lt;menuitem&gt;` | Item de menu | `MenuItem` / `SeparatorMenuItem` |&#10;| `&lt;contextmenu&gt;` | Menu de contexto (botão direito) | `ContextMenu` |&#10;| `&lt;nav&gt;` | Barra de navegação web | `HBox`/`VBox` com links |&#10;&#10; Estado atual:&#10;&#10;- Sistema de menus completo e maduro, suportando os padrões de desktop e web&#10;- Interface visual moderna e integrada com o motor de UI&#10;- Pronto para extensão com `CheckMenuItem` e `RadioMenuItem` no futuro" />
     <MESSAGE value="feat(ui): implement universal event binding and inline execution engine&#10;&#10;- Separate event handlers from attributes into dedicated `events` map in XplNode&#10;- Unify W3C web syntax (onclick) and Angular-like syntax ((click)) in HtmlParser&#10;- Extract JavaFX event mapping and UI state listeners into new utility class `AttachJavaFxListener`[cite: 6]&#10;- Add `dispatchInlineEvent` bridge in SuperUiEngine to dynamically compile and execute XPL inline callbacks with context injection (`event`)&#10;- Fix stage/scene hierarchy casting for window-level events (beforeunload, visibilitychange, resize)" />
     <MESSAGE value="fix(ui): parse and populate node.style map in transform test demos[cite: 3]&#10;&#10;- Update `createTransformDemo` in `StyleTransformTest` to split and populate the `node.style` map from CSS declaration strings[cite: 3]&#10;- Ensure `StyleTransformUtils` correctly receives individual and compound transform properties from `XplNode.style`[cite: 3]&#10;- Enable proper visual evaluation of 2D/3D transformations in functional UI tests[cite: 3]" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix(ui): parse and populate node.style map in transform test demos[cite: 3]&#10;&#10;- Update `createTransformDemo` in `StyleTransformTest` to split and populate the `node.style` map from CSS declaration strings[cite: 3]&#10;- Ensure `StyleTransformUtils` correctly receives individual and compound transform properties from `XplNode.style`[cite: 3]&#10;- Enable proper visual evaluation of 2D/3D transformations in functional UI tests[cite: 3]" />
+    <MESSAGE value="fix(ui): corrige aplicação de estilos CSS e duplicação no ciclo de renderização&#10;&#10;- Corrige XplCssMatcher.matchesSelector para ler id e className diretamente&#10;  do XplNode, em vez do mapa attributes (onde não eram preenchidos).&#10;- Ajusta ordem no renderCycle: aplica CSS (applyStylesToActiveDom) antes&#10;  de serializar estilos (serializeComputedStyles) para que as cores finais&#10;  sejam copiadas para o atributo style.&#10;- Adiciona chamada a renderCycle dentro de showWindow após definir a bridge,&#10;  garantindo que a UI é desenhada imediatamente.&#10;- Remove duplicação do script full.xpl (conteúdo repetido três vezes).&#10;- Adiciona seletor universal * com border e padding para depuração visual.&#10;&#10;Com estas correções, os estilos carregados via loadStyles são agora&#10;aplicados corretamente aos nós da árvore DOM e a janela é renderizada&#10;uma única vez, com o layout e as cores esperadas." />
+    <MESSAGE value="fix(ui): resolve media query evaluation, cascade repainting, and ghost size in JavaFX engine&#10;&#10;- Implement JavaFxMediaListener to handle dynamic viewport width changes and avoid initial phantom sizing issues[cite: 5].&#10;- Add unified cascade repainting logic in the media listener to prevent state clobbering during window resizing[cite: 5].&#10;- Integrate deep CSS property value extraction and media query processing into SuperUiEngine[cite: 3].&#10;- Update XplMediaNode conditions parser and evaluation logic[cite: 5]." />
+    <MESSAGE value="fix(ui): preserve media query states and enable structural hard reflow&#10;&#10;- Fix XplMediaNode state retention (`isActive`) in JavaFxMediaListener.addMediaNode during virtual DOM re-creations.&#10;- Connect media listener triggers to MainWindow.forceLayoutRebuild for seamless structural layout updates (hard reflow) on window resize breakpoints.&#10;- Isolate and correctly apply active media query rules to the virtual DOM tree before layout evaluation." />
+    <MESSAGE value="refactor(ui): implement atomic internal UIDs and fix DOM re-rendering&#10;&#10;- refactor: replace fragile ID-based lookups with AtomicLong-based '_internalUid' &#10;  for robust and collision-free element tracking.&#10;- fix(renderer): implement efficient &quot;Internal Transplant&quot; (clear/rebuild) in &#10;  JavaFxRenderer to respect LayoutEngine boundaries and flexbox calculations.&#10;- fix: resolve UI event loss during re-renders by syncing inline events &#10;  from Live DOM to Virtual DOM during the synchronization pass.&#10;- fix: resolve 'UnsupportedOperationException' by using internal element &#10;  cleanup methods instead of unmodifiable collection manipulation.&#10;- perf: optimize DOM hydration by preserving event listeners and &#10;  host components during layout updates." />
+    <MESSAGE value="fix(ui): resolve infinite layout loops and CSS state contamination&#10;&#10;- fix: prevent infinite resize loops in MediaListener by switching from Scene width &#10;  (affected by scrollbars) to Window width.&#10;- refactor(engine): remove CSS style caching in SuperUiEngine to prevent state &#10;  contamination between responsive breakpoints.&#10;- feat(renderer): implement full &quot;Hard Reflow&quot; in JavaFxRenderer to properly &#10;  recreate layout structures (HBox/VBox) upon media query transitions.&#10;- fix: ensure accurate reconciliation of UI components and event listeners during &#10;  total layout rebuilds." />
+    <MESSAGE value="feat: implement fine-grained reactivity and stabilize engine core&#10;&#10;- Implement XplEnvironmentWatcher decorator for non-intrusive reactivity hooks in Environment&#10;- Integrate XplReactiveState and XplReactivityRenderer for fine-grained DOM patching&#10;- Resolve scope capture issues in XplFunction and POO instantiation logic&#10;- Optimize JavaFxRenderer reconciliation to handle ghost text nodes and dynamic CSS updates&#10;- Fix arity validation errors in higher-order functions (callbacks)&#10;- Stabilize engine global scoping and type inference for generic templates" />
+    <MESSAGE value="refactor!: migrate standard library to object-oriented native models &amp; parser core&#10;&#10;- Refactor global functions and variables into clean, namespaced OOP native models (Http, Console, Task, Log, Assert, HttpServer, Security, Database, Smtp, Scheduler, Stream, Serial, Crypto, Mongo, Regex, Buffer, Channel, etc.).&#10;- Clean up global scope pollution in NativeVariables and NativeRegistry, encapsulating constants within their respective model structures.&#10;- Update Parser and Interpreter (visitArrowFunctionExpr) to fully support multi-parameter arrow functions ((req, res) =&gt; {}) with robust type inference.&#10;- Consolidate all standard library injections and execution pipelines through ModelNativeRegistry." />
+    <MESSAGE value="feat(runtime): implement EventLoop native model, refine reactive Observer and fix AST/interpreter bugs&#10;&#10;- Add EventLoopNativeModel supporting nextTick, defer, setTimeout, setInterval, and queue processing.&#10;- Refine Observer architecture with targeted `Observer.observable(name, type)` instances and streamlined (evento, velho, novo) callbacks.&#10;- Fix Parser dual-backpack system for independent `@` decorators and `&amp;` listeners.&#10;- Prevent memory leaks and zombie listeners by scoping environment listeners directly to interpreter instances.&#10;- Fix type-matching and null-safety for `any` types during dynamic function calls in XplFunction." />
+    <MESSAGE value="feat(interpreter): implement native observer pattern and error stringification&#10;&#10;- Replace fragile proxy-based wrappers with native `__active_listeners__` injection for POO instances.&#10;- Inject `target` and `targetName` context into listener instances for deep state introspection and rules validation.&#10;- Clean up legacy auto-triggering hooks in `visitGetExpr` and `visitSetExpr` to prevent infinite recursion/loops.&#10;- Add native `toString()` method to `ErrorNativeModel` to properly format error outputs.&#10;- Update top-level exception handling in `Interpreter.interpret` to cleanly display uncaught error messages." />
+    <MESSAGE value="refactor(ui): extract native component registration into UINativeRegistry&#10;&#10;- Create `UINativeRegistry` to handle native model definition, compilation registry mapping, and global environment injection for UI elements (`XplElement`, `XplDocument`, `SuperUiEngine`, `XplEvent`).&#10;- Clean up `SuperUiEngine` initialization by delegating native setup to `UINativeRegistry.inject()`.&#10;- Improve separation of concerns for the UI subsystem startup lifecycle." />
+    <MESSAGE value="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS." />
   </component>
 </project>

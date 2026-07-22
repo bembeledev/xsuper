@@ -4,15 +4,28 @@ import java.util.*;
 
 public final class HtmlTagUtils {
     public static final Map<String, List<String>> TAG_SPECIFIC_ATTRIBUTES = new LinkedHashMap<>();
+
     public static final Set<String> GLOBAL_ATTRIBUTES = Set.of(
             "id", "class", "style", "title", "tabindex", "hidden", "lang", "dir",
             "accesskey", "draggable", "spellcheck", "contenteditable", "translate",
-            "role", "slot", "inert", "popover"
+            "role", "slot", "inert", "popover",
+            "fill", "stroke", "stroke-width"
     );
+
+    // ⭐ 1. A NOVA LISTA EXCLUSIVA DE SHAPES SVG
+    public static final Set<String> SVG_SHAPES = Set.of(
+            "path", "circle", "rect", "line", "polygon", "polyline",
+            "ellipse", "arc", "quadcurve", "cubiccurve"
+    );
+
     public static final Set<String> EMPTY_TAGS = Set.of(
             "input", "img", "br", "hr", "meta", "link", "source", "track", "area",
-            "col", "base", "embed", "param", "wbr"
+            "col", "base", "embed", "param", "wbr",
+            // Os shapes SVG também são vazios por defeito na nossa engine
+            "path", "circle", "rect", "line", "polygon", "polyline",
+            "ellipse", "arc", "quadcurve", "cubiccurve"
     );
+
     // ─── Tags nativas HTML ──────────────────────────────────────────────────
     private static final Set<String> NATIVE_TAGS = Set.of(
             // Estrutura
@@ -46,15 +59,17 @@ public final class HtmlTagUtils {
             // Interação
             "details", "summary", "menu", "menuitem",
 
-            // Scripting
+            // Scripting & Vector (Canvas e SVG integrados)
             "canvas", "svg", "math",
+            "path", "circle", "rect", "line", "polygon", "polyline",
+            "ellipse", "arc", "quadcurve", "cubiccurve",
 
             // Nós especiais (internos)
             "#text", "#comment", "#document-fragment", "root"
     );
 
     static {
-        // ─── Estrutura ──────────────────────────────────────────────────────
+        // ... (O teu bloco static gigante de atributos mantém-se inalterado) ...
         TAG_SPECIFIC_ATTRIBUTES.put("html", List.of("lang", "xmlns"));
         TAG_SPECIFIC_ATTRIBUTES.put("head", List.of("profile"));
         TAG_SPECIFIC_ATTRIBUTES.put("title", List.of());
@@ -67,8 +82,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("template", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("slot", List.of("name"));
         TAG_SPECIFIC_ATTRIBUTES.put("dialog", List.of("open"));
-
-        // ─── Secções ────────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("section", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("nav", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("article", List.of());
@@ -84,8 +97,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("h4", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("h5", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("h6", List.of());
-
-        // ─── Agrupamento de conteúdo ──────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("p", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("hr", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("pre", List.of());
@@ -99,8 +110,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("figure", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("figcaption", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("div", List.of());
-
-        // ─── Texto ──────────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("a", List.of("href", "target", "download", "rel", "hreflang", "type", "ping", "referrerpolicy"));
         TAG_SPECIFIC_ATTRIBUTES.put("em", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("strong", List.of());
@@ -130,8 +139,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("span", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("br", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("wbr", List.of());
-
-        // ─── Mídia embutida ────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("img", List.of("src", "alt", "width", "height", "srcset", "sizes", "crossorigin", "loading", "decoding", "referrerpolicy"));
         TAG_SPECIFIC_ATTRIBUTES.put("picture", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("source", List.of("src", "srcset", "sizes", "type", "media", "width", "height"));
@@ -140,8 +147,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("track", List.of("src", "kind", "srclang", "label", "default"));
         TAG_SPECIFIC_ATTRIBUTES.put("map", List.of("name"));
         TAG_SPECIFIC_ATTRIBUTES.put("area", List.of("alt", "coords", "shape", "href", "target", "download", "rel", "hreflang", "type"));
-
-        // ─── Tabelas ────────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("table", List.of("border", "cellpadding", "cellspacing", "summary"));
         TAG_SPECIFIC_ATTRIBUTES.put("caption", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("colgroup", List.of("span"));
@@ -152,8 +157,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("tr", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("td", List.of("colspan", "rowspan", "headers"));
         TAG_SPECIFIC_ATTRIBUTES.put("th", List.of("colspan", "rowspan", "headers", "scope", "abbr"));
-
-        // ─── Formulários ────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("form", List.of("action", "method", "enctype", "target", "autocomplete", "novalidate", "accept-charset"));
         TAG_SPECIFIC_ATTRIBUTES.put("label", List.of("for"));
         TAG_SPECIFIC_ATTRIBUTES.put("input", List.of("type", "name", "value", "placeholder", "required", "disabled", "readonly",
@@ -173,113 +176,78 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("meter", List.of("value", "min", "max", "low", "high", "optimum"));
         TAG_SPECIFIC_ATTRIBUTES.put("fieldset", List.of("disabled", "form", "name"));
         TAG_SPECIFIC_ATTRIBUTES.put("legend", List.of());
-
-        // ─── Interação ──────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("details", List.of("open"));
         TAG_SPECIFIC_ATTRIBUTES.put("summary", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("menu", List.of("type", "label"));
         TAG_SPECIFIC_ATTRIBUTES.put("menuitem", List.of("type", "label", "icon", "disabled", "checked", "radiogroup", "command"));
-
-        // ─── Scripting ──────────────────────────────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("canvas", List.of("width", "height"));
         TAG_SPECIFIC_ATTRIBUTES.put("svg", List.of("width", "height", "viewBox"));
         TAG_SPECIFIC_ATTRIBUTES.put("math", List.of());
-
-        // ─── Obsoletas / menos usadas (algumas) ────────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("center", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("font", List.of("color", "face", "size"));
         TAG_SPECIFIC_ATTRIBUTES.put("marquee", List.of("behavior", "direction", "scrollamount", "scrolldelay", "loop", "width", "height"));
         TAG_SPECIFIC_ATTRIBUTES.put("frame", List.of("src", "name", "scrolling", "marginwidth", "marginheight", "noresize", "frameborder"));
         TAG_SPECIFIC_ATTRIBUTES.put("frameset", List.of("cols", "rows", "border"));
         TAG_SPECIFIC_ATTRIBUTES.put("iframe", List.of("src", "srcdoc", "name", "width", "height", "sandbox", "loading", "allow", "allowfullscreen", "referrerpolicy"));
-
-        // ─── Nós especiais (usados internamente) ──────────────────────────
         TAG_SPECIFIC_ATTRIBUTES.put("text", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#text", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#comment", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#document-fragment", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("root", List.of());
+        // ─── Atributos Vetoriais SVG (Para passarem no Filtro de Segurança do DOM) ───
+        TAG_SPECIFIC_ATTRIBUTES.put("path", List.of("d", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("circle", List.of("cx", "cy", "r", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("rect", List.of("x", "y", "width", "height", "rx", "ry", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("line", List.of("x1", "y1", "x2", "y2", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("polygon", List.of("points", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("polyline", List.of("points", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("ellipse", List.of("cx", "cy", "rx", "ry", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("arc", List.of("cx", "cy", "rx", "ry", "start", "length", "type", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("quadcurve", List.of("startX", "startY", "controlX", "controlY", "endX", "endY", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("cubiccurve", List.of("startX", "startY", "controlX1", "controlY1", "controlX2", "controlY2", "endX", "endY", "fill", "stroke", "stroke-width"));
     }
 
     private HtmlTagUtils() {
         // Construtor privado para evitar instanciação
     }
 
-    /**
-     * Retorna a lista de atributos específicos para uma tag HTML.
-     *
-     * @param tagName Nome da tag (case-insensitive)
-     * @return Lista de atributos permitidos (pode ser vazia)
-     */
     public static List<String> getSpecificAttributes(String tagName) {
         if (tagName == null) return Collections.emptyList();
         return TAG_SPECIFIC_ATTRIBUTES.getOrDefault(tagName.toLowerCase(), Collections.emptyList());
     }
 
-    /**
-     * Verifica se um atributo é específico de uma determinada tag.
-     *
-     * @param tagName  Nome da tag
-     * @param attrName Nome do atributo
-     * @return true se o atributo é válido para a tag
-     */
     public static boolean isSpecificAttribute(String tagName, String attrName) {
         if (tagName == null || attrName == null) return false;
         List<String> attrs = getSpecificAttributes(tagName);
         return attrs.contains(attrName);
     }
 
-    /**
-     * Retorna o mapa completo (para uso em depuração ou extensão).
-     */
     public static Map<String, List<String>> getAttributeMap() {
         return Collections.unmodifiableMap(TAG_SPECIFIC_ATTRIBUTES);
     }
 
-    /**
-     * Verifica se uma tag é nativa do HTML.
-     */
     public static boolean isNativeTag(String tagName) {
         return tagName != null && NATIVE_TAGS.contains(tagName.toLowerCase());
     }
 
-    /**
-     * Verifica se uma tag personalizada tem um nome válido.
-     * Permite PascalCase (ex: MeuBotao) ou kebab-case (ex: meu-botao).
-     */
     public static boolean isValidCustomTagName(String tagName) {
         if (tagName == null || tagName.isEmpty()) return false;
-        // PascalCase: começa com maiúscula, seguido de letras/dígitos
         if (tagName.matches("^[A-Z][a-zA-Z0-9]*$")) {
             return true;
         }
-        // kebab-case: minúsculas separadas por hífen
         return tagName.matches("^[a-z]+(-[a-z]+)*$");
     }
 
-    /**
-     * Verifica se uma tag é válida (nativa ou personalizada com nome válido).
-     */
     public static boolean isValidTag(String tagName) {
         return isNativeTag(tagName) || isValidCustomTagName(tagName);
     }
 
-    /**
-     * Retorna a lista de tags nativas (para uso externo, se necessário).
-     */
     public static Set<String> getNativeTags() {
         return NATIVE_TAGS;
     }
 
-    /**
-     * Método recursivo que percorre a árvore de nós para garantir a integridade estrutural.
-     *
-     * @param node O nó atual a verificar
-     */
     public static void validateForbiddenTags(Set<String> FORBIDDEN_TAGS_IN_COMPONENTS, XplNode node) {
         if (node == null) return;
-
-        // 1. Verifica o nó atual
         if (FORBIDDEN_TAGS_IN_COMPONENTS.contains(node.tag.toLowerCase())) {
             throw new RuntimeException(String.format(
                     "Erro de Arquitetura: A tag '<%s>' é proibida dentro de componentes customizados. " +
@@ -287,11 +255,39 @@ public final class HtmlTagUtils {
                     node.tag
             ));
         }
-
-        // 2. Recursividade: Percorre todos os filhos (se existirem)
         if (node.children != null) {
             for (XplNode child : node.children) {
                 validateForbiddenTags(FORBIDDEN_TAGS_IN_COMPONENTS, child);
+            }
+        }
+    }
+
+    // ⭐ 2. O POLÍCIA DO SVG: Verifica recursivamente se um shape está perdido no DOM
+    /**
+     * Garante que as formas vetoriais (Shapes SVG) só são usadas dentro de uma tag <svg>.
+     * O 'isInsideSvg' inicial deve ser 'false' quando chamado a partir do nó raiz (root).
+     */
+    public static void validateSvgStructure(XplNode node, boolean isInsideSvg) {
+        if (node == null) return;
+
+        String lowerTag = node.tag.toLowerCase();
+
+        // Informa se este nó atual, ou qualquer dos seus pais, é a tela <svg>
+        boolean currentlyInSvg = isInsideSvg || lowerTag.equals("svg");
+
+        // Se encontrou uma tag de shape e NÃO estamos dentro de uma <svg>, rebenta!
+        if (SVG_SHAPES.contains(lowerTag) && !currentlyInSvg) {
+            throw new RuntimeException(String.format(
+                    "Erro de Layout: A tag vetorial '<%s>' não pode ser usada solta no DOM. " +
+                            "Deve estar encapsulada obrigatoriamente dentro de um contentor <svg> para não quebrar a grelha/flexbox.",
+                    node.tag
+            ));
+        }
+
+        // Continua a procurar nos filhos
+        if (node.children != null) {
+            for (XplNode child : node.children) {
+                validateSvgStructure(child, currentlyInSvg);
             }
         }
     }

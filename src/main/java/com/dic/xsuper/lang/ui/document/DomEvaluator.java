@@ -177,6 +177,9 @@ public class DomEvaluator {
                         // 1. O "Polícia do DOM"
                         HtmlTagUtils.validateForbiddenTags(Set.of("html", "head", "body"), templateRoot);
 
+                        // ⭐ 2. O "Polícia do SVG" (Evita Shapes soltos que partem o layout do JavaFX)
+                        //HtmlTagUtils.validateSvgStructure(templateRoot, false);
+
                         // ⭐ 2. A MAGIA DA PROJEÇÃO DE CONTEÚDO (SLOTS) ⭐
                         processSlots(templateRoot, componentNode.children);
 
