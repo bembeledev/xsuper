@@ -84,6 +84,7 @@ try {
     fun PromessaQuebrada(): int {
         let calculo = 100 * 200;
         // Esqueceu-se do return! A Lei 2 do XplFunction vai guilhotinar!
+        return calculo;
     }
 
     let falha = PromessaQuebrada();

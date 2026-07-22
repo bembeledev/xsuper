@@ -33,7 +33,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // Guarda o Metadado completo dos Tipos para podermos executar Listeners/Validadores!
     public final java.util.Map<String, Stmt.TypeAliasDecl> typeAliasMetadata = new java.util.HashMap<>();
 
-
+    // ⭐ NOVO: Guarda as instâncias VIVAS (Singletons) dos listeners dos tipos! ⭐
+    public final java.util.Map<String, java.util.List<XplInstance>> typeListenersRegistry = new java.util.HashMap<>();
     // =========================================================================
     // ⭐ CÂMARA CRIOGÉNICA DE GENÉRICOS (Monomorfização) ⭐
     // Guarda o nó cru da AST exatamente como o utilizador o digitou!
@@ -966,23 +967,59 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitTypeAliasDecl(Stmt.TypeAliasDecl stmt) {
         String aliasName = stmt.name.lexeme;
 
-        // Regra 1: Não pode ter o mesmo nome de um tipo ou alias já existente.
         if (typeAliases.containsKey(aliasName) || registry_model.containsKey(aliasName)) {
-            throw new ControlFlow.RuntimeError(stmt.name,
-                    "Erro de Semântica: O identificador '" + aliasName + "' já designa um tipo existente.");
+            throw new ControlFlow.RuntimeError(stmt.name, "Erro de Semântica: O identificador '" + aliasName + "' já designa um tipo existente.");
         }
-
-        // Regra 2: Proibição estrita de referências circulares
         if (detectCircularAlias(aliasName, stmt.targetType)) {
-            throw new ControlFlow.RuntimeError(stmt.name,
-                    "Referência Circular Proibida: O alias '" + aliasName + "' aponta para si mesmo num ciclo infinito.");
+            throw new ControlFlow.RuntimeError(stmt.name, "Referência Circular Proibida: O alias '" + aliasName + "' aponta para si mesmo num ciclo infinito.");
         }
 
-        // 1. Regista o atalho simples (para a Alfândega de Tipos normal)
         typeAliases.put(aliasName, stmt.targetType);
-
-        // 2. ⭐ Regista o nó completo na RAM (Para executarmos Listeners depois!)
         typeAliasMetadata.put(aliasName, stmt);
+
+        // =====================================================================
+        // ⭐ NOVA ERA: INSTANCIAÇÃO SINGLETON DOS LISTENERS DE TIPO ⭐
+        // O Listener nasce UMA ÚNICA VEZ e protege todas as variáveis deste tipo!
+        // =====================================================================
+        if (stmt.listeners != null && !stmt.listeners.isEmpty()) {
+            java.util.List<XplInstance> activeTypeListeners = new java.util.ArrayList<>();
+
+            for (Stmt.DecoratorNode listenerNode : stmt.listeners) {
+                String listenerName = listenerNode.name.lexeme;
+                XPLModel listenerModel = registry_model.get(listenerName);
+
+                if (listenerModel == null) throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' não foi encontrado.");
+
+                XplClass listenerClass;
+                try { listenerClass = (XplClass) environment.get(listenerName); }
+                catch (Exception e) { listenerClass = new XplClass(listenerModel, this.globals); }
+
+                XplInstance listenerInstance = new XplInstance(listenerClass);
+
+                // ⭐ INJEÇÃO DE CONTEXTO: O Alvo é o próprio Nome do Tipo Blueprint (ex: 'Email')!
+                listenerInstance.fields.put("targetName", aliasName);
+
+                // ⭐ 1. O CONSTRUTOR (Alfândega de Argumentos)
+                Stmt.Function construtor = listenerModel.findMethod("init");
+                if (construtor != null) {
+                    new XplFunction(construtor, listenerClass.closure, listenerModel).bind(listenerInstance).call(this, listenerNode.arguments);
+                } else if (listenerNode.arguments != null && !listenerNode.arguments.isEmpty()) {
+                    throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' recebeu argumentos, mas não possui construtor 'init'.");
+                }
+
+                // ⭐ 2. O GATILHO DE CICLO DE VIDA ÚNICO: @(Listen.Init)
+                if (listenerModel.metaInitHook != null) {
+                    Stmt.Function hookFunc = listenerModel.findMethod(listenerModel.metaInitHook);
+                    if (hookFunc != null) {
+                        new XplFunction(hookFunc, listenerClass.closure, listenerModel).bind(listenerInstance).call(this, java.util.Collections.emptyList());
+                    }
+                }
+
+                activeTypeListeners.add(listenerInstance);
+            }
+            // Guarda os vigilantes VIVOS na Esquadra Global de Tipos!
+            typeListenersRegistry.put(aliasName, activeTypeListeners);
+        }
 
         return null;
     }
@@ -1043,73 +1080,42 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     // =========================================================================
-    // ⭐ MOTOR DE VALIDAÇÃO DE TIPOS REFINADOS (Refinement Types) ⭐
+    // ⭐ MOTOR DE VALIDAÇÃO DE TIPOS REFINADOS (Stateful Cache-Based) ⭐
     // =========================================================================
     private void fireTypeListeners(String typeName, Object value, Token originToken) {
-        Stmt.TypeAliasDecl aliasNode = typeAliasMetadata.get(typeName);
-        if (aliasNode == null || aliasNode.listeners == null) return;
 
-        for (Stmt.DecoratorNode listenerNode : aliasNode.listeners) {
-            String listenerName = listenerNode.name.lexeme;
-            XPLModel listenerModel = registry_model.get(listenerName);
+        // 1. Vai buscar os vigilantes vivos (Singletons) atados a este Tipo
+        java.util.List<XplInstance> listeners = typeListenersRegistry.get(typeName);
 
-            if (listenerModel == null || !listenerModel.isDecorator) {
-                throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' não foi encontrado.");
-            }
+        if (listeners != null) {
+            for (XplInstance listenerInstance : listeners) {
+                XPLModel listenerModel = listenerInstance.klass.model;
 
-            XplClass listenerClass;
-            try { listenerClass = (XplClass) environment.get(listenerName); }
-            catch (Exception e) { listenerClass = new XplClass(listenerModel, this.globals); }
+                // ⭐ INJEÇÃO DE CONTEXTO DINÂMICO (Atualiza a memória com o valor que está a entrar)
+                listenerInstance.fields.put("target", value);
 
-            XplInstance listenerInstance = new XplInstance(listenerClass);
+                // ⭐ 2. Dispara APENAS o Hook de Atribuição: @(Listen.Set)
+                if (listenerModel.metaSetHook != null) {
+                    Stmt.Function onAssignFunc = listenerModel.findMethod(listenerModel.metaSetHook);
+                    if (onAssignFunc != null) {
+                        XplFunction onAssignCallable = new XplFunction(onAssignFunc, listenerInstance.klass.closure, listenerModel);
 
-            // =====================================================================
-            // ⭐ INJEÇÃO DE CONTEXTO: O Listener passa a conhecer o seu dono! ⭐
-            // =====================================================================
-            listenerInstance.fields.put("target", value);
-            listenerInstance.fields.put("targetName", typeName); // Guarda o nome do tipo (ex: Email)
+                        java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
+                        hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value))); // O novo valor validado
 
-            // =====================================================================
-            // ⭐ 1. O CONSTRUTOR (A Alfândega de Argumentos do Tipo Refinado) ⭐
-            // =====================================================================
-            Stmt.Function construtor = listenerModel.findMethod("init");
-            if (construtor != null) {
-                XplFunction initCallable = new XplFunction(construtor, listenerClass.closure, listenerModel);
-                initCallable.bind(listenerInstance).call(this, listenerNode.arguments);
-            } else if (listenerNode.arguments != null && !listenerNode.arguments.isEmpty()) {
-                throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' recebeu argumentos, mas não possui um construtor 'init' declarado.");
-            }
-
-            // =====================================================================
-            // ⭐ 2. O GATILHO DE CICLO DE VIDA: @(Listen.Init) ⭐
-            // =====================================================================
-            if (listenerModel.metaInitHook != null) {
-                Stmt.Function hookFunc = listenerModel.findMethod(listenerModel.metaInitHook);
-                if (hookFunc != null) {
-                    XplFunction hookCallable = new XplFunction(hookFunc, listenerClass.closure, listenerModel);
-                    hookCallable.bind(listenerInstance).call(this, java.util.Collections.emptyList());
-                }
-            }
-
-            // ⭐ 3. Dispara o Hook de Atribuição: @(Listen.Set)
-            if (listenerModel.metaSetHook != null) {
-                Stmt.Function onAssignFunc = listenerModel.findMethod(listenerModel.metaSetHook);
-                if (onAssignFunc != null) {
-                    XplFunction onAssignCallable = new XplFunction(onAssignFunc, listenerClass.closure, listenerModel);
-                    java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
-                    hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value)));
-
-                    try {
-                        onAssignCallable.bind(listenerInstance).call(this, hookArgs);
-                    } catch (ControlFlow.RuntimeError e) {
-                        throw new ControlFlow.RuntimeError(originToken, "Validação de Tipo Falhou (" + listenerName + "): " + e.getMessage());
+                        try {
+                            onAssignCallable.bind(listenerInstance).call(this, hookArgs);
+                        } catch (ControlFlow.RuntimeError e) {
+                            throw new ControlFlow.RuntimeError(originToken, "Violação de Tipo ('" + typeName + "'): " + e.getMessage());
+                        }
                     }
                 }
             }
         }
 
         // Recursividade: Se o alias apontar para outro alias (ex: type B = A)
-        if (aliasNode.targetType instanceof TypeNode.Simple simpleType) {
+        Stmt.TypeAliasDecl aliasNode = typeAliasMetadata.get(typeName);
+        if (aliasNode != null && aliasNode.targetType instanceof TypeNode.Simple simpleType) {
             fireTypeListeners(simpleType.name.lexeme, value, originToken);
         }
     }

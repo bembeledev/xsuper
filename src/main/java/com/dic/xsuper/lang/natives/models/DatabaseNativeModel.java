@@ -115,7 +115,7 @@ public class DatabaseNativeModel {
                             setParameters(stmt, params);
                             try (ResultSet rs = stmt.executeQuery()) {
                                 List<Map<String, Object>> rows = resultSetToList(rs);
-                                return rows.isEmpty() ? null : rows.get(0);
+                                return rows.isEmpty() ? null : rows.getFirst();
                             }
                         }
                     }
@@ -180,36 +180,28 @@ public class DatabaseNativeModel {
         @Override
         public Object getProperty(String propertyName) {
             try {
-                switch (propertyName) {
-                    case "closed":
-                        return closed;
-                    case "autoCommit":
-                        return conn.getAutoCommit();
-                    case "url":
-                        return conn.getMetaData().getURL();
-                    case "catalog":
-                        return conn.getCatalog();
+                return switch (propertyName) {
+                    case "closed" -> closed;
+                    case "autoCommit" -> conn.getAutoCommit();
+                    case "url" -> conn.getMetaData().getURL();
+                    case "catalog" -> conn.getCatalog();
 
                     // ⭐ DELEGAÇÃO DE MÉTODOS PARA O MOTOR XPL ⭐
-                    case "query":
-                    case "queryOne":
-                    case "execute":
-                    case "transaction":
-                    case "begin":
-                    case "commit":
-                    case "rollback":
-                    case "close":
-                    case "prepare":
-                        return new XplCallable() {
-                            @Override public int arity() { return -1; }
-                            @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                                List<Object> evalArgs = Interpreter.unpackNativeArgs(intp, args);
-                                return invokeMethod(propertyName, evalArgs, intp);
-                            }
-                        };
-                    default:
-                        return null;
-                }
+                    case "query", "queryOne", "execute", "transaction", "begin", "commit", "rollback", "close",
+                         "prepare" -> new XplCallable() {
+                        @Override
+                        public int arity() {
+                            return -1;
+                        }
+
+                        @Override
+                        public Object call(Interpreter intp, List<Expr.CallArg> args) {
+                            List<Object> evalArgs = Interpreter.unpackNativeArgs(intp, args);
+                            return invokeMethod(propertyName, evalArgs, intp);
+                        }
+                    };
+                    default -> null;
+                };
             } catch (SQLException e) {
                 return null;
             }

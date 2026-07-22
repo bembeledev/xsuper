@@ -68,7 +68,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     private double viewportHeight = 600;
 
     // ─── O Documento Global (injectado no XPL) ─────────────────────────────
-    private final XplDocument document;
+    private  XplDocument document;
 
     // ─── Registo de funções XPL para eventos da UI ────────────────────────
     public final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
@@ -123,63 +123,22 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
         if (this.interpreter != null && this.interpreter.globals != null) {
 
-            // =================================================================
-            // ⭐ FASE 1: OBTER OS MODELOS NATIVOS REAIS (SEM REPETIR CÓDIGO!)
-            // =================================================================
-            XPLModel elementModel = com.dic.xsuper.lang.ui.document.XplElement.buildNativeModel();
-            XPLModel documentModel = com.dic.xsuper.lang.ui.document.XplDocument.buildNativeModel();
-            XPLModel engineModel = com.dic.xsuper.lang.ui.SuperUiEngine.buildNativeModel();
-
-            XPLModel eventModel = XplEvent.buildNativeModel();
+            // 1. Injeta os tipos todos de uma vez (Pode até ser chamado antes, no arranque do Interpretador!)
+            UINativeRegistry.inject(this.interpreter);
 
             // =================================================================
-            // ⭐ FASE 1.5: REGISTAR NO COMPILADOR (Para o 'extends' funcionar)
-            // Aqui dizemos ao Resolver: "Ei, estas classes nativas existem!"
+            // ⭐ A PRÓPRIA ENGINE ASSUME A SUA IDENTIDADE (__ui_engine)
             // =================================================================
-            this.interpreter.registry_model.put("XplElement", elementModel);
-            this.interpreter.registry_model.put("XplDocument", documentModel);
-            // Opcional, se precisares de estender a engine nalgum momento:
-            this.interpreter.registry_model.put("SuperUiEngine", engineModel);
-
-            interpreter.registry_model.put("XplEvent", eventModel);
-
-            // =================================================================
-            // ⭐ FASE 1.8: CRIAR AS CLASSES RUNTIME E REGISTAR NA MEMÓRIA GLOBAL
-            // =================================================================
-            ELEMENT_CLASS = new com.dic.xsuper.lang.poo.XplClass(elementModel, interpreter.globals);
-            DOCUMENT_CLASS = new com.dic.xsuper.lang.poo.XplClass(documentModel, interpreter.globals);
-            ENGINE_CLASS = new com.dic.xsuper.lang.poo.XplClass(engineModel, interpreter.globals);
-            EVENT_CLASS = new XplClass(eventModel, interpreter.globals);
-            // 2. Registar no Runtime (apenas se a classe NÃO estiver lá)
-            if (!this.interpreter.globals.values.containsKey("XplElement")) {
-                ELEMENT_CLASS = new com.dic.xsuper.lang.poo.XplClass(elementModel, interpreter.globals);
-                this.interpreter.globals.defineConst("XplElement", ELEMENT_CLASS);
-
-            }
-            if (!this.interpreter.globals.values.containsKey("XplDocument")) {
-                DOCUMENT_CLASS = new com.dic.xsuper.lang.poo.XplClass(documentModel, interpreter.globals);
-                this.interpreter.globals.defineConst("XplDocument", DOCUMENT_CLASS);
-            }
-            if (!interpreter.globals.values.containsKey("XplEvent")) {
-                interpreter.globals.defineConst("XplEvent", EVENT_CLASS);
-            }
-            // =================================================================
-            // ⭐ FASE 2: A PRÓPRIA ENGINE ASSUME A SUA IDENTIDADE (__ui_engine)
-            // =================================================================
-            this.klass = ENGINE_CLASS;
+            this.klass = UINativeRegistry.ENGINE_CLASS;
             this.invokeMethod(); // Injecta os próprios métodos!
             this.interpreter.globals.defineConst("__ui_engine", this);
-        }
 
-        // =================================================================
-        // ⭐ FASE 3: SÓ AGORA INSTANCIÁMOS OS OBJECTOS VIVOS (DOM)
-        // Agora o 'super(ELEMENT_CLASS)' lá dentro do Java vai encontrar a classe perfeitamente!
-        // =================================================================
+            // =================================================================
+            // ⭐ INSTANCIAMOS OS OBJETOS VIVOS (DOM)
+            // =================================================================
+            XplElement root = new XplElement("html");
+            this.document = new XplDocument(root);
 
-        XplElement root = new XplElement("html");
-        this.document = new XplDocument(root);
-
-        if (this.interpreter != null && this.interpreter.globals != null) {
             this.interpreter.globals.defineConst("document", this.document);
             this.interpreter.globals.defineConst("ui", this.document);
         }

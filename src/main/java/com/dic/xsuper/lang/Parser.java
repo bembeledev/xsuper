@@ -1961,8 +1961,20 @@ public class Parser {
     private ParseException error(Token token, String message) {
         this.errorCount++; // ⭐ Incrementa o contador de bugs!
         String path = (token.filePath != null) ? token.filePath : "Desconhecido";
+
+        // =====================================================================
+        // ⭐ UPGRADE: Contexto Cirúrgico (O que esperava vs O que encontrou)
+        // =====================================================================
+        String msgFinal = message;
+        if (token.type == TokenType.EOF) {
+            msgFinal += " (Fim do ficheiro inesperado).";
+        } else {
+            msgFinal += " (Mas encontrou: '" + token.lexeme + "').";
+        }
+
         // Formato: C:\Caminho\arquivo.xpl:10:5
-        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t Erro Sintático: " + message);
+        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t Erro Sintático: " + msgFinal);
+
         return new ParseException();
     }
 
@@ -1972,17 +1984,34 @@ public class Parser {
      * para tentar continuar a encontrar mais erros e avisar o programador de tudo de uma vez.
      */
     private void synchronize() {
-        advance();
+        advance(); // Engole o token que causou o erro inicial
+
         while (!isAtEnd()) {
+            // Se encontrámos um ponto e vírgula, a próxima instrução deve ser segura!
             if (previous().type == TokenType.SEMICOLON) return;
+
+            // Se encontrámos o início de algo importante, paramos de descartar!
             switch (peek().type) {
-                // Adiciona as novas palavras-chave para ele saber onde parar de saltar!
-                case FUN: case VAR: case LET: case CONST:
-                case FOR: case IF: case INTERFACE: case DECLARE: case IMPLEMENT:
-                case MATCH: case DECORATOR: case SWITCH: case LISTENER:
+                case IMPLEMENT:
+                case DECLARE:
+                case LISTENER:
+                case FUN:
+                case LET:
+                case VAR:
+                case CONST:
+                case IF:
+                case WHILE:
+                case FOR:
+                case RETURN:
+                case THROW:
+                case TYPE: // O teu type alias!
+                case RBRACE: // ⭐ MUITO IMPORTANTE: Parar se encontrarmos um fecho de bloco '}'
                     return;
+                default:
+                    break;
             }
-            advance();
+
+            advance(); // Descarta o token inútil e tenta olhar para o próximo
         }
     }
 

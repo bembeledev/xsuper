@@ -71,7 +71,7 @@ println(" 🏆 TESTE CONCLUÍDO! O BURACO NEGRO ESTÁ ESTÁVEL! 🏆 ", "#00FFFF
 println("==================================================", "#00FFFF");
 
 
-decorator Monitor {
+listener Monitor {
     pub value: int;
 }
 
@@ -80,15 +80,18 @@ abstract implement Monitor {
     pub fun init(value: int) {
         this.value = value;
     }
-    @(Context.Init) pub fun aoNascer() { println("🚀 INIT: Monitor ligado! - " +this.value); }
-    @(Context.Get)  pub fun onGet()  { println("👁️ GET: Propriedade lida. - " + this.value); }
-    @(Context.Set)  pub fun onSet()  { println("✍️ SET: Propriedade alterada! - " + this.value); }
-    @(Context.End)  pub fun aoMorrer() { println("⚰️ END: Monitor desligado. - " + this.value); }
+    @(Listen.Init) pub fun aoNascer() { println("🚀 INIT: Monitor ligado! - " +this.value); }
+    @(Listen.Get)  pub fun onGet()  { println("👁️ GET: Propriedade lida. - " + this.value); }
+    @(Listen.Set)  pub fun onSet()  { println("✍️ SET: Propriedade alterada! - " + this.value); }
+    @(Listen.End)  pub fun aoMorrer() { println("⚰️ END: Monitor desligado. - " + this.value); }
 }
 
 declare TV {pub value: int;}
-implement TV {}
-@Monitor(value: 10)
+implement TV {
+    pub fun init() {}
+}
+
+&Monitor(value: 10)
 var obj = new TV();
 
 println("--- Iniciando Ciclo de Vida ---");
