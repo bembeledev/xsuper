@@ -95,32 +95,27 @@ public abstract class NativeTag{
             fxNode.getProperties().put("transition", styles.get("transition"));
         }
 
-        // ==========================================================
-        // ⭐ 4. O GATILHO DAS ANIMAÇÕES
+// ==========================================================
+        // ⭐ 4. O GATILHO DAS ANIMAÇÕES (Agora entregue ao Maestro)
         // ==========================================================
         if (styles.containsKey("animation")) {
             String animationConfig = styles.get("animation");
-            // Ex: "fadeIn 2s ease-in-out forwards"
+            // Ex: "bounce 2s infinite" ou "meuEfeitoCustomizado 1s forwards"
             String[] parts = animationConfig.trim().split("\\s+");
 
             if (parts.length > 0) {
                 String animName = parts[0];
+                Map<String, String> overrides = extractAnimationOverrides(parts);
 
-                // ⭐ CORREÇÃO AQUI: Passamos pelo "AnimationManager" em vez de pedir direto à Engine!
-                com.dic.xsuper.lang.ui.animation.XplKeyframeAnimation anim =
-                        SuperUiEngine.getInstance().getAnimationManager().getKeyframe(animName);
-
-                if (anim != null) {
-                    // Constrói os overrides (duração, easing, etc.) a partir da string
-                    Map<String, String> overrides = extractAnimationOverrides(parts);
-                    // Dispara o motor!
-                    com.dic.xsuper.lang.ui.animation.XplAnimationEngine.applyKeyframeAnimation(fxNode, anim, overrides);
-                } else {
-                    System.err.println("[TagFactory] ⚠️ Animação não encontrada no CSS global: " + animName);
-                }
+                // Enviamos o Nó, o Nome, os Overrides e o teu Gestor de Animações CSS para o Maestro!
+                com.dic.xsuper.lang.ui.animation.XplAnimationEngine.playAnimation(
+                        fxNode,
+                        animName,
+                        overrides,
+                        SuperUiEngine.getInstance().getAnimationManager()
+                );
             }
         }
-
         if (overflowY.equals("auto") || overflowY.equals("scroll") ||
                 overflowX.equals("auto") || overflowX.equals("scroll")) {
             return wrapInWebScroll(fxNode, overflowX, overflowY, styles);
@@ -364,7 +359,14 @@ public abstract class NativeTag{
         com.dic.xsuper.lang.ui.css.W3cCssAdapter.applyW3cToNative(fxNode, style, css);
 
         if (!css.isEmpty()) {
-            fxNode.setStyle(fxNode.getStyle() + (fxNode.getStyle().isEmpty() ? "" : "; ") + css.toString());
+            // ⭐ A CURA DEFINITIVA (O Escudo Anti-Vazios) ⭐
+            // Esta expressão regular varre o CSS e extermina qualquer propriedade
+            // que tenha ficado órfã e sem valor (Ex: "-fx-background-color: ;")
+            String cleanCss = css.toString().replaceAll("[a-zA-Z0-9\\-]+:\\s*;\\s*", "");
+
+            if (!cleanCss.isEmpty()) {
+                fxNode.setStyle(fxNode.getStyle() + (fxNode.getStyle().isEmpty() ? "" : "; ") + cleanCss);
+            }
         }
     }
 

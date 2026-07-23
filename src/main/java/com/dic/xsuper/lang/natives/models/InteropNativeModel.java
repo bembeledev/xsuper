@@ -240,15 +240,14 @@ public class InteropNativeModel {
                         return data.length();
                     }
                     case "writeLine": {
-                        String data = interpreter.stringify(args.get(0));
+                        String data = interpreter.stringify(args.getFirst());
                         stdinWriter.write(data);
                         stdinWriter.newLine();
                         stdinWriter.flush();
                         return data.length() + 1;
                     }
                     case "read": {
-                        String line = stdoutReader.readLine();
-                        return line != null ? line : null;
+                        return stdoutReader.readLine();
                     }
                     case "readAll": {
                         StringBuilder sb = new StringBuilder();
@@ -267,7 +266,7 @@ public class InteropNativeModel {
                         return sb.toString().trim();
                     }
                     case "wait": {
-                        long waitTime = args.isEmpty() ? 0 : ((Number) args.get(0)).longValue();
+                        long waitTime = args.isEmpty() ? 0 : ((Number) args.getFirst()).longValue();
                         boolean finished;
                         if (waitTime > 0) {
                             finished = process.waitFor(waitTime, TimeUnit.MILLISECONDS);
@@ -310,35 +309,26 @@ public class InteropNativeModel {
 
         @Override
         public Object getProperty(String propertyName) {
-            switch (propertyName) {
-                case "pid":
-                    return pid;
-                case "isAlive":
-                    return process.isAlive();
-                case "exitCode":
-                    return process.isAlive() ? null : (long) process.exitValue();
-                case "charset":
-                    return charset.name();
+            return switch (propertyName) {
+                case "pid" -> pid;
+                case "isAlive" -> process.isAlive();
+                case "exitCode" -> process.isAlive() ? null : (long) process.exitValue();
+                case "charset" -> charset.name();
+                case "write", "writeLine", "read", "readAll", "readError", "wait", "terminate", "kill", "close" ->
+                        new XplCallable() {
+                            @Override
+                            public int arity() {
+                                return -1;
+                            }
 
-                case "write":
-                case "writeLine":
-                case "read":
-                case "readAll":
-                case "readError":
-                case "wait":
-                case "terminate":
-                case "kill":
-                case "close":
-                    return new XplCallable() {
-                        @Override public int arity() { return -1; }
-                        @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                            List<Object> evalArgs = Interpreter.unpackNativeArgs(intp, args);
-                            return invokeMethod(propertyName, evalArgs, intp);
-                        }
-                    };
-                default:
-                    return null;
-            }
+                            @Override
+                            public Object call(Interpreter intp, List<Expr.CallArg> args) {
+                                List<Object> evalArgs = Interpreter.unpackNativeArgs(intp, args);
+                                return invokeMethod(propertyName, evalArgs, intp);
+                            }
+                        };
+                default -> null;
+            };
         }
 
         // ─── GESTÃO DE CICLO DE VIDA ──────────────────────────────────────

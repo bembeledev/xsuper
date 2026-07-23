@@ -327,27 +327,35 @@ public class XplCssParser {
         consume(XplCssTokenType.RBRACE, "Esperado '}' para fechar o bloco.");
     }
 
-    // parseSelector: recolhe o seletor até encontrar '{' ou diretiva
+    // =========================================================================
+    // 🧠 RECONSTRUTOR DE SELETORES COMPLEXOS (W3C / jQuery Style)
+    // =========================================================================
     private String parseSelector() {
         StringBuilder selector = new StringBuilder();
 
         while (!isAtEnd()) {
+            // Condição de paragem: início do bloco '{' ou de uma diretiva de controlo
+            if (check(XplCssTokenType.LBRACE) || check(XplCssTokenType.AT_IF) ||
+                    check(XplCssTokenType.AT_FOR) || check(XplCssTokenType.AT_SWITCH) ||
+                    check(XplCssTokenType.AT_MATCH) || check(XplCssTokenType.AT_MEDIA) ||
+                    check(XplCssTokenType.AT_KEYFRAMES)) {
+                break;
+            }
 
-            // Consome PSEUDO_CLASS (ex: :root)
+            // Consome PSEUDO_CLASS (ex: :root) e cola sem espaço
             if (check(XplCssTokenType.PSEUDO_CLASS)) {
                 selector.append(advance().lexeme);
                 continue;
             }
 
-            // ⭐ Seletor universal: * { ... }
+            // Seletor universal: *
             if (check(XplCssTokenType.STAR)) {
                 selector.append(advance().lexeme);
-                // Se o próximo token for '{', para, senão continua (ex: *.classe)
                 if (check(XplCssTokenType.LBRACE)) break;
                 continue;
             }
 
-            // Se encontrarmos '{{', capturamos o conteúdo (bind)
+            // Se encontrarmos '{{', capturamos o conteúdo (bind XPL) intocado
             if (check(XplCssTokenType.LBRACE) && checkAhead(XplCssTokenType.LBRACE)) {
                 selector.append(advance().lexeme); // {
                 selector.append(advance().lexeme); // {
@@ -361,17 +369,38 @@ public class XplCssParser {
                 continue;
             }
 
-            // Condição de paragem: início do bloco '{' ou de uma diretiva de controlo
-            if (check(XplCssTokenType.LBRACE) || check(XplCssTokenType.AT_IF) ||
-                    check(XplCssTokenType.AT_FOR) || check(XplCssTokenType.AT_SWITCH) ||
-                    check(XplCssTokenType.AT_MATCH)) {
-                break;
+            XplCssToken token = advance();
+
+            // Preserva as aspas estritamente dentro de seletores de atributos: [type="text"]
+            if (token.type == XplCssTokenType.STRING) {
+                selector.append("\"").append(token.literal != null ? token.literal : token.lexeme).append("\"");
+            } else {
+                selector.append(token.lexeme);
             }
 
-            // Consome tokens (SELECTOR, IDENTIFIER, etc.) e adiciona ao seletor
-            selector.append(advance().lexeme);
+            // ⭐ A MAGIA DOS ESPAÇOS (Descendant Combinators) ⭐
+            // Reconstrói a hierarquia que o Lexer comprimiu.
+            // Se tivermos "div" e a seguir "p", injetamos um espaço ("div p").
+            // Se tivermos "div" e a seguir ">", NÃO injetamos espaço ("div>p").
+            if (!isAtEnd() && !check(XplCssTokenType.LBRACE)) {
+                XplCssTokenType nextType = peek().type;
+                if (!isStructuralOperator(token.type) && !isStructuralOperator(nextType)) {
+                    selector.append(" ");
+                }
+            }
         }
         return selector.toString().trim();
+    }
+
+    // Helper que dita quais os símbolos que "colam" elementos no CSS sem precisarem de espaços
+    private boolean isStructuralOperator(XplCssTokenType type) {
+        return type == XplCssTokenType.COLON || type == XplCssTokenType.LBRACKET || type == XplCssTokenType.RBRACKET ||
+                type == XplCssTokenType.ASSIGN || type == XplCssTokenType.EQUAL ||
+                type == XplCssTokenType.LPAREN || type == XplCssTokenType.RPAREN ||
+                type == XplCssTokenType.CARET || type == XplCssTokenType.DOLLAR || type == XplCssTokenType.STAR ||
+                type == XplCssTokenType.GREATER || type == XplCssTokenType.PLUS || type == XplCssTokenType.TILDE ||
+                type == XplCssTokenType.COMMA || type == XplCssTokenType.DOT || type == XplCssTokenType.HASH ||
+                type == XplCssTokenType.PSEUDO_CLASS;
     }
 
     // parseValue: processa o valor de uma propriedade

@@ -46,5 +46,6 @@ public enum XplCssTokenType {
     VAR_FUNC,          // var(
     CALC_FUNC,          // calc(
 
-    BANG, SELECTOR, PROPERTY, QUESTION_MARK, EOF
+    BANG, SELECTOR, PROPERTY, QUESTION_MARK, EOF,
+    TILDE, CARET, DOLLAR,   // ~ ^ $
 }

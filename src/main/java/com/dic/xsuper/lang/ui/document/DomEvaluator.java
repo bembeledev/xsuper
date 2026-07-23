@@ -68,6 +68,18 @@ public class DomEvaluator {
                 XplNode dynamicElement = cloneNode(node);
 
                 // ════════════════════════════════════════════════════════════════
+                // 🔥 PASSO 0: Interpolação nas propriedades fixas (Class e ID)
+                // ════════════════════════════════════════════════════════════════
+                if (dynamicElement.className != null && dynamicElement.className.contains("{")) {
+                    // Usa o avaliador de texto para substituir as variáveis sem apagar o texto à volta (ex: "btn {tipo}")
+                    dynamicElement.className = resolveAttributeBindings(dynamicElement.className, dynamicElement);
+                }
+
+                if (dynamicElement.id != null && dynamicElement.id.contains("{")) {
+                    dynamicElement.id = resolveAttributeBindings(dynamicElement.id, dynamicElement);
+                }
+
+                // ════════════════════════════════════════════════════════════════
                 // 🔥 PASSO 1: Interpolação em atributos normais (PRESERVA OBJETOS!)
                 // ════════════════════════════════════════════════════════════════
                 for (Map.Entry<String, Object> attrEntry : node.attributes.entrySet()) {

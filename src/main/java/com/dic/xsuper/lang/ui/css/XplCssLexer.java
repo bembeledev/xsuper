@@ -36,6 +36,9 @@ public class XplCssLexer {
             case '[': addToken(XplCssTokenType.LBRACKET); break;
             case ']': addToken(XplCssTokenType.RBRACKET); break;
             case ',': addToken(XplCssTokenType.COMMA); break;
+            case '~': addToken(XplCssTokenType.TILDE); break;
+            case '^': addToken(XplCssTokenType.CARET); break;
+            case '$': addToken(XplCssTokenType.DOLLAR); break;
             case ':':
                 // Deteta QUALQUER pseudo-classe dinamicamente (:root, :hover, ::before)
                 if (isAlpha(peek()) || peek() == ':') {

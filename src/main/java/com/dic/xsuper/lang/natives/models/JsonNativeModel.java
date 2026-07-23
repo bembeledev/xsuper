@@ -22,7 +22,7 @@ public class JsonNativeModel {
         // Json.encode(obj) -> String
         // =========================================================
         model.staticFields.put("encode", buildCallable(1, (intp, args) -> {
-            Object obj = intp.evaluate(args.get(0).expression);
+            Object obj = intp.evaluate(args.getFirst().expression);
             try {
                 return mapper.writeValueAsString(obj);
             } catch (Exception e) {
@@ -34,7 +34,7 @@ public class JsonNativeModel {
         // Json.decode(string) -> Object/Map/Array
         // =========================================================
         model.staticFields.put("decode", buildCallable(1, (intp, args) -> {
-            String jsonStr = intp.stringify(intp.evaluate(args.get(0).expression));
+            String jsonStr = intp.stringify(intp.evaluate(args.getFirst().expression));
             try {
                 return mapper.readValue(jsonStr, Object.class);
             } catch (Exception e) {

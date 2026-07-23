@@ -184,15 +184,18 @@ public class LabelTag extends NativeTag {
             } catch (Exception ignored) {}
         }
 
-        // ─── 5. Background (deixar para o pai, ou aplicar se não houver pai) ──
-        if (styles.containsKey("background-color") && (styles.get("background-color") != null)) {
-            fxLabel.setStyle(fxLabel.getStyle() + "-fx-background-color: " + styles.get("background-color") + "; ");
-            if (styles.containsKey("padding")) {
-                fxLabel.setStyle(fxLabel.getStyle() + "-fx-padding: " + styles.get("padding") + "; ");
+        // ─── 5. Background, Padding e Border-Radius ───
+        if (styles.containsKey("background-color")) {
+            String bgColor = styles.get("background-color").trim();
+            if (!bgColor.isEmpty()) {
+                fxLabel.setStyle(fxLabel.getStyle() + "-fx-background-color: " + bgColor + "; ");
             }
-            if (styles.containsKey("border-radius")) {
-                fxLabel.setStyle(fxLabel.getStyle() + "-fx-background-radius: " + styles.get("border-radius") + "; ");
-            }
+        }
+        if (styles.containsKey("padding")) {
+            fxLabel.setStyle(fxLabel.getStyle() + "-fx-padding: " + styles.get("padding") + "; ");
+        }
+        if (styles.containsKey("border-radius")) {
+            fxLabel.setStyle(fxLabel.getStyle() + "-fx-background-radius: " + styles.get("border-radius") + "; ");
         }
 
         // ─── 6. Cor do link (se for <a>) ────────────────────────────────────
