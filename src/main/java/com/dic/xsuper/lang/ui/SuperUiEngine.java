@@ -12,6 +12,8 @@ import com.dic.xsuper.lang.ui.css.media.XplMediaNode;
 import com.dic.xsuper.lang.ui.document.*;
 import com.dic.xsuper.lang.ui.event.XplEvent;
 import com.dic.xsuper.lang.ui.html.*;
+import com.dic.xsuper.lang.ui.layout.scroll.DefaultScrollBarRenderer;
+import com.dic.xsuper.lang.ui.layout.scroll.ScrollEngine;
 import com.dic.xsuper.lang.ui.reactivity.XplReactiveState;
 import com.dic.xsuper.lang.ui.reactivity.XplReactivityRenderer;
 import com.dic.xsuper.lang.ui.window.MainWindow;
@@ -34,6 +36,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // 1. As Plantas (Classes) Nativas Globais
     public static XplClass ELEMENT_CLASS;
     public static XplClass DOCUMENT_CLASS;
+
+    private ScrollEngine scrollEngine;
 
     // Janela Principal
     MainWindow mainWindow;
@@ -120,6 +124,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         this.mainWindow = new MainWindow(this);
         this.mediaListener.setEngineRebuildTrigger(this.mainWindow::forceLayoutRebuild);
 
+        // No construtor (após criar o rendererBridge):
+        this.scrollEngine = new ScrollEngine(new DefaultScrollBarRenderer());
+
         if (this.interpreter != null && this.interpreter.globals != null) {
 
             // 1. Injeta os tipos todos de uma vez (Pode até ser chamado antes, no arranque do Interpretador!)
@@ -174,6 +181,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
         // canal de comunicação entre o JavaFx, o DOM e o Interpretador para a UI.
         com.dic.xsuper.lang.ui.event.eventbus.UiEventBusSubscriber.register(this);
     }
+
+
+    // Getter:
+    public ScrollEngine getScrollEngine() { return scrollEngine; }
 
     // =========================================================================
     // ⭐ A PORTA DE ENTRADA DO XPL PARA A REACTIVIDADE CIRÚRGICA

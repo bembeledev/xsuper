@@ -155,14 +155,38 @@ public class Lexer {
                 else addToken(TokenType.MODULO);
             } break;
             case '/':
-                if (match('/')) { // Comentário de linha (ex: // isto é um comentário)
+                if (match('/')) {
                     while (peek() != '\n' && !isAtEnd()) advance();
+                } else if (match('*')) {
+
+                    boolean commentClosed = false; // ⭐ A NOSSA FLAG INTELIGENTE
+
+                    while (!isAtEnd()) {
+                        if (peek() == '\n') {
+                            line++;
+                            currentColumn = 0;
+                        }
+
+                        if (peek() == '*' && peekNext() == '/') {
+                            advance(); // Engole o '*'
+                            advance(); // Engole o '/'
+                            commentClosed = true; // ⭐ Marca como fechado com sucesso!
+                            break;
+                        }
+                        advance();
+                    }
+
+                    // ⭐ Agora só avisa se o ficheiro acabou e a flag continua false!
+                    if (!commentClosed) {
+                        System.err.println("Aviso Léxico (L" + line + "): Ficheiro terminou com um bloco de comentário '/*' não fechado.");
+                    }
+
                 } else if (match('=')) {
                     addToken(TokenType.SLASH_ASSIGN);
                 } else {
                     addToken(TokenType.SLASH);
                 }
-            break;
+                break;
             case '=': {
                 if (match('=')) {
                     // ⭐ Já leu '=='. Será que vem um terceiro '=' para formar '==='?

@@ -6,10 +6,13 @@ import com.dic.xsuper.lang.ui.SuperUiEngine;
 import com.dic.xsuper.lang.ui.css.media.JavaFxMediaListener;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -21,27 +24,18 @@ public class MainWindow {
     private final SuperUiEngine engine;
     private final JavaFxMediaListener mediaListener;
 
-    // Ponte de renderização (guardada localmente para referência)
     private JavaFxRenderer rendererBridge;
-
-    // Estado da janela
     private Stage primaryStage;
     private Scene currentScene;
 
     public MainWindow(SuperUiEngine engine) {
         this.engine = engine;
-        // O media listener já está na engine; podemos aceder via getter
         this.mediaListener = engine.getMediaListener();
     }
 
-    /**
-     * Abre a janela principal com o título e dimensões especificados.
-     * Este método é chamado a partir do XPL (via __ui_engine.showWindow).
-     */
-    public void showWindow(String title, double width, double height) {
+    public void showWindow(String title, double requestedWidth, double requestedHeight) {
         System.out.println("[MainWindow] A abrir janela: " + title);
 
-        // Inicializa o toolkit JavaFX se ainda não estiver
         try {
             Platform.startup(() -> {});
         } catch (IllegalStateException e) {
@@ -51,59 +45,94 @@ public class MainWindow {
         CountDownLatch latch = new CountDownLatch(1);
 
         Platform.runLater(() -> {
-            // 1. Cria a cena e o contentor raiz
             Stage stage = new Stage();
             this.primaryStage = stage;
 
-            // 2. Obtém o <body> da árvore ativa (já deve estar renderizada)
             XplNode activeDom = engine.getActiveDom();
             XplNode bodyNode = XplNode.findBodyNode(activeDom);
-            if (bodyNode == null) {
-                bodyNode = activeDom; // fallback
-            }
+            if (bodyNode == null) bodyNode = activeDom;
 
-            // 3. Cria o contentor JavaFX que representará o <body>
             javafx.scene.layout.VBox fxBody = new javafx.scene.layout.VBox();
-            fxBody.setStyle("-fx-background-color: #f0f2f5; -fx-padding: 0;");
 
-            // 4. Liga a ponte de renderização (JavaFxRenderer)
+            // Permite que o VBox cresça infinitamente para baixo para ativar o Scroll!
+            fxBody.setFillWidth(true);
+            fxBody.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+
             this.rendererBridge = new JavaFxRenderer(fxBody);
             engine.setRendererBridge(this.rendererBridge);
 
-            // 5. (Opcional) Debug da árvore
-            XplNodeDebugger.debbug(bodyNode);
+            //imprime as dimensoes
+            XplNodeDebugger.debugDimension(bodyNode);
+            //imprime a arvore DOM
+            XplNodeDebugger.debugTreeDOM(bodyNode);
 
-            // 6. Cria a ScrollPane (para permitir rolagem) e a Scene
+
+
+            // ⭐ 1. CRIAÇÃO DO SCROLL PAN COM FUNDO TRANSPARENTE
             ScrollPane scroll = new ScrollPane(fxBody);
-            scroll.setFitToWidth(true);
-            Scene scene = new Scene(scroll, width, height);
-            this.currentScene = scene;
+            //scroll.setFitToWidth(true); // O conteúdo adapta-se à largura da janela
+            // NÃO faças setFitToHeight(true) senão bloqueias o scroll vertical!
 
-            // ⭐ 6.1: Regista as dimensões iniciais na Engine
-            engine.setViewportSize(width, height);
-
-            // ⭐ 6.2: ESCUTA O REDIMENSIONAMENTO DO SO!
-            scene.widthProperty().addListener((obs, oldVal, newVal) -> {
-                engine.setViewportSize(newVal.doubleValue(), scene.getHeight());
-                // Descomenta a linha abaixo se quiseres que o UI faça "Reflow" em tempo real
-                // ao arrastar a janela (Cuidado: pode ser pesado em PCs mais fracos!)
-                // engine.renderCycle();
+            // ⭐ A CURA: O comportamento Web Real
+            // O body (<VBox>) terá no mínimo o tamanho visível do ecrã,
+            // mas é livre de crescer e acionar o scroll se a UI for muito larga!
+            scroll.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
+                fxBody.setMinWidth(newVal.getWidth());
+                fxBody.setMinHeight(newVal.getHeight()); // Garante que a cor de fundo vai até baixo
             });
 
-            scene.heightProperty().addListener((obs, oldVal, newVal) -> {
-                engine.setViewportSize(scene.getWidth(), newVal.doubleValue());
-            });
+            // Força a barra de scroll horizontal a aparecer apenas quando necessário
+            scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-            // 7. Anexa o listener de media queries à cena
+            scroll.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+
+            // ⭐ 2. INTELIGÊNCIA DE RESOLUÇÃO (Não deixa a janela estourar o monitor!)
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            double finalWidth = Math.min(requestedWidth, screenBounds.getWidth());
+            // Subtraímos 40px para garantir que não fica por baixo da barra de tarefas do Windows/Mac
+            double finalHeight = Math.min(requestedHeight, screenBounds.getHeight() - 40);
+
+            Scene scene = new Scene(scroll, finalWidth, finalHeight);
+
+            // ⭐ 3. A MAGIA DO SCROLLBAR MODERNO WEB (Base64 Injection)
+            // Aplica um scroll flutuante, escuro, arredondado e sem os botões com setas feios.
+            String modernScrollCss =
+                    ".scroll-pane { -fx-background-color: transparent; -fx-background: transparent; }\n" +
+                            ".scroll-pane > .viewport { -fx-background-color: transparent; }\n" +
+                            ".scroll-bar:horizontal, .scroll-bar:vertical { -fx-background-color: transparent; }\n" +
+                            ".scroll-bar:vertical { -fx-pref-width: 8px; }\n" +
+                            ".scroll-bar:horizontal { -fx-pref-height: 8px; }\n" +
+                            ".scroll-bar:horizontal .track, .scroll-bar:vertical .track { -fx-background-color: transparent; -fx-border-color: transparent; }\n" +
+                            ".scroll-bar:horizontal .thumb, .scroll-bar:vertical .thumb { -fx-background-color: #475569; -fx-background-radius: 10px; }\n" +
+                            ".scroll-bar:horizontal .thumb:hover, .scroll-bar:vertical .thumb:hover { -fx-background-color: #94a3b8; }\n" +
+                            ".scroll-bar:horizontal .increment-button, .scroll-bar:horizontal .decrement-button,\n" +
+                            ".scroll-bar:vertical .increment-button, .scroll-bar:vertical .decrement-button { -fx-background-color: transparent; -fx-pref-width: 0; -fx-pref-height: 0; -fx-padding: 0; }\n" +
+                            ".scroll-bar:horizontal .increment-arrow, .scroll-bar:horizontal .decrement-arrow,\n" +
+                            ".scroll-bar:vertical .increment-arrow, .scroll-bar:vertical .decrement-arrow { -fx-shape: \" \"; -fx-padding: 0; }";
+
+            String cssUri = "data:text/css;charset=utf-8;base64," + Base64.getEncoder().encodeToString(modernScrollCss.getBytes());
+            scene.getStylesheets().add(cssUri);
+
+            // Fundo escuro padrão caso a tag Body não traga cor
+            scene.setFill(javafx.scene.paint.Color.web("#050505"));
+
+            // Listeners de Redimensionamento
+            engine.setViewportSize(finalWidth, finalHeight);
+            scene.widthProperty().addListener((obs, oldVal, newVal) -> engine.setViewportSize(newVal.doubleValue(), scene.getHeight()));
+            scene.heightProperty().addListener((obs, oldVal, newVal) -> engine.setViewportSize(scene.getWidth(), newVal.doubleValue()));
+
             mediaListener.attachToScene(scene);
 
-            // 8. Configura e mostra a janela
             stage.setTitle(title);
             stage.setScene(scene);
-            stage.show();
 
-            // 9. Força um ciclo de renderização completo com a largura atual
-            //    (garante que as media queries são aplicadas imediatamente)
+            // Se ainda assim for muito grande, maximiza automaticamente
+            if (finalWidth >= screenBounds.getWidth() && finalHeight >= screenBounds.getHeight() - 40) {
+                stage.setMaximized(true);
+            }
+
+            stage.show();
             engine.renderCycle();
 
             latch.countDown();
@@ -116,34 +145,14 @@ public class MainWindow {
         }
     }
 
-    /**
-     * Força a reconstrução total do layout (hard reflow).
-     * Chamado pelo media listener quando uma media query estrutural muda.
-     */
     public void forceLayoutRebuild() {
-        System.out.println("[MainWindow] ⚠️ Hard Reflow solicitado pelo MediaListener.");
-
-        // 1. Executa o renderCycle para atualizar a árvore virtual e aplicar o novo CSS
         engine.renderCycle();
-
-        // 2. Dispara o Hard Reflow VERDADEIRO (Usa a função de 1 argumento!)
         if (rendererBridge != null) {
             Platform.runLater(() -> rendererBridge.rebuildFullView(engine.getActiveDom()));
         }
     }
 
-    // ─── GETTERS (para a SuperUiEngine poder aceder, se necessário) ────
-
-    public JavaFxRenderer getRendererBridge() {
-        return rendererBridge;
-    }
-
-    public Scene getCurrentScene() {
-        return currentScene;
-    }
-
-    public Stage getPrimaryStage() {
-        return primaryStage;
-    }
-
+    public JavaFxRenderer getRendererBridge() { return rendererBridge; }
+    public Scene getCurrentScene() { return currentScene; }
+    public Stage getPrimaryStage() { return primaryStage; }
 }

@@ -61,6 +61,12 @@ public abstract class ChartBase extends NativeTag {
         activeChart = createChart();
         if (activeChart == null) return;
 
+        // ⭐ A CURA DOS GRÁFICOS TEIMOSOS:
+        // Retira a reserva de espaço gigante de fábrica (500x400) do JavaFX!
+        activeChart.setMinSize(0, 0);
+        activeChart.setPrefSize(10, 10); // Aceita ser minúsculo e deixa o CSS esticá-lo!
+        activeChart.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+
         if (title != null) activeChart.setTitle(title);
         activeChart.setAnimated(animated);
         activeChart.setLegendVisible(legendVisible);

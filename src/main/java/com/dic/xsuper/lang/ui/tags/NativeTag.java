@@ -210,24 +210,6 @@ public abstract class NativeTag{
     protected void addChildren() {
         if (fxNode instanceof javafx.scene.layout.Pane pane) {
 
-            // ⭐ A CURA DO TEXTO PERDIDO ⭐
-            // Se o contentor tiver texto livre, o JavaFX precisa de um Label fantasma para o desenhar!
-            if (sourceNode.textContent != null && !sourceNode.textContent.trim().isEmpty()) {
-                javafx.scene.control.Label inlineText = new javafx.scene.control.Label(sourceNode.textContent.trim());
-
-                // 🔖 O CARIMBO: Assinala que este Label é o texto interno da Div!
-                inlineText.getProperties().put("xpl_ghost_text", true);
-
-                // Transfere as regras de texto (Cor, Fonte) do contentor para o texto injetado!
-                if (resolvedStyles.textColor != 0xFF000000) {
-                    inlineText.setStyle("-fx-text-fill: " + toJavaFxCssColor(resolvedStyles.textColor) + ";");
-                }
-                if (resolvedStyles.fontSize != null && resolvedStyles.fontSize.toPixels(cssContext) > 0) {
-                    inlineText.setStyle(inlineText.getStyle() + "-fx-font-size: " + resolvedStyles.fontSize.toPixels(cssContext) + "px; ");
-                }
-
-                pane.getChildren().addFirst(inlineText);
-            }
 
             // ⭐ 1. LÓGICA DO GRID (Calcula colunas automaticamente!)
             switch (fxNode) {
@@ -310,15 +292,20 @@ public abstract class NativeTag{
             String widthStr = style.get("width");
             if ("100%".equals(widthStr)) {
                 region.setMaxWidth(Double.MAX_VALUE); // Força a expansão máxima permitida pelo pai
-                region.setPrefWidth(2000); // Hack visual para garantir stretch
             } else {
                 float w = resolvedStyles.boxSize.getWidthPixels(cssContext);
                 if (w > 0) css.append("-fx-pref-width: ").append(w).append("px; ");
             }
 
-            float h = resolvedStyles.boxSize.getHeightPixels(cssContext);
-            if (h > 0) css.append("-fx-pref-height: ").append(h).append("px; ");
-
+            // (Faz o mesmo para o height 100% se quiseres que ocupe a altura toda de forma submissa)
+            String heightStr = style.get("height");
+            if ("100%".equals(heightStr)) {
+                region.setMaxHeight(Double.MAX_VALUE);
+                region.setPrefHeight(10); // ⭐ SUBMISSÃO
+            } else {
+                float h = resolvedStyles.boxSize.getHeightPixels(cssContext);
+                if (h > 0) css.append("-fx-pref-height: ").append(h).append("px; ");
+            }
             // Padding CSS
             css.append("-fx-padding: ")
                     .append(resolvedStyles.padding.getTopPixels(cssContext)).append("px ")

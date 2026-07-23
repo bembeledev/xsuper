@@ -18,7 +18,6 @@ public class GridContainerPane extends GridPane implements CustomLayoutPane {
     private final List<GridDimension> rows;
     private final Map<String, String> style;
 
-    // Cache para o Auto-Fit Responsivo W3C
     private List<NativeTag> cachedTags;
     private final List<Node> builtNodes = new ArrayList<>();
     private CssContext context;
@@ -35,30 +34,25 @@ public class GridContainerPane extends GridPane implements CustomLayoutPane {
         this.cachedTags = children;
         this.context = context;
 
-        // 1. Pré-constrói os nós do JavaFX APENAS UMA VEZ para poupar CPU
         for (NativeTag child : children) {
             builtNodes.add(child.build());
         }
 
-        // 2. O Layout pede responsividade (auto-fit/auto-fill)?
         boolean hasAutoFit = columns.stream().anyMatch(d -> d.isRepeat() &&
                 (((RepeatDimension)d).isAutoFit() || ((RepeatDimension)d).isAutoFill()));
 
         if (hasAutoFit) {
-            // ⭐ A FÍSICA W3C: Ouve a largura da Janela e recalcula as colunas!
             this.widthProperty().addListener((obs, oldV, newV) -> {
                 double w = newV.doubleValue();
                 if (w > 0) buildResponsiveGrid(w);
             });
         } else {
-            // Grelha Estática Clássica (ex: 1fr 1fr)
             buildStaticGrid();
         }
     }
 
     private void buildResponsiveGrid(double containerWidth) {
-        // Descobre a largura mínima requerida pelo teu Parser (ex: os 200px do minmax)
-        double minWidth = 200; // Fallback
+        double minWidth = 200;
         for (GridDimension d : columns) {
             if (d.isRepeat()) {
                 GridDimension inner = ((RepeatDimension) d).getDimensions().getFirst();
@@ -68,64 +62,95 @@ public class GridContainerPane extends GridPane implements CustomLayoutPane {
             }
         }
 
-        // A Matemática Responsiva: Quantas colunas cabem com os gaps?
         double gap = this.getHgap();
         int colsThatFit = Math.max(1, (int) ((containerWidth + gap) / (minWidth + gap)));
-
-        // Não criar colunas fantasma se houver poucos cartões (Regra auto-fit)
         colsThatFit = Math.min(colsThatFit, builtNodes.size());
 
-        // Se o número de colunas for igual à renderização anterior, evita recalcular!
         if (colsThatFit == this.currentCols) return;
         this.currentCols = colsThatFit;
 
-        // 1. Limpar a grelha atual
         this.getColumnConstraints().clear();
         this.getChildren().clear();
 
-        // 2. Distribuir larguras perfeitamente (ex: se cabem 3, divide por 33.33%)
         for (int i = 0; i < colsThatFit; i++) {
             ColumnConstraints cc = new ColumnConstraints();
             cc.setPercentWidth(100.0 / colsThatFit);
+            cc.setMinWidth(0); // ⭐ CURA WEB: Liberta a compressão!
+            cc.setFillWidth(true);
+            cc.setHalignment(javafx.geometry.HPos.CENTER);
+            cc.setHgrow(javafx.scene.layout.Priority.SOMETIMES);
             this.getColumnConstraints().add(cc);
         }
 
-        // 3. Posicionar os nós usando as coordenadas de grelha "Auto-Flow" W3C
         int col = 0, row = 0;
         for (int i = 0; i < builtNodes.size(); i++) {
             Node node = builtNodes.get(i);
-            applyMargins(node, cachedTags.get(i), this.context);
+            NativeTag tag = cachedTags.get(i);
+            applyMargins(node, tag, this.context);
 
-            this.add(node, col, row);
+            int colSpan = getSpan(tag, "grid-column");
+            int rowSpan = getSpan(tag, "grid-row");
 
-            col++;
-            if (col >= colsThatFit) {
-                col = 0; // Quebra de linha!
-                row++;
-            }
+            if (colSpan > colsThatFit) colSpan = colsThatFit;
+            if (col + colSpan > colsThatFit) { col = 0; row++; }
+
+            this.add(node, col, row, colSpan, rowSpan);
+
+            col += colSpan;
+            if (col >= colsThatFit) { col = 0; row++; }
         }
     }
 
     private void buildStaticGrid() {
-        // A tua lógica original mantida e limpa
         List<GridDimension> expandedColumns = expandDimensions(columns, builtNodes.size());
         List<GridDimension> expandedRows = expandDimensions(rows, builtNodes.size());
 
         applyColumnConstraints(expandedColumns);
         applyRowConstraints(expandedRows);
 
+        int totalCols = expandedColumns.size();
+        if (totalCols == 0) totalCols = 1;
+
         int col = 0, row = 0;
         for (int i = 0; i < builtNodes.size(); i++) {
             Node node = builtNodes.get(i);
-            applyMargins(node, cachedTags.get(i), context);
-            this.add(node, col, row);
+            NativeTag tag = cachedTags.get(i);
+            applyMargins(node, tag, context);
 
-            col++;
-            if (col >= expandedColumns.size()) {
+            // ⭐ A INTELIGÊNCIA ESPACIAL (Lê o "span 2")
+            int colSpan = getSpan(tag, "grid-column");
+            int rowSpan = getSpan(tag, "grid-row");
+
+            if (colSpan > totalCols) colSpan = totalCols;
+
+            // Se não couber na linha, quebra para a de baixo!
+            if (col + colSpan > totalCols) {
+                col = 0;
+                row++;
+            }
+
+            this.add(node, col, row, colSpan, rowSpan);
+
+            col += colSpan;
+            if (col >= totalCols) {
                 col = 0;
                 row++;
             }
         }
+    }
+
+    // ⭐ NOVO: O Extrator de Span CSS
+    private int getSpan(NativeTag tag, String property) {
+        Map<String, String> styles = tag.getRawStyles();
+        if (styles.containsKey(property)) {
+            String val = styles.get(property).toLowerCase();
+            if (val.contains("span")) {
+                try {
+                    return Integer.parseInt(val.replace("span", "").trim());
+                } catch (Exception ignored) {}
+            }
+        }
+        return 1; // Padrão é 1 célula
     }
 
     private List<GridDimension> expandDimensions(List<GridDimension> dims, int childCount) {
@@ -147,22 +172,33 @@ public class GridContainerPane extends GridPane implements CustomLayoutPane {
     private void applyColumnConstraints(List<GridDimension> dims) {
         getColumnConstraints().clear();
         double totalFr = 0;
+        boolean isMixedLayout = false;
+
         for (GridDimension d : dims) {
             if (d.isFr()) totalFr += d.getFrValue();
+            else isMixedLayout = true;
         }
+
         for (GridDimension d : dims) {
             ColumnConstraints cc = new ColumnConstraints();
             d.applyToColumn(cc, 0, dims.size());
+
             if (d.isFr() && totalFr > 0) {
-                cc.setPercentWidth((d.getFrValue() / totalFr) * 100);
+                if (isMixedLayout) {
+                    cc.setHgrow(javafx.scene.layout.Priority.ALWAYS);
+                    cc.setMinWidth(0); // ⭐ CURA WEB: Liberta a compressão!
+                } else {
+                    cc.setPercentWidth((d.getFrValue() / totalFr) * 100);
+                    cc.setMinWidth(0); // ⭐ CURA WEB: Liberta a compressão!
+                }
             }
+            cc.setFillWidth(true);
+            cc.setHalignment(javafx.geometry.HPos.CENTER);
             getColumnConstraints().add(cc);
         }
     }
 
-    private void applyRowConstraints(List<GridDimension> dims) {
-        // Oculto por simplicidade, mantém o teu código original...
-    }
+    private void applyRowConstraints(List<GridDimension> dims) {}
 
     private void applyMargins(Node targetNode, NativeTag child, CssContext context) {
         if (!child.getResolvedStyles().margin.isZero()) {

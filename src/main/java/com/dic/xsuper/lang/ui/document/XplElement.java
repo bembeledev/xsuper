@@ -43,6 +43,9 @@ public class XplElement extends XplInstance implements XplNativeObject{
     public XplElement firstChild;
     public XplElement lastChild;
 
+    //aplicação do scroll
+    private XplScroll scroll;
+
     // Assume uma matrícula própria (útil para document.createElement("div"))
     public String _internalUid = com.dic.xsuper.lang.ui.html.XplNode.generateUid();
 
@@ -243,16 +246,31 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // Dimensões (simuladas)
-    public int getClientWidth() { return 0; }
-    public int getClientHeight() { return 0; }
-    public int getOffsetWidth() { return 0; }
-    public int getOffsetHeight() { return 0; }
-    public int getScrollWidth() { return 0; }
-    public int getScrollHeight() { return 0; }
-    public int getScrollTop() { return 0; }
-    public void setScrollTop(int value) {}
-    public int getScrollLeft() { return 0; }
-    public void setScrollLeft(int value) {}
+    // ─── Gerenciamento do scroll ──────────────────────────────────
+    public XplScroll getScroll() {
+        if (scroll == null) {
+            // Inicializa com o ScrollEngine global (podes injetar via setter ou singleton)
+            scroll = new XplScroll(this, SuperUiEngine.getInstance().getScrollEngine());
+        }
+        return scroll;
+    }
+
+    // ─── Métodos de scroll (delegação) ───────────────────────────
+    public float getScrollTop() { return getScroll().getScrollTop(); }
+    public void setScrollTop(float value) { getScroll().setScrollTop(value); }
+    public float getScrollLeft() { return getScroll().getScrollLeft(); }
+    public void setScrollLeft(float value) { getScroll().setScrollLeft(value); }
+    public String getOverflowX() { return getScroll().getOverflowX(); }
+    public void setOverflowX(String overflowX) { getScroll().setOverflowX(overflowX); }
+    public String getOverflowY() { return getScroll().getOverflowY(); }
+    public void setOverflowY(String overflowY) { getScroll().setOverflowY(overflowY); }
+
+    public int getClientWidth() { return getScroll().getClientWidth(); }
+    public int getClientHeight() { return getScroll().getClientHeight(); }
+    public int getScrollWidth() { return getScroll().getScrollWidth(); }
+    public int getScrollHeight() { return getScroll().getScrollHeight(); }
+    public int getOffsetWidth() { return getScroll().getOffsetWidth(); }
+    public int getOffsetHeight() { return getScroll().getOffsetHeight(); }
 
     // ─── NOVAS PROPRIEDADES UNIVERSAIS (value, name, type, etc) ──────────────
 
@@ -594,6 +612,9 @@ public class XplElement extends XplInstance implements XplNativeObject{
         String currentStyle = (String) attributes.getOrDefault("style", "");
         Map<String, String> styles = parseStyle(currentStyle);
         styles.put(property, value);
+        if ("overflow".equals(property) || "overflow-x".equals(property) || "overflow-y".equals(property)) {
+            getScroll().parseOverflowStyles();
+        }
         attributes.put("style", serializeStyle(styles));
     }
 

@@ -219,6 +219,7 @@ public final class HtmlTagUtils {
                 "tooltip",       // boolean ou objeto
                 "legend"         // boolean ou objeto
         ));
+        TAG_SPECIFIC_ATTRIBUTES.put("hr", List.of("orientation"));
     }
 
     private HtmlTagUtils() {

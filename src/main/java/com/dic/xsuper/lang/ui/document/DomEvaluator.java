@@ -78,9 +78,6 @@ public class DomEvaluator {
                         // ⭐ A CURA: Usamos o método que preserva o tipo real (List/Map)
                         // em vez de forçar a conversão para String!
                         Object resolved = resolveAttributeValue(strValue, dynamicElement);
-
-                        System.err.println(resolved);
-
                         // Se não for nulo, guarda o objeto real. Se for nulo, guarda vazio.
                         dynamicElement.setAttribute(key, resolved != null ? resolved : "");
                     }

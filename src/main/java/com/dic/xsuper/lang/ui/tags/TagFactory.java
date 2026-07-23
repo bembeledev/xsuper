@@ -135,9 +135,12 @@ public class TagFactory {
                     case "bubble" -> new BubbleChartTag(node);
                     case "stacked-bar" -> new StackedBarChartTag(node);
                     case "stacked-area" -> new StackedAreaChartTag(node);
+                    case "math" -> new MathChartTag(node);
                     default -> new LineChartTag(node);
                 };
             }
+
+            case "hr" -> new HrTag(node);
 
             default -> new ContainerTag(node);
         };
