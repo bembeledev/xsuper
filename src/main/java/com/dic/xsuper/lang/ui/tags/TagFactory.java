@@ -1,6 +1,7 @@
 package com.dic.xsuper.lang.ui.tags;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
+import com.dic.xsuper.lang.ui.tags.chart.*;
 import com.dic.xsuper.lang.ui.tags.controls.*;
 import com.dic.xsuper.lang.ui.tags.controls.date.DateTimeLocalInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.date.MonthInputTag;
@@ -124,6 +125,19 @@ public class TagFactory {
             case "quadcurve" -> new QuadCurveTag(node);
             case "cubiccurve" -> new CubicCurveTag(node);
             case "content" -> new TextTag(node);
+            case "chart" -> {
+                String type = (String) node.attributes.getOrDefault("type", "line");
+                yield switch (type.toLowerCase()) {
+                    case "bar" -> new BarChartTag(node);
+                    case "area" -> new AreaChartTag(node);
+                    case "pie" -> new PieChartTag(node);
+                    case "scatter" -> new ScatterChartTag(node);
+                    case "bubble" -> new BubbleChartTag(node);
+                    case "stacked-bar" -> new StackedBarChartTag(node);
+                    case "stacked-area" -> new StackedAreaChartTag(node);
+                    default -> new LineChartTag(node);
+                };
+            }
 
             default -> new ContainerTag(node);
         };

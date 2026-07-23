@@ -68,16 +68,21 @@ public class DomEvaluator {
                 XplNode dynamicElement = cloneNode(node);
 
                 // ════════════════════════════════════════════════════════════════
-                // 🔥 PASSO 1: Interpolação em atributos normais (Angular‑like)
+                // 🔥 PASSO 1: Interpolação em atributos normais (PRESERVA OBJETOS!)
                 // ════════════════════════════════════════════════════════════════
                 for (Map.Entry<String, Object> attrEntry : node.attributes.entrySet()) {
                     String key = attrEntry.getKey();
                     Object value = attrEntry.getValue();
-                    // Mudou de "{{" para "{"
-                    if (value instanceof String && ((String) value).contains("{")) {
-                        String resolved = resolveAttributeBindings((String) value, dynamicElement);
-                        if (resolved == null) resolved = "";
-                        dynamicElement.setAttribute(key, resolved);
+
+                    if (value instanceof String strValue && strValue.contains("{")) {
+                        // ⭐ A CURA: Usamos o método que preserva o tipo real (List/Map)
+                        // em vez de forçar a conversão para String!
+                        Object resolved = resolveAttributeValue(strValue, dynamicElement);
+
+                        System.err.println(resolved);
+
+                        // Se não for nulo, guarda o objeto real. Se for nulo, guarda vazio.
+                        dynamicElement.setAttribute(key, resolved != null ? resolved : "");
                     }
                 }
 
@@ -87,11 +92,10 @@ public class DomEvaluator {
                 for (Map.Entry<String, String> styleEntry : dynamicElement.style.entrySet()) {
                     String prop = styleEntry.getKey();
                     String val = styleEntry.getValue();
-                    // Mudou de "{{" para "{"
                     if (val != null && val.contains("{")) {
+                        // Estilos CSS são SEMPRE strings, logo aqui usamos o avaliador de texto normal
                         String resolved = resolveAttributeBindings(val, dynamicElement);
-                        if (resolved == null) resolved = "";
-                        dynamicElement.style.put(prop, resolved);
+                        dynamicElement.style.put(prop, resolved != null ? resolved : "");
                     }
                 }
 
@@ -113,8 +117,8 @@ public class DomEvaluator {
                         reactiveState.track(varName, dynamicElement);
                     }
                     Object value = evaluateExpressionXPL(varName);
-                    String strValue = value != null ? String.valueOf(value) : "";
-                    dynamicElement.setAttribute(bindKey, strValue);
+
+                    dynamicElement.setAttribute(bindKey, value);
                 }
 
                 // ─── PASSO 5: Interpolação em textContent (já existente) ──────
@@ -252,18 +256,21 @@ public class DomEvaluator {
     private Object resolveAttributeValue(String text, XplNode componentNode) {
         if (text == null) return null;
 
-        // Se for EXATAMENTE uma única expressão (ex: "{{pessoa}}") sem texto à volta
-        if (text.startsWith("{{") && text.endsWith("}}") && text.indexOf("{{", 2) == -1) {
-            String expr = text.substring(2, text.length() - 2).trim();
+        // ⭐ A CURA: Agora procura por uma única chaveta e corta apenas 1 caractere!
+        if (text.startsWith("{") && text.endsWith("}") && !text.startsWith("{{")) {
 
-            // ⭐ CORREÇÃO DE ARQUITETURA: Usa track() para registar dependências
-            // e depois usa evaluateExpressionXPL para resolver a expressão matemática/lógica!
+            // Corta 1 no início (o '{') e 1 no fim (o '}')
+            String expr = text.substring(1, text.length() - 1).trim();
+
             if (reactiveState != null && componentNode != null) {
                 reactiveState.track(expr, componentNode);
             }
+
+            // Devolve o Objeto PURO (List, Map, Boolean) direto do Interpretador!
             return evaluateExpressionXPL(expr);
         }
 
+        // Se for string misturada (ex: "id-{index}"), cai no motor de strings que tu viste
         return resolveAttributeBindings(text, componentNode);
     }
 

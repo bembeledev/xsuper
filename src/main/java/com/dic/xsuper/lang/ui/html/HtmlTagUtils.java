@@ -60,7 +60,7 @@ public final class HtmlTagUtils {
             "details", "summary", "menu", "menuitem",
 
             // Scripting & Vector (Canvas e SVG integrados)
-            "canvas", "svg", "math",
+            "canvas", "svg", "math", "chart",
             "path", "circle", "rect", "line", "polygon", "polyline",
             "ellipse", "arc", "quadcurve", "cubiccurve",
 
@@ -206,6 +206,19 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("quadcurve", List.of("startX", "startY", "controlX", "controlY", "endX", "endY", "fill", "stroke", "stroke-width"));
         TAG_SPECIFIC_ATTRIBUTES.put("cubiccurve", List.of("startX", "startY", "controlX1", "controlY1", "controlX2", "controlY2", "endX", "endY", "fill", "stroke", "stroke-width"));
         TAG_SPECIFIC_ATTRIBUTES.put("content", List.of("x", "y", "dx", "dy", "text-anchor", "font-size", "font-family", "font-weight", "fill", "stroke", "stroke-width", "rotate", "length-adjust"));
+        TAG_SPECIFIC_ATTRIBUTES.put("chart", List.of(
+                "type",          // tipo de gráfico (bar, line, pie, etc.)
+                "data",          // dados (pode ser um JSON string)
+                "options",       // opções de configuração (JSON)
+                "width", "height",
+                "theme",         // claro/escuro
+                "responsive",    // boolean
+                "title",         // título do gráfico
+                "colors",        // paleta de cores
+                "animation",     // boolean ou objeto
+                "tooltip",       // boolean ou objeto
+                "legend"         // boolean ou objeto
+        ));
     }
 
     private HtmlTagUtils() {
