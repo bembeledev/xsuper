@@ -15,7 +15,7 @@ public final class HtmlTagUtils {
     // ⭐ 1. A NOVA LISTA EXCLUSIVA DE SHAPES SVG
     public static final Set<String> SVG_SHAPES = Set.of(
             "path", "circle", "rect", "line", "polygon", "polyline",
-            "ellipse", "arc", "quadcurve", "cubiccurve"
+            "ellipse", "arc", "quadcurve", "cubiccurve", "content"
     );
 
     public static final Set<String> EMPTY_TAGS = Set.of(
@@ -65,7 +65,7 @@ public final class HtmlTagUtils {
             "ellipse", "arc", "quadcurve", "cubiccurve",
 
             // Nós especiais (internos)
-            "#text", "#comment", "#document-fragment", "root"
+            "#text", "#comment", "#document-fragment", "root", "content"
     );
 
     static {
@@ -189,8 +189,8 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("frame", List.of("src", "name", "scrolling", "marginwidth", "marginheight", "noresize", "frameborder"));
         TAG_SPECIFIC_ATTRIBUTES.put("frameset", List.of("cols", "rows", "border"));
         TAG_SPECIFIC_ATTRIBUTES.put("iframe", List.of("src", "srcdoc", "name", "width", "height", "sandbox", "loading", "allow", "allowfullscreen", "referrerpolicy"));
-        TAG_SPECIFIC_ATTRIBUTES.put("text", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#text", List.of());
+        TAG_SPECIFIC_ATTRIBUTES.put("text", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#comment", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("#document-fragment", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("root", List.of());
@@ -205,6 +205,7 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("arc", List.of("cx", "cy", "rx", "ry", "start", "length", "type", "fill", "stroke", "stroke-width"));
         TAG_SPECIFIC_ATTRIBUTES.put("quadcurve", List.of("startX", "startY", "controlX", "controlY", "endX", "endY", "fill", "stroke", "stroke-width"));
         TAG_SPECIFIC_ATTRIBUTES.put("cubiccurve", List.of("startX", "startY", "controlX1", "controlY1", "controlX2", "controlY2", "endX", "endY", "fill", "stroke", "stroke-width"));
+        TAG_SPECIFIC_ATTRIBUTES.put("content", List.of("x", "y", "dx", "dy", "text-anchor", "font-size", "font-family", "font-weight", "fill", "stroke", "stroke-width", "rotate", "length-adjust"));
     }
 
     private HtmlTagUtils() {

@@ -148,6 +148,8 @@ public class XplCssLexer {
                 scanDirective();
                 break;
 
+            case '?': addToken(XplCssTokenType.QUESTION_MARK); break;
+
             // ─── Números e identificadores ─────────────────────────────
             default:
                 if (Character.isWhitespace(c)) {

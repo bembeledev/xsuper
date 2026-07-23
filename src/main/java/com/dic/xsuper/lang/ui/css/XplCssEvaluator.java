@@ -188,11 +188,8 @@ public class XplCssEvaluator {
      * Interpola strings, substituindo {{chave}} pelo valor do contexto.
      */
     private static String interpolate(String text, Map<String, Object> context) {
-        String result = text;
-        for (Map.Entry<String, Object> entry : context.entrySet()) {
-            result = result.replace("{{" + entry.getKey() + "}}", String.valueOf(entry.getValue()));
-        }
-        return result;
+        // Usa o avaliador de texto livre porque os seletores CSS usam a sintaxe {{ var }}
+        return com.dic.xsuper.lang.ui.expression.XplExpressionEvaluator.evaluateText(text, context);
     }
 
     /**

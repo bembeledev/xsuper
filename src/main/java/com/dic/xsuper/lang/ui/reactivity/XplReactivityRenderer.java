@@ -55,7 +55,7 @@ public class XplReactivityRenderer {
         // NÍVEL 2: CIRURGIA DE TEXTO (Interpolação, ex: {{ titulo }})
         // =========================================================================
         if (node.rawTemplate != null && node.rawTemplate.contains("{{")) {
-            String newText = engine.getDomEvaluator().resolveBindings(node.rawTemplate, node);
+            String newText = engine.getDomEvaluator().resolveTextBindings(node.rawTemplate, node);
             node.textContent = newText;
 
             if (engine.getRendererBridge() != null) {

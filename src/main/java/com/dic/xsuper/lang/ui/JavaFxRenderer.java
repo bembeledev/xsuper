@@ -287,22 +287,6 @@ public class JavaFxRenderer implements XplUiBridge {
                 fxNodeRegistry.put(secretUid, fxNode);
             }
 
-            /*for (Map.Entry<String, String> entry : tag.getEvents().entrySet()) {
-                String eventName = entry.getKey();
-                String action = entry.getValue();
-
-                if (eventName.equals("click")) {
-                    if (fxNode instanceof ButtonBase btn) {
-                        btn.setOnAction(e -> { if (engineCallback != null) engineCallback.onEvent(action, null); });
-                    } else {
-                        fxNode.setOnMouseClicked(e -> { if (engineCallback != null) engineCallback.onEvent(action, null); });
-                    }
-                } else if (eventName.equals("input") && fxNode instanceof TextInputControl input) {
-                    input.textProperty().addListener((obs, oldV, newV) -> {
-                        if (engineCallback != null) engineCallback.onEvent(action, newV);
-                    });
-                }
-            }*/
         }
         for (NativeTag child : tag.getChildren()) {
             registerNodeRecursively(child);

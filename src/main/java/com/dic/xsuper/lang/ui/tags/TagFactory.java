@@ -32,7 +32,7 @@ public class TagFactory {
             case "div", "main", "section", "article", "header", "footer", "aside" -> new ContainerTag(node);
 
             // ⭐ NÓS DE TEXTO PURO (Gerados pelo HtmlParser)
-            case "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "label", "text", "#text", "b", "strong", "i", "em" -> new LabelTag(node);
+            case "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "label", "#text", "b", "strong", "i", "em" -> new LabelTag(node);
 
             // ⭐ Tabelas
             case "table" -> new TableTag(node);
@@ -123,6 +123,7 @@ public class TagFactory {
             case "arc" -> new ArcTag(node);
             case "quadcurve" -> new QuadCurveTag(node);
             case "cubiccurve" -> new CubicCurveTag(node);
+            case "content" -> new TextTag(node);
 
             default -> new ContainerTag(node);
         };

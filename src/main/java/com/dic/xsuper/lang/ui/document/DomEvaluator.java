@@ -56,42 +56,76 @@ public class DomEvaluator {
                 result.addAll(evaluateComponent(node));
                 break;
             }
-            // ⭐ A CORREÇÃO: TEM DE APANHAR O "#text" PARA EXECUTAR A MAGIA! ⭐
             case "#text":
             case "text":
                 XplNode textNode = cloneNode(node);
-                // Passa o texto (ex: "{{item}}") pelo tradutor de variáveis!
-                // ⭐ NOVO: Guardar a string intocada (a planta) para o Cirurgião saber como a reconstruir mais tarde!
                 textNode.rawTemplate = node.textContent;
-                textNode.textContent = resolveBindings(node.textContent,textNode);
+                textNode.textContent = resolveTextBindings(node.textContent, textNode);
                 result.add(textNode);
                 break;
 
             default:
                 XplNode dynamicElement = cloneNode(node);
 
-                // 1. Resolver Bindings Dinâmicos (Atributos)
+                // ════════════════════════════════════════════════════════════════
+                // 🔥 PASSO 1: Interpolação em atributos normais (Angular‑like)
+                // ════════════════════════════════════════════════════════════════
+                for (Map.Entry<String, Object> attrEntry : node.attributes.entrySet()) {
+                    String key = attrEntry.getKey();
+                    Object value = attrEntry.getValue();
+                    // Mudou de "{{" para "{"
+                    if (value instanceof String && ((String) value).contains("{")) {
+                        String resolved = resolveAttributeBindings((String) value, dynamicElement);
+                        if (resolved == null) resolved = "";
+                        dynamicElement.setAttribute(key, resolved);
+                    }
+                }
+
+                // ════════════════════════════════════════════════════════════════
+                // 🔥 PASSO 2: Interpolação no mapa `style` (propriedades individuais)
+                // ════════════════════════════════════════════════════════════════
+                for (Map.Entry<String, String> styleEntry : dynamicElement.style.entrySet()) {
+                    String prop = styleEntry.getKey();
+                    String val = styleEntry.getValue();
+                    // Mudou de "{{" para "{"
+                    if (val != null && val.contains("{")) {
+                        String resolved = resolveAttributeBindings(val, dynamicElement);
+                        if (resolved == null) resolved = "";
+                        dynamicElement.style.put(prop, resolved);
+                    }
+                }
+
+                // ════════════════════════════════════════════════════════════════
+                // 🔥 PASSO 3: Sincronizar o mapa `style` com o atributo "style"
+                // ════════════════════════════════════════════════════════════════
+                if (!dynamicElement.style.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Map.Entry<String, String> e : dynamicElement.style.entrySet()) {
+                        sb.append(e.getKey()).append(": ").append(e.getValue()).append("; ");
+                    }
+                    dynamicElement.setAttribute("style", sb.toString().trim());
+                }
+
+                // ─── PASSO 4: Bindings com colchetes (já existente) ────────────
                 for (String bindKey : node.bindings.keySet()) {
                     String varName = node.bindings.get(bindKey);
-
                     if (reactiveState != null) {
                         reactiveState.track(varName, dynamicElement);
                     }
-                    Object value = evaluateExpressionXPL(varName); // A fonte da verdade!
-
+                    Object value = evaluateExpressionXPL(varName);
                     String strValue = value != null ? String.valueOf(value) : "";
                     dynamicElement.setAttribute(bindKey, strValue);
                 }
 
-                // ====================================================================
-                // ⭐ A CURA DO TEXTO: Avaliar o textContent diretamente no Pai!
-                // ====================================================================
+                // ─── PASSO 5: Interpolação em textContent (já existente) ──────
                 if (dynamicElement.textContent != null && dynamicElement.textContent.contains("{{")) {
-                    dynamicElement.rawTemplate = dynamicElement.textContent; // Guarda a planta original!
-                    dynamicElement.textContent = resolveBindings(dynamicElement.textContent, dynamicElement);
+                    dynamicElement.rawTemplate = dynamicElement.textContent;
+                    // Usa a função dedicada para Texto Duplo
+                    dynamicElement.textContent = resolveTextBindings(dynamicElement.textContent, dynamicElement);
+                    if (dynamicElement.textContent == null) dynamicElement.textContent = "";
                 }
 
-                // 3. Avaliar filhos recursivamente
+                // ─── PASSO 6: Avaliar filhos recursivamente ────────────────────
                 for (XplNode child : node.children) {
                     dynamicElement.children.addAll(evaluateNode(child));
                 }
@@ -100,8 +134,6 @@ public class DomEvaluator {
         }
         return result;
     }
-
-
     /**
      * Processa um nó componente, instanciando a classe XPL correspondente e
      * substituindo o nó pela árvore renderizada.
@@ -232,7 +264,7 @@ public class DomEvaluator {
             return evaluateExpressionXPL(expr);
         }
 
-        return resolveBindings(text, componentNode);
+        return resolveAttributeBindings(text, componentNode);
     }
 
     // =====================================================================
@@ -483,30 +515,70 @@ public class DomEvaluator {
         return a.equals(b);
     }
 
-    // 🧪 O motor que transforma "{{item}}" no valor real avaliado pelo XPL
-    // Em DomEvaluator.java
+    // =========================================================================
+    // 🧪 MOTORES DE BINDING (ATRIBUTOS { } vs TEXTO {{ }})
+    // =========================================================================
 
-    // 🧪 O motor que transforma "{{item}}" no valor real avaliado pelo XPL
-    // ⭐ NOVO: Recebe o targetNode para o colar aos Signals
-    public String resolveBindings(String text, XplNode targetNode) {
+    public String resolveTextBindings(String text, XplNode targetNode) {
         if (text == null || !text.contains("{{")) return text;
 
-        String resolved = text;
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\{(.+?)\\}\\}").matcher(text);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\{([^}]+)\\}\\}").matcher(text);
+        StringBuffer sb = new StringBuffer();
 
         while (m.find()) {
             String expr = m.group(1).trim();
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(processExpression(expr, targetNode)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
 
-            // 1. Cola os "Ouvidos" do nó à variável no Map Reativo
+    public String resolveAttributeBindings(String text, XplNode targetNode) {
+        if (text == null || !text.contains("{")) return text;
+
+        // Regex cega o {{ }} para não haver colisões
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?<!\\{)\\{([^}]+)\\}(?!\\})").matcher(text);
+        StringBuffer sb = new StringBuffer();
+
+        while (m.find()) {
+            String expr = m.group(1).trim();
+            m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(processExpression(expr, targetNode)));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * O Cérebro Unificado: Analisa a string da expressão, atrela os Signals
+     * de Reatividade e pergunta ao Interpretador XPL o resultado final.
+     */
+    private String processExpression(String expr, XplNode targetNode) {
+        // ⭐ É UM TERNÁRIO? (Ex: isNotificationVisible ? 'eu.png' : 'ele.png')
+        if (expr.contains("?")) {
+            String[] parts = expr.split("\\?", 2);
+            String condition = parts[0].trim();
+
+            String[] branches = parts[1].split(":", 2);
+            String trueBranch = branches[0].trim().replace("\"", "").replace("'", "");
+            String falseBranch = branches.length > 1 ? branches[1].trim().replace("\"", "").replace("'", "") : "";
+
+            // 1. Cola os "ouvidos" da reatividade apenas na condição do ternário!
+            if (reactiveState != null && targetNode != null) {
+                reactiveState.track(condition, targetNode);
+            }
+
+            // 2. Avalia a condição no XPL
+            Object val = evaluateExpressionXPL(condition);
+            return isTruthy(val) ? trueBranch : falseBranch;
+        }
+
+        // ⭐ É UMA VARIÁVEL SIMPLES? (Ex: index)
+        else {
             if (reactiveState != null && targetNode != null) {
                 reactiveState.track(expr, targetNode);
             }
-
-            // 2. Vai SEMPRE buscar o valor real ao Interpretador (A Fonte da Verdade)
             Object val = evaluateExpressionXPL(expr);
-
-            resolved = resolved.replace(m.group(0), val != null ? String.valueOf(val) : "");
+            return val != null ? String.valueOf(val) : "";
         }
-        return resolved;
     }
 }

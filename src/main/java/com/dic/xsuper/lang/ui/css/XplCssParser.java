@@ -439,7 +439,9 @@ public class XplCssParser {
             if (!isAtEnd() && !check(XplCssTokenType.SEMICOLON) && !check(XplCssTokenType.RBRACE)) {
                 XplCssTokenType nextType = peek().type;
                 if (t.type != XplCssTokenType.LPAREN && nextType != XplCssTokenType.RPAREN &&
-                        nextType != XplCssTokenType.COMMA && t.type != XplCssTokenType.COMMA) {
+                        nextType != XplCssTokenType.COMMA && t.type != XplCssTokenType.COMMA &&
+                        nextType != XplCssTokenType.LPAREN && // <- PROÍBE espaço antes de '(' (ex: "rgba(")
+                        t.type != XplCssTokenType.MINUS) {    // <- PROÍBE espaço depois de '-' (ex: "-8px")
                     sb.append(" ");
                 }
             }

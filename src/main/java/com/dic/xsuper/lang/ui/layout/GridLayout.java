@@ -2,8 +2,10 @@ package com.dic.xsuper.lang.ui.layout;
 
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import com.dic.xsuper.lang.ui.layout.panes.GridContainerPane;
-import javafx.scene.layout.ColumnConstraints;
+import com.dic.xsuper.lang.ui.layout.grid.GridDimension;
+import com.dic.xsuper.lang.ui.layout.grid.GridTemplateParser;
 import javafx.scene.layout.Pane;
+import java.util.List;
 import java.util.Map;
 
 public class GridLayout implements LayoutManager {
@@ -11,59 +13,31 @@ public class GridLayout implements LayoutManager {
     public Pane createContainer(NativeTag tag) {
         Map<String, String> styles = tag.getRawStyles();
 
-        // ⭐ Instancia o nosso Pane Especializado
-        GridContainerPane grid = new GridContainerPane(styles);
+        // Parse das colunas e linhas
+        List<GridDimension> columns = parseGridTemplate(styles.get("grid-template-columns"));
+        List<GridDimension> rows = parseGridTemplate(styles.get("grid-template-rows"));
 
-        // 1. GAP (Espaçamento entre células)
-        if (styles.containsKey("gap")) {
+        // Cria o GridContainerPane com as dimensões
+        GridContainerPane grid = new GridContainerPane(styles, columns, rows);
+
+        // Configurar gap
+        String gap = styles.get("gap");
+        if (gap != null) {
             try {
-                double gap = Double.parseDouble(styles.get("gap").replace("px", "").trim());
-                grid.setHgap(gap);
-                grid.setVgap(gap);
+                double gapVal = Double.parseDouble(gap.replace("px", "").trim());
+                grid.setHgap(gapVal);
+                grid.setVgap(gapVal);
             } catch (Exception ignored) {}
         }
 
-        // 2. A MATEMÁTICA DO GRID-TEMPLATE-COLUMNS (Restrições percentuais / fr)
-        if (styles.containsKey("grid-template-columns")) {
-            String[] cols = styles.get("grid-template-columns").trim().split("\\s+");
-
-            double totalFr = 0;
-            for (String col : cols) {
-                if (col.endsWith("fr")) {
-                    try {
-                        totalFr += Double.parseDouble(col.replace("fr", "").trim());
-                    } catch (NumberFormatException e) {
-                        totalFr += 1.0;
-                    }
-                }
-            }
-
-            for (String col : cols) {
-                ColumnConstraints constraint = new ColumnConstraints();
-
-                if (col.endsWith("fr")) {
-                    double frValue = 1.0;
-                    try {
-                        frValue = Double.parseDouble(col.replace("fr", "").trim());
-                    } catch (NumberFormatException ignored) {}
-
-                    if (totalFr > 0) {
-                        constraint.setPercentWidth((frValue / totalFr) * 100);
-                    }
-                } else if (col.endsWith("%")) {
-                    try {
-                        constraint.setPercentWidth(Double.parseDouble(col.replace("%", "").trim()));
-                    } catch (NumberFormatException ignored) {}
-                } else if (col.endsWith("px")) {
-                    try {
-                        constraint.setPrefWidth(Double.parseDouble(col.replace("px", "").trim()));
-                    } catch (NumberFormatException ignored) {}
-                }
-
-                grid.getColumnConstraints().add(constraint);
-            }
-        }
+        // Configurar alinhamentos (serão aplicados no GridContainerPane)
+        // justify-items, align-items, justify-content, align-content
 
         return grid;
+    }
+
+    private List<GridDimension> parseGridTemplate(String value) {
+        if (value == null || value.trim().isEmpty()) return List.of();
+        return GridTemplateParser.parse(value);
     }
 }

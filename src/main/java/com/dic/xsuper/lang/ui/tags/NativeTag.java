@@ -129,6 +129,7 @@ public abstract class NativeTag{
         return fxNode;
     }
 
+
     // ==========================================================
     // 🛠️ Helper para extrair a Duração, Iterações, etc. (Cola isto na NativeTag se não tiveres)
     // ==========================================================
@@ -371,6 +372,9 @@ public abstract class NativeTag{
         if ("bold".equals(resolvedStyles.fontWeight)) {
             css.append("-fx-font-weight: bold; ");
         }
+
+        // ⭐ A INTEGRAÇÃO DO NOVO ADAPTADOR W3C
+        com.dic.xsuper.lang.ui.css.W3cCssAdapter.applyW3cToNative(fxNode, style, css);
 
         if (!css.isEmpty()) {
             fxNode.setStyle(fxNode.getStyle() + (fxNode.getStyle().isEmpty() ? "" : "; ") + css.toString());

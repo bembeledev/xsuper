@@ -3,7 +3,6 @@ package com.dic.xsuper.lang.ui.tags.shapes;
 import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import javafx.scene.Node;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 
