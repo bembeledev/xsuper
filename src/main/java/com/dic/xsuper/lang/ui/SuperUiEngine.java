@@ -34,7 +34,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // 1. As Plantas (Classes) Nativas Globais
     public static XplClass ELEMENT_CLASS;
     public static XplClass DOCUMENT_CLASS;
-    public static XplClass ENGINE_CLASS;
 
     // Janela Principal
     MainWindow mainWindow;
