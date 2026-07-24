@@ -429,6 +429,13 @@ public class DomEvaluator {
         clone.textContent = original.textContent;
         clone.attributes.putAll(original.attributes);
         clone.events.putAll(original.events);
+
+        // ⭐ A CURA DA AMNÉSIA: O clone herda a identidade e os poderes reativos do original!
+        clone._internalUid = original._internalUid;
+        clone.bindings.putAll(original.bindings);
+        clone.rawTemplate = original.rawTemplate;
+        clone.hostComponent = original.hostComponent;
+
         return clone;
     }
 

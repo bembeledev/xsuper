@@ -81,6 +81,26 @@ public abstract class ChartBase extends NativeTag {
         container.getChildren().add(activeChart);
     }
 
+    // Adicionar no ChartBase.java
+    @Override
+    public void onReactiveAttributeChange(String attrName, Object newValue) {
+        super.onReactiveAttributeChange(attrName, newValue);
+
+        // Se o programador XPL mudar a variável de dados: ex: dados_vendas = novos_dados;
+        if ("data".equalsIgnoreCase(attrName)) {
+            // Em vez de recriar o gráfico, apenas injetamos os novos dados.
+            // O motor do gráfico encarrega-se de animar as barras/linhas de forma fluida!
+            javafx.application.Platform.runLater(() -> {
+                populateData(newValue);
+            });
+        }
+
+        // Se mudar o título reativamente
+        if ("title".equalsIgnoreCase(attrName) && activeChart != null) {
+            activeChart.setTitle(String.valueOf(newValue));
+        }
+    }
+
     protected abstract Chart createChart();
     protected void applySpecificAttributes() {}
     protected void populateData(Object data) {}

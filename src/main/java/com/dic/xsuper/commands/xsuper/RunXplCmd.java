@@ -90,6 +90,11 @@ public class RunXplCmd implements Command {
                     @Override
                     public void rebuildFullView(String targetId, XplNode virtualNode) {}
 
+                    @Override
+                    public void invokeMethodOnNode(String targetId, String methodName, Object[] args) {
+
+                    }
+
 
                     @Override public void reportError(String message) {
                         System.err.println("Erro UI: " + message);

@@ -25,6 +25,9 @@ public class JavaFxRenderer implements XplUiBridge {
     // ⭐ O ESTADO DA ÁRVORE ANTERIOR (Memória VDOM)
     private XplNode currentDomRoot = null;
 
+    // No topo do JavaFxRenderer.java
+    private final Map<String, NativeTag> tagRegistry = new HashMap<>();
+
     public JavaFxRenderer(Pane windowRoot) {
         this.windowRoot = windowRoot;
     }
@@ -67,33 +70,58 @@ public class JavaFxRenderer implements XplUiBridge {
         });
     }
 
+    @Override
+    public void invokeMethodOnNode(String targetId, String methodName, Object... args) {
+        Platform.runLater(() -> {
+            NativeTag tag = tagRegistry.get(targetId);
+            if (tag != null) {
+                tag.invokeMethod(methodName, args); // O Polimorfismo faz o resto!
+            } else {
+                System.err.println("[Renderer] Elemento não encontrado para invocar o método: " + targetId);
+            }
+        });
+    }
+
     // =====================================================================
     // 1. O MOTOR DE RENDERIZAÇÃO E RECONCILIAÇÃO
     // =====================================================================
     @Override
     public void renderView(XplNode newDomRoot) {
+        System.out.println("🚩 [LOG 3 - Renderer] Ordem recebida! A agendar para a Thread JavaFX...");
+
         Platform.runLater(() -> {
-            if (currentDomRoot == null) {
-                // PRIMEIRA VEZ: Desenha tudo do zero e liga as âncoras!
-                windowRoot.getChildren().clear();
-                fxNodeRegistry.clear();
+            try {
+                System.out.println("🚩 [LOG 3.1 - Renderer] A iniciar Reconciliação Visual (Diffing)...");
 
-                for (XplNode xplChild : newDomRoot.children) {
-                    NativeTag tag = TagFactory.create(xplChild);
-                    if (tag != null) {
-                        Node fxNode = tag.build();
-                        xplChild.nativeNode = fxNode; // Guarda a âncora gráfica
-                        registerNodeRecursively(tag);
-                        windowRoot.getChildren().add(fxNode);
+                if (currentDomRoot == null) {
+                    System.out.println("🚩 [LOG 3.2 - Renderer] Primeira renderização (Montagem Inicial)");
+
+                    windowRoot.getChildren().clear();
+                    fxNodeRegistry.clear();
+
+                    for (XplNode xplChild : newDomRoot.children) {
+                        NativeTag tag = TagFactory.create(xplChild);
+                        if (tag != null) {
+                            Node fxNode = tag.build();
+                            xplChild.nativeNode = fxNode;
+                            registerNodeRecursively(tag);
+                            windowRoot.getChildren().add(fxNode);
+                        }
                     }
+                } else {
+                    System.out.println("🚩 [LOG 3.2 - Renderer] A fazer Diff & Patch (reconcileChildren)...");
+                    reconcileChildren(currentDomRoot, newDomRoot, windowRoot);
                 }
-            } else {
-                // VEZES SEGUINTES: A Magia da Reconciliação (Diff & Patch)
-                reconcileChildren(currentDomRoot, newDomRoot, windowRoot);
-            }
 
-            // Atualiza a árvore em memória para o próximo ciclo
-            currentDomRoot = newDomRoot;
+                // Atualiza a árvore em memória para o próximo ciclo
+                currentDomRoot = newDomRoot;
+                System.out.println("🚩 [LOG 3.3 - Renderer] Reconciliação concluída com SUCESSO!");
+
+            } catch (Exception e) {
+                // ❌ O GRITO DO JAVAFX! Isto vai expor o nosso fantasma!
+                System.err.println("❌ [CRASH FATAL NA THREAD DO JAVAFX] " + e.getMessage());
+                e.printStackTrace();
+            }
         });
     }
 
@@ -245,18 +273,30 @@ public class JavaFxRenderer implements XplUiBridge {
             }
         }
 
-        // D. Diff de Atributos Críticos (Disabled, Value, Checked)
-        boolean oldDisabled = Boolean.parseBoolean(oldNode.attributes.getOrDefault("disabled", "false").toString());
-        boolean newDisabled = Boolean.parseBoolean(newNode.attributes.getOrDefault("disabled", "false").toString());
-        if (oldDisabled != newDisabled) fxNode.setDisable(newDisabled);
 
-        String oldValue = oldNode.attributes.getOrDefault("value", "").toString();
-        String newValue = newNode.attributes.getOrDefault("value", "").toString();
-        if (!oldValue.equals(newValue)) applyRawStyleToFxNode(fxNode, "value", newValue, newValue);
+        // 1. Recupera a tag inteligente DIRETAMENTE da memória física do ecrã
+        NativeTag targetTag = (NativeTag) fxNode.getProperties().get("xpl_native_tag");
+        // D. DIFF GENÉRICO DE ATRIBUTOS
+        for (Map.Entry<String, Object> newAttr : newNode.attributes.entrySet()) {
+            String attrName = newAttr.getKey().toLowerCase();
+            Object newVal = newAttr.getValue();
+            Object oldVal = oldNode.attributes.get(attrName);
 
-        String oldChecked = oldNode.attributes.getOrDefault("checked", "false").toString();
-        String newChecked = newNode.attributes.getOrDefault("checked", "false").toString();
-        if (!oldChecked.equals(newChecked)) applyRawStyleToFxNode(fxNode, "checked", newChecked, newChecked);
+            if (!java.util.Objects.equals(oldVal, newVal)) {
+
+                // 2. AVISA A TAG IMEDIATAMENTE (Isto vai acordar o DialogTag!)
+                if (targetTag != null) {
+                    targetTag.onReactiveAttributeChange(attrName, newVal);
+                }
+
+                String valStr = newVal != null ? newVal.toString() : "";
+                switch (attrName) {
+                    case "disabled" -> fxNode.setDisable(Boolean.parseBoolean(valStr) || valStr.isEmpty());
+                    case "value" -> applyRawStyleToFxNode(fxNode, "value", valStr, newVal);
+                    case "checked" -> applyRawStyleToFxNode(fxNode, "checked", valStr, newVal);
+                }
+            }
+        }
     }
 
     private void unregisterNodeRecursively(XplNode node) {
@@ -277,6 +317,7 @@ public class JavaFxRenderer implements XplUiBridge {
             String id = tag.getId();
             if (id != null && !id.isEmpty()) {
                 fxNodeRegistry.put(id, fxNode);
+                tagRegistry.put(id, tag);
             }
 
             // ⭐ Lê a matrícula secreta gerada no XplNode/XplElement
@@ -285,6 +326,7 @@ public class JavaFxRenderer implements XplUiBridge {
             if (secretUid != null) {
                 // A caixa gráfica fica registada no dicionário com a chave "node_X"
                 fxNodeRegistry.put(secretUid, fxNode);
+                tagRegistry.put(secretUid, tag);
             }
 
         }
@@ -301,6 +343,12 @@ public class JavaFxRenderer implements XplUiBridge {
         Platform.runLater(() -> {
             Node fxNode = fxNodeRegistry.get(nodeId);
             if (fxNode == null) return;
+
+            // ⭐ 1. AVISAR A TAG INTELIGENTE (SRP Aplicado!)
+            NativeTag tag = tagRegistry.get(nodeId);
+            if (tag != null) {
+                tag.onReactiveAttributeChange(propertyName, newValue);
+            }
 
             String valStr = newValue != null ? newValue.toString() : "";
             String prop = propertyName.toLowerCase();

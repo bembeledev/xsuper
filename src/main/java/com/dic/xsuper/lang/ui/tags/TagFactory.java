@@ -141,6 +141,7 @@ public class TagFactory {
             }
 
             case "hr" -> new HrTag(node);
+            case "dialog" -> new DialogTag(node);
 
             default -> new ContainerTag(node);
         };

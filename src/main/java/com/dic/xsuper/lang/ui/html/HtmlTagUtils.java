@@ -81,7 +81,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("noscript", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("template", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("slot", List.of("name"));
-        TAG_SPECIFIC_ATTRIBUTES.put("dialog", List.of("open"));
         TAG_SPECIFIC_ATTRIBUTES.put("section", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("nav", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("article", List.of());
@@ -98,7 +97,6 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("h5", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("h6", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("p", List.of());
-        TAG_SPECIFIC_ATTRIBUTES.put("hr", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("pre", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("blockquote", List.of("cite"));
         TAG_SPECIFIC_ATTRIBUTES.put("ol", List.of("reversed", "start", "type"));
@@ -220,6 +218,21 @@ public final class HtmlTagUtils {
                 "legend"         // boolean ou objeto
         ));
         TAG_SPECIFIC_ATTRIBUTES.put("hr", List.of("orientation"));
+        TAG_SPECIFIC_ATTRIBUTES.put("dialog", List.of(
+                // ─── Atributos W3C padrão ──────────────────────────────────────────────
+                "open",           // Indica que o diálogo está aberto (booleano)
+                "returnvalue",    // Valor de retorno definido ao fechar (string)
+
+                // ─── Atributos estendidos da SuperUI ──────────────────────────────────
+                "close-on-backdrop",   // Fecha ao clicar no fundo (backdrop)
+                "close-on-escape",     // Fecha com a tecla ESC
+                "modal",               // True para overlay modal (padrão true)
+                "show-close-button",   // Mostra o botão ✕ no canto superior direito
+                "width",               // Largura da caixa do diálogo (ex: "400px")
+                "max-width",           // Largura máxima (ex: "600px")
+                "title",               // Título (pode ser usado como cabeçalho)
+                "message"              // Mensagem textual (útil para diálogos simples)
+        ));
     }
 
     private HtmlTagUtils() {

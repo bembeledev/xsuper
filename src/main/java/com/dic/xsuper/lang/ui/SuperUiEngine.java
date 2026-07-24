@@ -183,6 +183,14 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
 
+    // Adicionar no SuperUiEngine.java
+    public void invokeElementMethod(String targetId, String methodName, Object... args) {
+        if (rendererBridge != null) {
+            // O RendererBridge encontra a tag gráfica pelo ID e chama o método (showModal, close, etc.)
+            rendererBridge.invokeMethodOnNode(targetId, methodName, args);
+        }
+    }
+
     // Getter:
     public ScrollEngine getScrollEngine() { return scrollEngine; }
 
@@ -194,8 +202,10 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      * sempre que o valor de uma variável mudar. (Ex: isOpen = false)
      */
     public void updateVariable(String varName, Object newValue) {
+        System.out.println("🚩 [LOG 1 - Engine] Variável XPL alterada: " + varName + " = " + newValue);
         if (reactiveState != null) {
             reactiveState.put(varName, newValue);
+            renderCycle();
         }
     }
 
@@ -607,7 +617,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      */
     public void renderCycle() {
         if (staticRoot == null) return;
-
+        System.out.println("🚩 [LOG 2 - Engine] A iniciar renderCycle() para aplicar reatividade...");
         // 1. Guardar estado actual
         Map<String, Object> currentValues = new HashMap<>();
         collectCurrentValues(this.activeDom, currentValues);
