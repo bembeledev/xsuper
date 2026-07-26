@@ -116,6 +116,13 @@ public abstract class NativeTag{
                 );
             }
         }
+
+        // ⭐ A 1ª ÂNCORA: Liga o Nó Físico ao Nó Virtual (Cura a Amnésia do Diffing!)
+        this.sourceNode.nativeNode = fxNode;
+
+        // ⭐ A 2ª ÂNCORA: Liga o Nó Físico ao Cérebro (NativeTag)
+        fxNode.getProperties().put("xpl_native_tag", this);
+
         if (overflowY.equals("auto") || overflowY.equals("scroll") ||
                 overflowX.equals("auto") || overflowX.equals("scroll")) {
             return wrapInWebScroll(fxNode, overflowX, overflowY, styles);
@@ -202,6 +209,20 @@ public abstract class NativeTag{
     protected abstract Node createNode();
     protected abstract void applyTagSpecificStyles();
 
+    // Em NativeTag.java (adiciona este método)
+    public void invokeMethod(String methodName, Object... args) {
+        // Por padrão, as tags normais (div, span) não têm métodos especiais.
+        // Pode emitir um aviso no console se necessário.
+        System.err.println("[NativeTag] Método '" + methodName + "' não suportado nesta tag.");
+    }
+
+    // Em NativeTag.java
+    public void onReactiveAttributeChange(String attrName, Object newValue) {
+        // Por predefinição, as tags base não fazem nada de especial com a reatividade pura de atributos
+        // (Deixamos as propriedades CSS para o JavaFxRenderer tratar)
+        this.sourceNode.attributes.put(attrName, newValue);
+    }
+
     protected void addChildren() {
         if (fxNode instanceof javafx.scene.layout.Pane pane) {
 
@@ -283,23 +304,32 @@ public abstract class NativeTag{
 
         if (fxNode instanceof Region region) {
 
-            // ⭐ A CURA PARA O WIDTH: 100%
+            // ⭐ A CURA PARA O WIDTH: 100% E DIMENSÕES FIXAS
             String widthStr = style.get("width");
             if ("100%".equals(widthStr)) {
-                region.setMaxWidth(Double.MAX_VALUE); // Força a expansão máxima permitida pelo pai
+                region.setMaxWidth(Double.MAX_VALUE);
             } else {
                 float w = resolvedStyles.boxSize.getWidthPixels(cssContext);
-                if (w > 0) css.append("-fx-pref-width: ").append(w).append("px; ");
+                if (w > 0) {
+                    // O bloqueio absoluto do W3C Box Model!
+                    css.append("-fx-pref-width: ").append(w).append("px; ");
+                    css.append("-fx-min-width: ").append(w).append("px; ");
+                    css.append("-fx-max-width: ").append(w).append("px; ");
+                }
             }
 
-            // (Faz o mesmo para o height 100% se quiseres que ocupe a altura toda de forma submissa)
+            // O mesmo para o height
             String heightStr = style.get("height");
             if ("100%".equals(heightStr)) {
                 region.setMaxHeight(Double.MAX_VALUE);
-                region.setPrefHeight(10); // ⭐ SUBMISSÃO
+                region.setPrefHeight(10);
             } else {
                 float h = resolvedStyles.boxSize.getHeightPixels(cssContext);
-                if (h > 0) css.append("-fx-pref-height: ").append(h).append("px; ");
+                if (h > 0) {
+                    css.append("-fx-pref-height: ").append(h).append("px; ");
+                    css.append("-fx-min-height: ").append(h).append("px; ");
+                    css.append("-fx-max-height: ").append(h).append("px; ");
+                }
             }
             // Padding CSS
             css.append("-fx-padding: ")

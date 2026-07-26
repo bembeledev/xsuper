@@ -87,14 +87,11 @@ public class JavaFxRenderer implements XplUiBridge {
     // =====================================================================
     @Override
     public void renderView(XplNode newDomRoot) {
-        System.out.println("🚩 [LOG 3 - Renderer] Ordem recebida! A agendar para a Thread JavaFX...");
 
         Platform.runLater(() -> {
             try {
-                System.out.println("🚩 [LOG 3.1 - Renderer] A iniciar Reconciliação Visual (Diffing)...");
 
                 if (currentDomRoot == null) {
-                    System.out.println("🚩 [LOG 3.2 - Renderer] Primeira renderização (Montagem Inicial)");
 
                     windowRoot.getChildren().clear();
                     fxNodeRegistry.clear();
@@ -109,17 +106,13 @@ public class JavaFxRenderer implements XplUiBridge {
                         }
                     }
                 } else {
-                    System.out.println("🚩 [LOG 3.2 - Renderer] A fazer Diff & Patch (reconcileChildren)...");
                     reconcileChildren(currentDomRoot, newDomRoot, windowRoot);
                 }
 
                 // Atualiza a árvore em memória para o próximo ciclo
                 currentDomRoot = newDomRoot;
-                System.out.println("🚩 [LOG 3.3 - Renderer] Reconciliação concluída com SUCESSO!");
 
             } catch (Exception e) {
-                // ❌ O GRITO DO JAVAFX! Isto vai expor o nosso fantasma!
-                System.err.println("❌ [CRASH FATAL NA THREAD DO JAVAFX] " + e.getMessage());
                 e.printStackTrace();
             }
         });

@@ -4,19 +4,37 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS.">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/ArcTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/CircleTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/CubicCurveTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/EllipseTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/LineTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PathTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PolygonTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/PolylineTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/QuadCurveTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/RectangleTag.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/shapes/SvgTag.java" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="fix(core): enforce W3C Box Model and fix composite border parsing&#10;&#10;- Layout: Apply strict dimension constraints (min/max/pref) in NativeTag.java for fixed width/height values, preventing JavaFX containers from stretching elements.&#10;- CSS: Implement fallback logic to correctly translate combined 'border' (with rgba) and 'border-top-color' shorthands into the 4-axis JavaFX '-fx-border-color' format.&#10;- Resolves the &quot;fake black background&quot; and stretching bugs on W3C components like spinners.">
+      <change afterPath="$PROJECT_DIR$/model/com/dic/validators/Validators.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/XplRuntime.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/modules/XplModuleManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/PopupTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/chart/CircularChartTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/chart/XYChartTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/AnimationTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/CameraTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/EmbeddedGameApp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/EnemyTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/EntityTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/EntityType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/GameTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/GameTagBase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/LevelTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/PhysicsTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/PlayerControl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/PlayerTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/PowerupTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/ProjectileTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/SpawnerTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/game/TriggerTag.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/valid.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/xpl.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ListCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/commands/standard/ListCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/Interpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/StringMethods.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/helpers/StringMethods.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeAssert.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeChannel.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeCompress.java" beforeDir="false" />
@@ -46,16 +64,22 @@
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeTask.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeUrl.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/natives/NativeWebSocket.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/JavaFxRenderer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/SuperUiEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/XplUiBridge.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/TestXplCss.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/W3cCssAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/W3cCssAdapter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/css/XplCssCompiler.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/document/DomEvaluator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventAdapter.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventBind.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/event/XplGlobalEventListener.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/events/XplEvent.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/html/HtmlTagUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/properties/size/LayoutBox.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/ContainerTag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/ContainerTag.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/NativeTag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/NativeTag.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TagFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lang/ui/tags/TagFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/standard/ListCmd.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/standard/ListCmd.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/xsuper/RunXplCmd$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/commands/xsuper/RunXplCmd$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ReturnException.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$ReturnException.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$RuntimeError.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ControlFlow$RuntimeError.class" afterDir="false" />
@@ -195,6 +219,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$7.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$8.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/helpers/StringMethods.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1$1.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1$2.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeChannel$1.class" beforeDir="false" />
@@ -238,6 +263,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl$1.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl$NativeAction.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/natives/NativeUrl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/JavaFxRenderer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/JavaFxRenderer.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$10.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$11.class" beforeDir="false" />
@@ -249,6 +275,8 @@
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$7.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$8.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/SuperUiEngine.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/XplUiBridge.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/XplUiBridge.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/css/TestXplCss.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$1.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/document/XplDocument$10.class" beforeDir="false" />
@@ -333,6 +361,7 @@
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$8.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent$9.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/events/XplEvent.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlTagUtils.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/dic/xsuper/lang/ui/html/HtmlTagUtils.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/xsuper-xplorer.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/xsuper-xplorer.jar" afterDir="false" />
@@ -359,7 +388,7 @@
   </component>
   <component name="KotlinScriptingSettings" supportWarning="false" />
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -373,6 +402,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
     &quot;Application.AnimandoNodeEControl.executor&quot;: &quot;Run&quot;,
     &quot;Application.AnimationDemo.executor&quot;: &quot;Run&quot;,
     &quot;Application.FileExplorerCLI.executor&quot;: &quot;Run&quot;,
@@ -393,8 +423,10 @@
     &quot;Application.TestXplCssMatcher.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestXplCssResolver.executor&quot;: &quot;Run&quot;,
     &quot;Application.UIFromHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.XplRuntime.executor&quot;: &quot;Run&quot;,
     &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [deploy].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [package].executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
@@ -403,10 +435,10 @@
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/xsuper/lang/ui&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
     &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
@@ -414,20 +446,23 @@
 }</component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
+      <recent name="com.dic.xsuper.lang.ui.tags.game" />
       <recent name="com.dic.xsuper.lang.ui.layout" />
       <recent name="com.dic.xsuper.lang.ui.document" />
       <recent name="com.dic.xsuper.lang.ui" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web\tags" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui\properties" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web\tags" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\lib" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests\src" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
     </key>
   </component>
   <component name="RunManager" selected="Application.Main">
@@ -485,13 +520,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="UIFromHTML" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.UIFromHTML" />
+    <configuration name="XplRuntime" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.XplRuntime" />
       <module name="FileManager" />
-      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
+          <option name="PATTERN" value="com.dic.xsuper.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -500,19 +534,19 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.XplRuntime" />
       <item itemvalue="Application.AnimandoNodeEControl" />
       <item itemvalue="Application.AnimationDemo" />
       <item itemvalue="Application.FileExplorerCLI" />
-      <item itemvalue="Application.UIFromHTML" />
       <item itemvalue="Application.Main" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Main" />
+        <item itemvalue="Application.XplRuntime" />
         <item itemvalue="Application.AnimandoNodeEControl" />
         <item itemvalue="Application.AnimationDemo" />
         <item itemvalue="Application.FileExplorerCLI" />
-        <item itemvalue="Application.UIFromHTML" />
       </list>
     </recent_temporary>
   </component>
@@ -524,46 +558,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1781622929272</updated>
-    </task>
-    <task id="LOCAL-00001" summary="Funcionalidades Padrão">
-      <option name="closed" value="true" />
-      <created>1781652251933</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1781652251934</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Comandos para Cript, Hisotry,Watch, etc">
-      <option name="closed" value="true" />
-      <created>1781652999462</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1781652999463</updated>
-    </task>
-    <task id="LOCAL-00003" summary="feat(lang): operadores matemáticos avançados, atribuição composta e motor 64-bits&#10;&#10;- Arquitetura AST: Criados os nós `CompoundAssign` (+=, -=) e `Update` (++, --) para preservar a estrutura original do código-fonte.&#10;- Matemática Avançada: Implementados os operadores de Potência (**), Resto (%) e Divisão Inteira (#) no Parser e Interpretador.&#10;- Motor Numérico: Migração profunda de Integer (32-bit) para Long/Double (64-bit), permitindo cálculos massivos e prevenindo 'Integer Overflow'.">
-      <option name="closed" value="true" />
-      <created>1781787074150</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1781787074150</updated>
-    </task>
-    <task id="LOCAL-00004" summary="Funcionalidade: Dicionários, Enums e Standard Library de Objetos&#10;&#10;* Arquitetura de Memória: Introdução de Objetos Literais e Enums, mapeados internamente para `LinkedHashMap` para garantir a ordem de inserção.&#10;* Acesso Dinâmico: Interpretador atualizado para suportar leitura/escrita híbrida (ex: `obj.nome` e `obj[&quot;nome&quot;]`).&#10;* Super Biblioteca de Objetos: Criação da classe `ObjectMethods` com dezenas de métodos utilitários, incluindo achatamento de dados (`flatten`), fusão (`merge`) e filtragem (`pick`, `omit`).&#10;* Algoritmos de Pesquisa: Implementação de pesquisa recursiva profunda em árvores JSON e suporte a verificação de caminhos complexos (ex: `hasPath(&quot;ceo.cidade&quot;)`).&#10;* Correções Críticas (Bugfixes): &#10;  - O Lexer e Parser agora reconhecem corretamente `true`, `false` e `null` como valores literais e não variáveis.&#10;  - Resolvido o escape literal de quebras de linha (\n) dentro das Strings.">
-      <option name="closed" value="true" />
-      <created>1781810476757</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1781810476757</updated>
-    </task>
-    <task id="LOCAL-00005" summary="fix(core): blindar ciclo de vida de objetos, variantes abstratas e avaliação de construtores&#10;&#10;- Corrige `visitNewExpr` no Interpreter para avaliar (`evaluate`) as expressões dos argumentos do `new` antes de os passar à fábrica `XplClass`.&#10;- Ativa a Guilhotina de Aridade: o motor agora valida automaticamente se o número de argumentos fornecidos bate certo com a assinatura do método construtor `init()`.&#10;- Ajusta a injeção de comportamento para Variantes (`implement ... as ...`), garantindo que estas assumem `hasBaseImplementation = true` e herdam corretamente a flag `isAbstract` da AST.&#10;- Sela a Guilhotina de Instanciação: impede definitivamente o nascimento de modelos com implementações abstratas (ex: `Fish`), garantindo a consistência da memória.&#10;- Melhora a separação lógica no `visitImplementDeclStmt` para evitar que a injeção de variantes corrompa as flags de estado do modelo base.">
-      <option name="closed" value="true" />
-      <created>1781899771897</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1781899771897</updated>
     </task>
     <task id="LOCAL-00006" summary="feat(poo): implementar suporte à palavra-chave 'super' para herança e polimorfismo&#10;&#10;- Adiciona reconhecimento do token `SUPER` no Lexer e suporte sintático para `super.metodo()` no Parser (`Expr.Super`).&#10;- Implementa rastreamento genético (`getOwnerOfMethod`) no `XPLModel` para identificar a classe exata de origem de cada método.&#10;- Modifica `XplFunction`, `XplInstance` e `XplClass` para injetarem e preservarem o contexto da classe atual (`__current_model`) em tempo de execução.&#10;- Adiciona `visitSuperExpr` no Interpretador para resolver e invocar métodos da superclasse dinamicamente, mantendo o escopo e encapsulamento da instância atual (`this`).&#10;- Habilita a reutilização de construtores (`init`) e delegação de comportamentos entre classes pai e filho, evitando duplicação de lógica.">
       <option name="closed" value="true" />
@@ -893,7 +887,71 @@
       <option name="project" value="LOCAL" />
       <updated>1784728973950</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="feat(ui): add complete SVG shape component suite and container support&#10;&#10;- Implement SvgTag using JavaFX Pane for absolute coordinate positioning.&#10;- Add and register W3C shape tags: ArcTag, CircleTag, CubicCurveTag, EllipseTag, LineTag, PathTag, PolygonTag, PolylineTag, QuadCurveTag, and RectangleTag.&#10;- Update HtmlTagUtils with SVG shape definitions, specific attributes, and structural validation (&quot;SVG Police&quot;) to prevent loose shapes in the DOM.&#10;- Fix shape point parsing and color handling for properties like 'none'.">
+      <option name="closed" value="true" />
+      <created>1784731861067</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1784731861067</updated>
+    </task>
+    <task id="LOCAL-00048" summary="feat: implement advanced CSS Grid, TableLayout enhancements, and SVG text support&#10;&#10;- Full CSS Grid with repeat(), minmax(), auto-fit/fill&#10;- TableLayout with rowspan/colspan, border-collapse, modern styling&#10;- SVG text element support with x, y, font-size, text-anchor&#10;- Fix interpolation in HTML class attributes&#10;- Add CSS var() and calc() support">
+      <option name="closed" value="true" />
+      <created>1784767963668</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1784767963668</updated>
+    </task>
+    <task id="LOCAL-00049" summary="feat: implement advanced CSS Grid, TableLayout enhancements, and SVG text support&#10;&#10;- Full CSS Grid with repeat(), minmax(), auto-fit/fill&#10;- TableLayout with rowspan/colspan, border-collapse, modern styling&#10;- SVG text element support with x, y, font-size, text-anchor&#10;- Fix interpolation in HTML class attributes&#10;- Add CSS var() and calc() support">
+      <option name="closed" value="true" />
+      <created>1784768293204</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1784768293204</updated>
+    </task>
+    <task id="LOCAL-00050" summary="feat(css): add W3C adapter support for Adobe Illustrator-like custom mesh gradients&#10;&#10;- Preserves solid base background-color alongside background-image layers.&#10;- Dynamically normalizes raw pixel radii into responsive JavaFX percentages.&#10;- Translates custom-gradient tuples into smoothly blended multi-layer radial gradients.">
+      <option name="closed" value="true" />
+      <created>1784802438439</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1784802438439</updated>
+    </task>
+    <task id="LOCAL-00051" summary="fix(build): align javafx-base and javafx-graphics versions to resolve flatMap NoSuchMethodError&#10;&#10;- Explicitly declares javafx-base and javafx-graphics version 21 in pom.xml.&#10;- Resolves transitive dependency conflicts caused by older JavaFX modules from third-party UI libraries.">
+      <option name="closed" value="true" />
+      <created>1784806877559</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1784806877559</updated>
+    </task>
+    <task id="LOCAL-00052" summary="feat(core): revolução na arquitetura CSS Grid, Scroll moderno e Math Charts nativos&#10;&#10;Esta atualização refatora profundamente a forma como a SuperUI lida com o layout W3C, dimensões físicas e renderização gráfica, aproximando a engine do comportamento real de um browser.&#10;&#10;🛠️ Correções (Fixes):&#10;- fix(lexer): Remove falso positivo de &quot;comentário não fechado&quot; no exato final do ficheiro.&#10;- fix(layout): Elimina a duplicação de texto (&quot;ghost text&quot;) na `NativeTag`.&#10;- fix(grid): Corrige o &quot;estouro&quot; de largura das colunas. Substitui hacks de 2000px por `setFillWidth(true)` e `setMinWidth(0)` no `GridContainerPane`.&#10;- fix(chart): Força a submissão dos gráficos nativos do JavaFX ao CSS Grid usando `setMinSize(0,0)` e `setPrefSize(10,10)`.&#10;&#10;✨ Novas Funcionalidades (Features):&#10;- feat(scroll): Cria o módulo `ModernScrollContainer` (inspirado em Skia) com track transparente, auto-hide e polegar arrastável, substituindo o ScrollPane padrão do JavaFX.&#10;- feat(window): Adiciona limitador inteligente na `MainWindow` via `Screen.getPrimary().getVisualBounds()`.&#10;- feat(grid): Adiciona suporte nativo para `grid-column: span X` no algoritmo de distribuição de células.&#10;- feat(debugger): Evolui o `XplNodeDebugger` para o &quot;Modo Raio-X&quot;, extraindo dimensões absolutas `prefWidth(-1)` e coordenadas XY através da compilação de nós na memória.&#10;- feat(chart): Implementa `MathChartTag` com um Recursive Descent Parser minúsculo e nativo. Suporta plotagem de múltiplas funções matemáticas no mesmo S.C.O separadas por vírgula (ex: `expressions=&quot;x, x^2&quot;`).">
+      <option name="closed" value="true" />
+      <created>1784819678053</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1784819678055</updated>
+    </task>
+    <task id="LOCAL-00053" summary="feat(animation): universal keyframes support for colors/transforms &amp; AnimateFX integration&#10;&#10;- Integrada a biblioteca AnimateFX com mais de 70 animações geridas pelo XplAnimationEngine (Maestro).&#10;- Corrigido NullPointerException em animações complexas/3D através de escuta segura da Scene no ciclo de vida do nó.&#10;- Implementada interpolação matemática de cores quadro a quadro para keyframes (background-color, color, border-color).&#10;- Expandido o motor de transformações numéricas para suporte universal a propriedades diretas e compostas (scale, rotate, translate, e sintaxe transform).">
+      <option name="closed" value="true" />
+      <created>1784847592304</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1784847592306</updated>
+    </task>
+    <task id="LOCAL-00054" summary="fix(core): enforce W3C Box Model and fix composite border parsing&#10;&#10;- Layout: Apply strict dimension constraints (min/max/pref) in NativeTag.java for fixed width/height values, preventing JavaFX containers from stretching elements.&#10;- CSS: Implement fallback logic to correctly translate combined 'border' (with rgba) and 'border-top-color' shorthands into the 4-axis JavaFX '-fx-border-color' format.&#10;- Resolves the &quot;fake black background&quot; and stretching bugs on W3C components like spinners.">
+      <option name="closed" value="true" />
+      <created>1784860360778</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1784860360778</updated>
+    </task>
+    <option name="localTasksCounter" value="55" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -931,11 +989,6 @@
                   </entry>
                 </map>
               </option>
-              <option name="TEXT_FILTER_SETTINGS">
-                <TextFilterSettings>
-                  <option name="REGEX" value="true" />
-                </TextFilterSettings>
-              </option>
             </State>
           </value>
         </entry>
@@ -943,13 +996,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(core/modules): impor encapsulamento estrito e exportação explícita de superglobais&#10;&#10;- Removida a injeção automática de declarações `global` na tabela de exports do módulo.&#10;- Ficheiros de superglobais (`globals.xpl` / `globais.xpl`) agora exigem a instrução `export` para partilhar constantes com pacotes externos.&#10;- Preservada a herança natural de escopo lexical para ficheiros internos do mesmo projeto.&#10;- Validada a sintaxe de extração seletiva com prefixo (Ex: `{VERSION} prefix &quot;PDFCONV&quot;`)." />
-    <MESSAGE value="feat(core/lexer): adicionar strings multi-linha, interpolação e rastreamento de arquivos&#10;&#10;- Implementado suporte a Text Blocks (`&quot;&quot;&quot;...&quot;&quot;&quot;`) estilo Java, com remoção automática de recuos incidentais comuns e preservação de formatação interna.&#10;- Adicionado motor de interpolação léxica via açúcar sintático (`${expression}`), convertendo trechos dinâmicos em nós de concatenação diretamente na AST.&#10;- Adicionado o campo `filePath` na classe `Token` e no construtor do `Lexer`, permitindo o mapeamento de caminhos absolutos de arquivos em tempo de compilação.&#10;- Atualizados os relatórios do `Parser` e `Interpreter` para exibir mensagens de erro no formato industrial `path:linha:coluna`." />
-    <MESSAGE value="fix(core/interpreter): resolver colisão na fusão de declares e aplicar classes seladas&#10;&#10;- Alterado o Passo 4 do `visitImplementDeclStmt` para injetar a classe executiva via mutação direta de mapa (`environment.values.put`), corrigindo o erro de constante duplicada no upgrade de modelos de base.&#10;- Preservada a via oficial `defineConst` estritamente para o registo de novas variantes isoladas (aliases).&#10;- Consolidada a muralha de encapsulamento local: tentativas externas de estender ou implementar 'declares' privados são agora abortadas com uma exceção fatal de segurança." />
-    <MESSAGE value="fix(core/interpreter): blindar guilhotina do sealed com rastreio de símbolos importados&#10;&#10;- Atualizado o `visitImplementDeclStmt` para validar a flag `isImported` em conjunto com o escopo local (`isLocal`).&#10;- Corrigida a brecha de segurança onde um `implement` externo conseguia violar um `sealed declare` se o símbolo original estivesse presente no ambiente via importação.&#10;- Ajustada a condição da guilhotina para interceptar intrusões baseadas em `(isImported || !isLocal) &amp;&amp; baseModel.isSealed`." />
-    <MESSAGE value="feat(meta): estabilizar motor de reflexão profunda e unificar operador '::'&#10;&#10;- Implementado o desempacotador quântico no `MetaReflectionEngine` para fazer bypass automático de proxies de decoradores (`ContextDecorator`), permitindo o `CallMethod` dinâmico no núcleo real do modelo.&#10;- Corrigida a consistência de esquema no `getDeclareToObject` garantindo o retorno de listas vazias instanciadas em chaves nulas (como `variantAliases`).&#10;- Sincronizado o Monomorfizador JIT com a nova hierarquia de expressões do `Parser`, substituindo parsing manual de strings por uma árvore de `TypeNode` estruturada.&#10;- Suporte híbrido completo no `::` para introspeção tanto em instâncias vivas quanto em definições de modelos/classes estáticas na RAM.&#10;&#10;Validado com sucesso via `tests/meta_test.xpl` com 100% de cobertura semântica." />
-    <MESSAGE value="feat: implementação do ecossistema de funções nativas (I/O, Math, Regex e Rede)&quot; -m &quot;- Criação do pacote `com.dic.xsuper.lang.natives` para isolamento de chamadas de sistema.&#10;- Implementação da classe `NativeConsole` para leitura e manipulação robusta de I/O via terminal (read/prompt).&#10;- Implementação da classe `NativeFileSystem` para operações atómicas de disco (I/O de ficheiros, metadados e listagem).&#10;- Implementação da classe `NativeMath` encapsulando operações matemáticas de alta precisão e algoritmos de utilidade (clamp, lerp).&#10;- Implementação da classe `NativeRegex` com sistema de cache estático (`patternCache`) para otimização de performance em varrimento de strings.&#10;- Implementação dos módulos `NativeHttp`, `NativeUrl` e `NativeNetwork` suportando requisições REST com retorno de estruturas bivalentes (Map) e verificação de diagnóstico de rede (ping/dns).&#10;- Adicionado o mapa global de constantes imutáveis `HTTPREQUEST` no núcleo do interpretador." />
-    <MESSAGE value="feat(core): arquitetura de concorrência massiva, isolamento de escopo e tipagem anónima&quot; -m &quot;- Refatoração do `Environment` para `ConcurrentHashMap`, garantindo Thread-Safety absoluto na memória global.&#10;- Implementação do `Interpreter.fork()` para resolver Scope Leaks (Data Races), dando a cada Thread a sua própria pilha de execução partilhando a memória estática.&#10;- Criação dos módulos `NativeMutex` (trancas) e `NativeChannel` (mensageria mpsc) para orquestração e Dataflow entre threads.&#10;- Refatoração do `NativeTask` acoplando botões de cancelamento diretos à `AtomicReference` do ExecutorService, eliminando 'Zombie Threads'.&#10;- Aperfeiçoamento do `Parser` com Lookahead resiliente via `advance()`, permitindo Tipagem Estrita em Arrow Functions (`(): tipo =&gt; { ... }`) ignorando ambiguidades com Keywords.&#10;- Adição da injeção letal e verificação de pulsação (`Thread.currentThread().isInterrupted()`) no ciclo de vida principal da AST (`execute()`)." />
     <MESSAGE value="feat(ui): implementa sistema DOM completo e motor de renderização reativo&#10;&#10;- Adiciona XplDocument (API DOM estilo JavaScript) com índice rápido por ID&#10;- Cria XplElement com suporte a atributos, estilos, classes, eventos e navegação&#10;- Implementa XplEvent e XplEventListener com adaptador para funções XPL&#10;- Desenvolve SuperUiEngine com ciclo de renderização e hidratação do DOM&#10;- Expande XplNode com métodos de pesquisa, clonagem e conversão para XplElement&#10;- Adiciona suporte a eventos via addEventListener com funções XPL&#10;- Inclui testes headless (TestHeadlessEngine) para validação do motor&#10;- Corrige atualização de ponteiros de navegação (nextSibling, parent, etc.)" />
     <MESSAGE value="feat(natives): implementa módulos de sistema, hardware, interoperabilidade e segurança avançada&#10;&#10; Módulos Nativos Adicionados / Expandidos:&#10;&#10;1. NativeOS (maduro e robusto)&#10;   - Detecção automática do SO (Windows, Linux, macOS, Android, iOS, Unknown)&#10;   - Providers específicos com fallback&#10;   - Informações: nome, versão, arquitetura, hostname, username, PID&#10;   - Hardware básico: CPUs, memória total/livre, discos, interfaces de rede&#10;   - Variáveis de ambiente (getenv, getenv_all)&#10;   - Execução de processos com controlo total (cwd, env, timeout, stdin)&#10;   - Utilitários: sleep, exit, caminhos do sistema&#10;&#10;2. NativeHardware (informações detalhadas do hardware)&#10;   - CPU: modelo, vendor, núcleos físicos/lógicos, frequências, cache, uso, temperatura&#10;   - Memória: total, usada, livre, máxima, uso percentual&#10;   - Discos: path, tamanhos, tipo (SSD/HDD), modelo&#10;   - Rede: interfaces, MAC, MTU, IPs, velocidade (fallback)&#10;   - Sistema: fabricante, modelo, serial, BIOS (vendor, versão, data)&#10;   - GPU: nome, memória, driver&#10;   - Bateria: carga e estado (para laptops)&#10;&#10;3. NativeInterop (interoperabilidade industrial)&#10;   - Eval: execução de scripts (Python, Node, Ruby, PHP, etc.) com suporte a charset e timeout&#10;   - Spawn: processos com I/O bidirecional e controlo total (cwd, env, charset, timeout, stream)&#10;   - Streaming assíncrono via canais (stdout/stderr direcionados para canais XPL)&#10;   - Gestão de ciclo de vida: PID, wait, terminate (SIGTERM), kill (SIGKILL)&#10;   - Placeholder para FFI (JNA/FFM – futura expansão)&#10;&#10;4. NativeStream (manipulação eficiente de ficheiros)&#10;   - file_open_stream(path, mode) com modos r/w/rw&#10;   - Leitura/escrita em chunks (read, write)&#10;   - Leitura linha a linha (readLine)&#10;   - Posicionamento (seek, tell)&#10;   - Propriedades: size, path, mode&#10;   - Utilitários: file_read_all, file_write_all&#10;&#10;5. NativeSecurity (criptografia e segurança)&#10;   - Hashes: MD5, SHA-1/224/256/384/512, SHA3-224/256/384/512, BLAKE2b/s&#10;   - HMAC: MD5, SHA256, SHA512&#10;   - AES-CBC com IV, ChaCha20 (via Bouncy Castle)&#10;   - RSA: geração, encriptação, desencriptação, assinatura, verificação&#10;   - ECDSA: geração, assinatura, verificação (suporte a secp256r1, secp384r1, secp521r1)&#10;   - KDF: PBKDF2, Argon2id (via Bouncy Castle)&#10;   - Codificações: Base64, Base58, Hex&#10;   - RNG: bytes, inteiros, UUID&#10;   - Comparação segura (tempo constante)&#10;&#10;6. NativeCryptoExtended (criptografia avançada)&#10;   - ECDSA com curvas personalizadas&#10;   - Encriptação híbrida (AES-256 + RSA)&#10;   - Certificados X.509 (auto-assinados e validação)&#10;   - JWT: HS256, RS256, ES256 (com parsing JSON nativo)&#10;   - CSR (Certificate Signing Requests)&#10;   - PKCS#12: criar e extrair (keystores)&#10;   - SSH Ed25519 (geração de par de chaves)&#10;&#10; Melhorias no Core:&#10;   - Interface XplNativeObject uniformizada (invokeMethod, getProperty)&#10;   - Suporte a objetos nativos no visitGetExpr (delegação para getProperty)&#10;   - Registro automático de módulos no Interpreter&#10;&#10; Dependências Adicionadas:&#10;   - Bouncy Castle (bcprov-jdk18on, bcpkix-jdk18on, bcutil-jdk18on)&#10;   - Jackson (databind, annotations, core) – para JSON (embora substituído por parser manual)&#10;&#10; Testes:&#10;   - Testes de validação para todos os módulos (os.xpl, hardware.xpl, interop.xpl, security.xpl, crypto_adv.xpl)&#10;   - Exemplos de uso com canais, tarefas assíncronas e streaming&#10;&#10;✨ Estabilidade:&#10;   - Tratamento robusto de exceções e fallbacks para diferentes SOs&#10;   - Gestão de recursos (close, flush, destruição de processos)&#10;   - Sem dependências de bibliotecas externas para funcionalidades básicas (JSON, Base58, etc.)&#10;&#10; Estado Atual:&#10;   - O XPL possui agora um ecossistema nativo rico, permitindo:&#10;        * Interagir com o SO e hardware em tempo real&#10;        * Executar scripts de outras linguagens&#10;        * Criptografar, assinar e verificar dados&#10;        * Gerir streams de ficheiros eficientemente&#10;        * Criar certificados e JWT&#10;   - A linguagem está preparada para aplicações enterprise, automação, segurança e desenvolvimento de sistemas." />
     <MESSAGE value="feat(ui): motor de renderização HTML → JavaFX completo e moderno&#10;&#10;️ Sistema de UI Nativo&#10;- Implementa a ponte HTML → JavaFX com suporte a tags nativas&#10;- Tags estruturais: div, main, section, article, header, footer, nav, aside, ul, li, form, table, etc.&#10;- Tags de texto: h1-h6, p, span, label, b, strong, i, em, a (hyperlink), img&#10;- Tags de formulário: todos os tipos de input (text, password, email, tel, url, search, number, range, color, date, datetime-local, time, month, week, checkbox, radio, file, hidden, submit, reset, button, image)&#10;- Select com suporte a optgroup e option (single e múltiplo)&#10;- Textarea com atributos rows, cols, placeholder, disabled, readonly&#10;- Botões com estilos personalizados (ButtonTag, ButtonInputTag, SubmitInputTag, ResetInputTag, ImageInputTag)&#10;&#10; Sistema de Estilos (CSS)&#10;- Resolvedor de estilos (StyleResolver) com suporte a CSS inline&#10;- Unidades CSS: px, em, rem, %, vw, vh, etc.&#10;- Propriedades: padding, margin, border, border-radius, background-color, color, font-*, text-align, text-decoration, text-shadow, box-shadow, opacity, line-height, white-space&#10;- Gradientes lineares, radiais, cónicos e personalizados (via Bouncy Castle)&#10;- Cores com suporte a nomes web, hex, rgb/rgba (XplColor)&#10;&#10; Motor de Layout&#10;- Suporte a display: block, flex, grid, inline, inline-block, table, table-row, table-cell&#10;- ContainerTag delega para LayoutEngine (VBox, HBox, GridPane, CustomLayoutPane)&#10;- Lógica de margens adaptativa (setMargin para VBox/HBox/GridPane)&#10;- Lógica de padding e espaçamento entre elementos&#10;&#10;⚙️ Arquitetura Orientada a Objetos&#10;- NativeTag como classe base com métodos de ciclo de vida (build, createNode, applyCommonStyles, addChildren, bindEvents)&#10;- FormControlTag centraliza atributos comuns de formulário (disabled, readonly, required, name, value, placeholder)&#10;- TagFactory com mapeamento dinâmico para todas as tags&#10;- ResolvedStyles e CssContext para gestão de estilos computados&#10;&#10;️ Integração JavaFX&#10;- Aplicação de estilos via CSS nativo do JavaFX (fxNode.setStyle)&#10;- Utilização de componentes nativos: TextField, PasswordField, DatePicker, ColorPicker, ComboBox, ListView, Slider, Spinner, CheckBox, RadioButton, Button, Label, Hyperlink, TextArea, etc.&#10;- Suporte a eventos nativos (clique, mudança de valor, etc.) com despacho para o motor XPL&#10;&#10; Temas e Estilização&#10;- Suporte a temas globais via CSS (AtlantaFX, MaterialFX, Transit)&#10;- Classes CSS para elementos (className) permitindo estilização moderna (Tailwind-like, Material Design)&#10;- Estilos inline com alta prioridade (substituem a skin padrão do JavaFX)&#10;&#10; Testes e Exemplos&#10;- TestAllInputs, TestSelect, TestUIRender para validar todos os tipos de input e layouts&#10;- Exemplo de formulário completo com todos os campos&#10;- Validação de estilos e comportamento responsivo&#10;&#10; Dependências&#10;- Bouncy Castle (gradientes e criptografia)&#10;- (opcional) AtlantaFX, JMetro, MaterialFX para temas modernos&#10;&#10; Estado atual&#10;- Motor de UI funcional para aplicações desktop com sintaxe declarativa HTML/CSS&#10;- 100% integrado com a linguagem XPL (através de NativeTag e TagFactory)&#10;- Pronto para extensão com novas tags (audio, video, canvas, dialog, etc.)" />
@@ -968,6 +1014,13 @@
     <MESSAGE value="feat(interpreter): implement native observer pattern and error stringification&#10;&#10;- Replace fragile proxy-based wrappers with native `__active_listeners__` injection for POO instances.&#10;- Inject `target` and `targetName` context into listener instances for deep state introspection and rules validation.&#10;- Clean up legacy auto-triggering hooks in `visitGetExpr` and `visitSetExpr` to prevent infinite recursion/loops.&#10;- Add native `toString()` method to `ErrorNativeModel` to properly format error outputs.&#10;- Update top-level exception handling in `Interpreter.interpret` to cleanly display uncaught error messages." />
     <MESSAGE value="refactor(ui): extract native component registration into UINativeRegistry&#10;&#10;- Create `UINativeRegistry` to handle native model definition, compilation registry mapping, and global environment injection for UI elements (`XplElement`, `XplDocument`, `SuperUiEngine`, `XplEvent`).&#10;- Clean up `SuperUiEngine` initialization by delegating native setup to `UINativeRegistry.inject()`.&#10;- Improve separation of concerns for the UI subsystem startup lifecycle." />
     <MESSAGE value="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS." />
+    <MESSAGE value="feat(ui): add complete SVG shape component suite and container support&#10;&#10;- Implement SvgTag using JavaFX Pane for absolute coordinate positioning.&#10;- Add and register W3C shape tags: ArcTag, CircleTag, CubicCurveTag, EllipseTag, LineTag, PathTag, PolygonTag, PolylineTag, QuadCurveTag, and RectangleTag.&#10;- Update HtmlTagUtils with SVG shape definitions, specific attributes, and structural validation (&quot;SVG Police&quot;) to prevent loose shapes in the DOM.&#10;- Fix shape point parsing and color handling for properties like 'none'." />
+    <MESSAGE value="feat: implement advanced CSS Grid, TableLayout enhancements, and SVG text support&#10;&#10;- Full CSS Grid with repeat(), minmax(), auto-fit/fill&#10;- TableLayout with rowspan/colspan, border-collapse, modern styling&#10;- SVG text element support with x, y, font-size, text-anchor&#10;- Fix interpolation in HTML class attributes&#10;- Add CSS var() and calc() support" />
+    <MESSAGE value="feat(css): add W3C adapter support for Adobe Illustrator-like custom mesh gradients&#10;&#10;- Preserves solid base background-color alongside background-image layers.&#10;- Dynamically normalizes raw pixel radii into responsive JavaFX percentages.&#10;- Translates custom-gradient tuples into smoothly blended multi-layer radial gradients." />
+    <MESSAGE value="fix(build): align javafx-base and javafx-graphics versions to resolve flatMap NoSuchMethodError&#10;&#10;- Explicitly declares javafx-base and javafx-graphics version 21 in pom.xml.&#10;- Resolves transitive dependency conflicts caused by older JavaFX modules from third-party UI libraries." />
+    <MESSAGE value="feat(core): revolução na arquitetura CSS Grid, Scroll moderno e Math Charts nativos&#10;&#10;Esta atualização refatora profundamente a forma como a SuperUI lida com o layout W3C, dimensões físicas e renderização gráfica, aproximando a engine do comportamento real de um browser.&#10;&#10;️ Correções (Fixes):&#10;- fix(lexer): Remove falso positivo de &quot;comentário não fechado&quot; no exato final do ficheiro.&#10;- fix(layout): Elimina a duplicação de texto (&quot;ghost text&quot;) na `NativeTag`.&#10;- fix(grid): Corrige o &quot;estouro&quot; de largura das colunas. Substitui hacks de 2000px por `setFillWidth(true)` e `setMinWidth(0)` no `GridContainerPane`.&#10;- fix(chart): Força a submissão dos gráficos nativos do JavaFX ao CSS Grid usando `setMinSize(0,0)` e `setPrefSize(10,10)`.&#10;&#10;✨ Novas Funcionalidades (Features):&#10;- feat(scroll): Cria o módulo `ModernScrollContainer` (inspirado em Skia) com track transparente, auto-hide e polegar arrastável, substituindo o ScrollPane padrão do JavaFX.&#10;- feat(window): Adiciona limitador inteligente na `MainWindow` via `Screen.getPrimary().getVisualBounds()`.&#10;- feat(grid): Adiciona suporte nativo para `grid-column: span X` no algoritmo de distribuição de células.&#10;- feat(debugger): Evolui o `XplNodeDebugger` para o &quot;Modo Raio-X&quot;, extraindo dimensões absolutas `prefWidth(-1)` e coordenadas XY através da compilação de nós na memória.&#10;- feat(chart): Implementa `MathChartTag` com um Recursive Descent Parser minúsculo e nativo. Suporta plotagem de múltiplas funções matemáticas no mesmo S.C.O separadas por vírgula (ex: `expressions=&quot;x, x^2&quot;`)." />
+    <MESSAGE value="feat(animation): universal keyframes support for colors/transforms &amp; AnimateFX integration&#10;&#10;- Integrada a biblioteca AnimateFX com mais de 70 animações geridas pelo XplAnimationEngine (Maestro).&#10;- Corrigido NullPointerException em animações complexas/3D através de escuta segura da Scene no ciclo de vida do nó.&#10;- Implementada interpolação matemática de cores quadro a quadro para keyframes (background-color, color, border-color).&#10;- Expandido o motor de transformações numéricas para suporte universal a propriedades diretas e compostas (scale, rotate, translate, e sintaxe transform)." />
+    <MESSAGE value="fix(core): enforce W3C Box Model and fix composite border parsing&#10;&#10;- Layout: Apply strict dimension constraints (min/max/pref) in NativeTag.java for fixed width/height values, preventing JavaFX containers from stretching elements.&#10;- CSS: Implement fallback logic to correctly translate combined 'border' (with rgba) and 'border-top-color' shorthands into the 4-axis JavaFX '-fx-border-color' format.&#10;- Resolves the &quot;fake black background&quot; and stretching bugs on W3C components like spinners." />
+    <option name="LAST_COMMIT_MESSAGE" value="fix(core): enforce W3C Box Model and fix composite border parsing&#10;&#10;- Layout: Apply strict dimension constraints (min/max/pref) in NativeTag.java for fixed width/height values, preventing JavaFX containers from stretching elements.&#10;- CSS: Implement fallback logic to correctly translate combined 'border' (with rgba) and 'border-top-color' shorthands into the 4-axis JavaFX '-fx-border-color' format.&#10;- Resolves the &quot;fake black background&quot; and stretching bugs on W3C components like spinners." />
   </component>
 </project>

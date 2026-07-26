@@ -39,6 +39,8 @@ public interface XplUiBridge {
 
     void rebuildFullView(String targetId, com.dic.xsuper.lang.ui.html.XplNode virtualNode);
 
+    void invokeMethodOnNode(String targetId, String methodName, Object[] args);
+
     /**
      * O canal de comunicação para enviar eventos de volta.
      */

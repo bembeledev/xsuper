@@ -25,33 +25,56 @@ public class ListCmd implements Command {
     @Override
     public Path execute(String[] args, Path currentDirectory) throws Exception {
         boolean detailed = false;
-        String targetPattern = null;
+        List<String> pathParts = new ArrayList<>();
 
         for (int i = 1; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("-l")) {
                 detailed = true;
-            } else if (!args[i].startsWith(">")) {
-                targetPattern = args[i];
+            } else if (!args[i].startsWith(">") && !args[i].startsWith("-")) {
+                pathParts.add(args[i]);
             }
         }
 
-        // Se nenhum alvo for fornecido, lista a diretoria atual normalmente
-        if (targetPattern == null || targetPattern.equals(".")) {
+        // Se não houver partes, targetPattern é null
+        String targetPattern = pathParts.isEmpty() ? null : String.join(" ", pathParts);
+
+        // Remover aspas se existirem
+        if (targetPattern != null) {
+            targetPattern = targetPattern.replaceAll("^\"|\"$", "").trim();
+            if (targetPattern.isEmpty()) targetPattern = null;
+        }
+
+        // Se nenhum alvo for fornecido ou for ".", lista a diretoria atual
+        if (targetPattern == null || targetPattern.equals(".") || targetPattern.equals(".\\") || targetPattern.equals("./")) {
             printNormalList(currentDirectory, currentDirectory.toFile(), detailed);
             return currentDirectory;
         }
 
-        // Deteção do Superpoder de Globbing (se contém asteriscos ou pontos de interrogação)
+        // Deteção do caminho absoluto vs relativo
+        Path targetPath;
+        try {
+            Path maybeAbsolute = Paths.get(targetPattern);
+            if (maybeAbsolute.isAbsolute()) {
+                targetPath = maybeAbsolute.normalize();
+            } else {
+                targetPath = currentDirectory.resolve(targetPattern).normalize();
+            }
+        } catch (InvalidPathException e) {
+            System.out.println(ConsoleTheme.ERROR + "❌ Caminho inválido: " + targetPattern + ConsoleTheme.RESET);
+            return currentDirectory;
+        }
+
+        // Se for um padrão com asteriscos, usar Globbing
         if (targetPattern.contains("*") || targetPattern.contains("?")) {
             handleGlobbingSearch(targetPattern, currentDirectory, detailed);
+            return currentDirectory;
+        }
+
+        // Verificar existência e listar
+        if (!Files.exists(targetPath)) {
+            System.out.println(ConsoleTheme.ERROR + "❌ Caminho não encontrado: " + targetPath.toAbsolutePath() + ConsoleTheme.RESET);
         } else {
-            // Navegação normal com caminhos exatos
-            Path targetPath = currentDirectory.resolve(targetPattern).normalize();
-            if (!Files.exists(targetPath)) {
-                System.out.println(ConsoleTheme.ERROR + "❌ Caminho não encontrado: " + targetPath.toAbsolutePath() + ConsoleTheme.RESET);
-            } else {
-                printNormalList(currentDirectory, targetPath.toFile(), detailed);
-            }
+            printNormalList(currentDirectory, targetPath.toFile(), detailed);
         }
 
         return currentDirectory;

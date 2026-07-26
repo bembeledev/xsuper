@@ -8,6 +8,7 @@ import com.dic.xsuper.lang.ui.tags.controls.date.MonthInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.date.TimeInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.date.WeekInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.select.SelectTag;
+import com.dic.xsuper.lang.ui.tags.game.*;
 import com.dic.xsuper.lang.ui.tags.interactive.*;
 import com.dic.xsuper.lang.ui.tags.list.LiTag;
 import com.dic.xsuper.lang.ui.tags.list.OlTag;
@@ -126,8 +127,9 @@ public class TagFactory {
             case "cubiccurve" -> new CubicCurveTag(node);
             case "content" -> new TextTag(node);
             case "chart" -> {
-                String type = (String) node.attributes.getOrDefault("type", "line");
-                yield switch (type.toLowerCase()) {
+                String type = node.attributes.getOrDefault("type", "line").toString().toLowerCase();
+                yield switch (type) {
+                    // ─── MOTORES JAVAFX ORIGINAIS ───
                     case "bar" -> new BarChartTag(node);
                     case "area" -> new AreaChartTag(node);
                     case "pie" -> new PieChartTag(node);
@@ -136,12 +138,35 @@ public class TagFactory {
                     case "stacked-bar" -> new StackedBarChartTag(node);
                     case "stacked-area" -> new StackedAreaChartTag(node);
                     case "math" -> new MathChartTag(node);
+
+                    // ─── MOTORES HANSOLO (Nova Geração) ───
+                    case "donut" -> new CircularChartTag(node);
+                    case "xy" -> new XYChartTag(node); // Delega para o motor Hansolo XY
+
                     default -> new LineChartTag(node);
                 };
             }
 
+            // Em TagFactory.java
+            case "popup", "tooltip" -> new PopupTag(node);
+
             case "hr" -> new HrTag(node);
             case "dialog" -> new DialogTag(node);
+
+
+            // ─── TAGS DE JOGO ──────────────────────────────────────────────────
+            case "game" -> new GameTag(node);
+            case "physics" -> new PhysicsTag(node);
+            case "level" -> new LevelTag(node);
+            case "camera" -> new CameraTag(node);
+            case "entity" -> new EntityTag(node);
+            case "player" -> new PlayerTag(node);
+            case "enemy" -> new EnemyTag(node);
+            case "powerup" -> new PowerupTag(node);
+            case "projectile" -> new ProjectileTag(node);
+            case "spawner" -> new SpawnerTag(node);
+            case "trigger" -> new TriggerTag(node);
+            case "animation" -> new AnimationTag(node);
 
             default -> new ContainerTag(node);
         };

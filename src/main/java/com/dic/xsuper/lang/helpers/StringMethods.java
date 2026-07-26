@@ -182,13 +182,13 @@ public class StringMethods {
                     }
                 };
 
-            case "includes":
+            case "includes", "contains":
                 return new XplCallable() {
                     @Override public int arity() { return 1; }
                     @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
-                        checkArgCount(args, 1, "includes");
-                        String search = args.get(0).toString();
+                        checkArgCount(args, 1, "contains");
+                        String search = args.getFirst().toString();
                         return text.contains(search);
                     }
                 };
@@ -436,6 +436,93 @@ public class StringMethods {
                     @Override public int arity() { return 0; }
                     @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
                         return new StringBuilder(text).reverse().toString();
+                    }
+                };
+
+            // ---------- Validação e Regex ----------
+            case "matches":
+                return new XplCallable() {
+                    @Override public int arity() { return 1; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        List<Object> args = Interpreter.unpackNativeArgs(interpreter, arguments);
+                        checkArgCount(args, 1, "matches");
+                        String regex = args.getFirst().toString();
+                        return Pattern.matches(regex, text);
+                    }
+                };
+
+            // ---------- Inspetores de Tipo de Caracteres ----------
+            case "isNumeric":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        return text.matches("-?\\d+(\\.\\d+)?");
+                    }
+                };
+
+            case "isAlpha":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        return text.matches("[a-zA-Z]+");
+                    }
+                };
+
+            case "isAlphanumeric":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        return text.matches("[a-zA-Z0-9]+");
+                    }
+                };
+
+            case "isBlank":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        return text.isBlank();
+                    }
+                };
+
+            // ---------- Hashing e Segurança (Alinhado com o SDM) ----------
+            case "toSHA256":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        try {
+                            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                            byte[] hash = md.digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            StringBuilder hexString = new StringBuilder();
+                            for (byte b : hash) {
+                                String hex = Integer.toHexString(0xff & b);
+                                if (hex.length() == 1) hexString.append('0');
+                                hexString.append(hex);
+                            }
+                            return hexString.toString();
+                        } catch (Exception e) {
+                            throw new ControlFlow.RuntimeError(null, "Erro ao gerar SHA-256: " + e.getMessage());
+                        }
+                    }
+                };
+
+            case "toBase64":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        return java.util.Base64.getEncoder().encodeToString(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                };
+
+            case "fromBase64":
+                return new XplCallable() {
+                    @Override public int arity() { return 0; }
+                    @Override public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
+                        try {
+                            byte[] decoded = java.util.Base64.getDecoder().decode(text);
+                            return new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+                        } catch (Exception e) {
+                            throw new ControlFlow.RuntimeError(null, "Erro ao descodificar Base64: " + e.getMessage());
+                        }
                     }
                 };
 

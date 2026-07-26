@@ -65,7 +65,11 @@ public final class HtmlTagUtils {
             "ellipse", "arc", "quadcurve", "cubiccurve",
 
             // Nós especiais (internos)
-            "#text", "#comment", "#document-fragment", "root", "content"
+            "#text", "#comment", "#document-fragment", "root", "content",
+            "popup", "tooltip",
+            // ─── TAGS DE JOGO (FXGL) ──────────────────────────────────────────
+            "game", "physics", "level", "camera", "entity", "player", "enemy",
+            "powerup", "projectile", "spawner", "trigger", "animation"
     );
 
     static {
@@ -208,7 +212,7 @@ public final class HtmlTagUtils {
                 "type",          // tipo de gráfico (bar, line, pie, etc.)
                 "data",          // dados (pode ser um JSON string)
                 "options",       // opções de configuração (JSON)
-                "width", "height",
+                "width", "height", "model",
                 "theme",         // claro/escuro
                 "responsive",    // boolean
                 "title",         // título do gráfico
@@ -232,6 +236,74 @@ public final class HtmlTagUtils {
                 "max-width",           // Largura máxima (ex: "600px")
                 "title",               // Título (pode ser usado como cabeçalho)
                 "message"              // Mensagem textual (útil para diálogos simples)
+        ));
+        TAG_SPECIFIC_ATTRIBUTES.put("popup", List.of(
+                "anchor",    // O ID do elemento alvo onde o balão vai flutuar
+                "show",      // A variável reativa booleana (true/false)
+                "position",  // A direção do balão (top, bottom, left, right)
+                "title",     // Opcional, caso queiras dar um título ao popup no futuro));
+                "timeout", // ⭐ NOVO: Tempo em milissegundos
+                "onclose"  // ⭐ NOVO: Evento para avisar o XPL que fechou
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("tooltip", List.of(
+                "anchor",    // O ID do elemento alvo onde o balão vai flutuar
+                "show",      // A variável reativa booleana (true/false)
+                "position",  // A direção do balão (top, bottom, left, right)
+                "text"
+        ));
+
+        // ─── TAGS DE JOGO (FXGL) ──────────────────────────────────────────────────
+        TAG_SPECIFIC_ATTRIBUTES.put("game", List.of(
+                "width", "height", "title", "fps", "debug", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("physics", List.of(
+                "gravity-x", "gravity-y", "velocity-iterations", "position-iterations"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("level", List.of(
+                "src", "background"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("camera", List.of(
+                "target", "zoom", "bounds-x", "bounds-y", "bounds-width", "bounds-height"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("entity", List.of(
+                "type", "x", "y", "sprite", "width", "height", "bbox", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("player", List.of(
+                "x", "y", "speed", "jump-force", "sprite", "controls", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("enemy", List.of(
+                "x", "y", "speed", "hp", "behavior", "sprite", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("powerup", List.of(
+                "x", "y", "type", "sprite", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("projectile", List.of(
+                "type", "x", "y", "speed", "damage", "lifetime", "sprite", "width", "height",
+                "direction", "angle", "gravity", "piercing", "on-hit", "on-expire",
+                "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("spawner", List.of(
+                "x", "y", "interval", "max-entities", "entity-type", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("trigger", List.of(
+                "x", "y", "width", "height", "target-type", "on-enter", "on-exit",
+                "repeat", "delay", "active", "color", "id", "class", "style"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("animation", List.of(
+                "id", "sprite", "frames", "frame-width", "frame-height", "columns", "rows",
+                "start-frame", "end-frame", "duration", "loop", "auto-play", "on-complete"
         ));
     }
 
