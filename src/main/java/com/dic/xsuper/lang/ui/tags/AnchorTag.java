@@ -111,9 +111,21 @@ public class AnchorTag extends NativeTag {
             } catch (Exception e) {
                 System.err.println("Erro ao abrir link externo: " + e.getMessage());
             }
-        } else {
-            System.out.println("[Router XPL] A navegar para vista interna: " + href);
-            // dispatchEvent("navigate", sourceNode.id, href);
+        } else if (href.startsWith("#")) {
+            // ⭐ A CURA DAS ÂNCORAS: Faz scroll automático até à ID!
+            String targetId = href.substring(1);
+            com.dic.xsuper.lang.ui.SuperUiEngine engine = com.dic.xsuper.lang.ui.SuperUiEngine.getInstance();
+
+            if (engine != null && engine.getActiveDom() != null) {
+                com.dic.xsuper.lang.ui.html.XplNode targetNode = engine.getActiveDom().getElementById(targetId);
+                if (targetNode != null && targetNode.nativeNode != null) {
+                    javafx.application.Platform.runLater(() -> {
+                        javafx.scene.Node targetFxNode = (javafx.scene.Node) targetNode.nativeNode;
+                        targetFxNode.getParent().requestLayout();
+                        targetFxNode.requestFocus(); // Puxa o ecrã instantaneamente para este elemento!
+                    });
+                }
+            }
         }
     }
 }

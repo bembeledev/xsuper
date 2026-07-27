@@ -17,8 +17,8 @@ public class ContainerTag extends NativeTag {
 
         // ⭐ A CURA W3C UNIVERSAL PARA CONTENTORES
         // Removemos a resistência do Pane para que o CSS (Flexbox) possa esticá-lo livremente
-        layoutPane.setMinSize(0, 0);
-        layoutPane.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        //layoutPane.setMinSize(0, 0);
+        //layoutPane.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
         return layoutPane;
     }

@@ -26,6 +26,11 @@ public final class HtmlTagUtils {
             "ellipse", "arc", "quadcurve", "cubiccurve"
     );
 
+    // ⭐ O NOVO DICIONÁRIO DE FORMATAÇÃO INLINE
+    public static final Set<String> INLINE_FORMATTING_TAGS = Set.of(
+            "b", "strong", "i", "em", "u", "s", "strike", "small", "mark", "sub", "sup", "code", "#text"
+    );
+
     // ─── Tags nativas HTML ──────────────────────────────────────────────────
     private static final Set<String> NATIVE_TAGS = Set.of(
             // Estrutura
@@ -322,6 +327,13 @@ public final class HtmlTagUtils {
 
     private HtmlTagUtils() {
         // Construtor privado para evitar instanciação
+    }
+
+    /**
+     * Verifica se a tag é de formatação pura de texto (não deve gerar um contentor flexbox)
+     */
+    public static boolean isInlineFormattingTag(String tagName) {
+        return tagName != null && INLINE_FORMATTING_TAGS.contains(tagName.toLowerCase());
     }
 
     public static List<String> getSpecificAttributes(String tagName) {

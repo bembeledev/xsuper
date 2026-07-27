@@ -23,6 +23,7 @@ import com.dic.xsuper.lang.ui.tags.table.TableCellTag;
 import com.dic.xsuper.lang.ui.tags.table.TableGroupTag;
 import com.dic.xsuper.lang.ui.tags.table.TableRowTag;
 import com.dic.xsuper.lang.ui.tags.table.TableTag;
+import com.dic.xsuper.lang.ui.tags.texts.*;
 
 public class TagFactory {
 
@@ -34,9 +35,15 @@ public class TagFactory {
             // ⭐ Contentores W3C Universais (Agora incluem ul, li e form)
             case "div", "main", "section", "article", "header", "footer", "aside" -> new ContainerTag(node);
 
-            // ⭐ NÓS DE TEXTO PURO (Gerados pelo HtmlParser)
-            case "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "label", "#text", "b", "strong", "i", "em" -> new LabelTag(node);
+            // ⭐ TIPOGRAFIA E TEXTOS W3C DESCENTRALIZADOS
+            case "p" -> new ParagraphTag(node);
+            case "h1", "h2", "h3", "h4", "h5", "h6" -> new HeadingTag(node);
+            case "span", "label" -> new SpanTag(node);
 
+            // Junta o small e o mark aqui:
+            case "b", "strong", "i", "em", "u", "s", "strike", "small", "mark" -> new FormattingTag(node);
+
+            case "#text" -> new TextNodeTag(node);
             // ⭐ Tabelas
             case "table" -> new TableTag(node);
             case "thead", "tbody", "tfoot" -> new TableGroupTag(node);

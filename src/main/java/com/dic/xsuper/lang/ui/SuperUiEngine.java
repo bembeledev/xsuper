@@ -640,7 +640,7 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      * Recalcula os @if e @for, hidrata os nós com ID, e renderiza a UI.
      * Deve ser chamado sempre que uma variável XPL relevante mudar.
      */
-    public void renderCycle() {
+    public synchronized void renderCycle() {
         if (staticRoot == null) return;
         // 1. Guardar estado actual
         Map<String, Object> currentValues = new HashMap<>();

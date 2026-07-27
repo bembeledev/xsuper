@@ -382,11 +382,6 @@ public class FormTag extends NativeTag {
             }
         }
 
-        // Min / Max (para NumberInput)
-        if (node instanceof Spinner<?> spinner) {
-            // Casting para Number
-            // ...
-        }
     }
 
     // ─── Eventos ────────────────────────────────────────────────────────────
