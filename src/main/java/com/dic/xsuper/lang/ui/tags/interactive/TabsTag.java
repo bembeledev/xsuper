@@ -47,18 +47,28 @@ public class TabsTag extends NativeTag {
     protected Node createNode() {
         rootContainer = new VBox();
         rootContainer.setMaxWidth(Double.MAX_VALUE);
+        // ⭐ Permite que a raiz cresça na vertical
+        rootContainer.setMaxHeight(Double.MAX_VALUE);
 
         // O cabeçalho onde os botões das abas vão ficar
         headerContainer = new HBox(5);
         headerContainer.setStyle("-fx-border-color: transparent transparent #e2e8f0 transparent; -fx-border-width: 0 0 1px 0; -fx-padding: 0 10px 0 10px;");
         headerContainer.setAlignment(Pos.BOTTOM_LEFT);
 
-        // A caixa onde o conteúdo vai aparecer (StackPane é perfeito para sobreposição rápida)
+        // A caixa onde o conteúdo vai aparecer
         contentContainer = new StackPane();
         contentContainer.setMaxWidth(Double.MAX_VALUE);
+        // ⭐ Permite que o painel de conteúdo cresça na vertical
+        contentContainer.setMaxHeight(Double.MAX_VALUE);
         contentContainer.setStyle("-fx-padding: 10px 0 0 0;");
 
         rootContainer.getChildren().addAll(headerContainer, contentContainer);
+
+        // =================================================================
+        // ⭐ A CURA PARA A ALTURA (O FLEX-GROW INTERNO DO JAVAFX)
+        // Obriga o VBox a dar todo o espaço vertical sobrante ao contentContainer!
+        // =================================================================
+        VBox.setVgrow(contentContainer, javafx.scene.layout.Priority.ALWAYS);
 
         applyCommonStyles();
         return rootContainer;
@@ -167,4 +177,7 @@ public class TabsTag extends NativeTag {
             this.label = label;
         }
     }
+
+    @Override
+    public boolean isGreedyByDefault() { return true; }
 }

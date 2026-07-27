@@ -81,16 +81,43 @@ public abstract class ChartBase extends NativeTag {
         container.getChildren().add(activeChart);
     }
 
-    // Adicionar no ChartBase.java
     @Override
     public void onReactiveAttributeChange(String attrName, Object newValue) {
         super.onReactiveAttributeChange(attrName, newValue);
 
-        // Se o programador XPL mudar a variável de dados: ex: dados_vendas = novos_dados;
+        // Se o programador XPL mudar a variável de dados reativamente
         if ("data".equalsIgnoreCase(attrName)) {
-            // Em vez de recriar o gráfico, apenas injetamos os novos dados.
-            // O motor do gráfico encarrega-se de animar as barras/linhas de forma fluida!
+
+            boolean isStreaming = sourceNode.attributes.containsKey("streaming");
+
             javafx.application.Platform.runLater(() -> {
+
+                // ⭐ 1. BLINDAGEM GLOBAL: Desliga a animação principal do Gráfico
+                if (activeChart != null) {
+                    activeChart.setAnimated(false);
+                }
+
+                // ⭐ 2. BLINDAGEM DOS EIXOS (A Cura para o Index Out of Bounds!)
+                // O JavaFX esconde os eixos dentro do XYChart, temos de ir lá buscá-los.
+                if (activeChart instanceof javafx.scene.chart.XYChart) {
+                    javafx.scene.chart.XYChart<?, ?> xyChart = (javafx.scene.chart.XYChart<?, ?>) activeChart;
+                    xyChart.getXAxis().setAnimated(false);
+                    xyChart.getYAxis().setAnimated(false);
+
+                    // Se for Streaming, desliza o eixo!
+                    if (isStreaming) {
+                        int maxWindow = 10;
+                        try { maxWindow = Integer.parseInt(sourceNode.attributes.get("streaming").toString()); }
+                        catch (Exception ignored) {}
+
+                        applyStreamingData(newValue, maxWindow);
+                        return; // Sai cedo para não re-desenhar tudo!
+                    }
+                }
+
+                // ⭐ 3. GRÁFICOS NORMAIS (Ex: PieChart da RAM ou Scatter da Rede)
+                // Como as animações agora estão totalmente desligadas, o JavaFX não
+                // vai estourar quando a função abaixo fizer chart.getData().clear()
                 populateData(newValue);
             });
         }
@@ -101,6 +128,54 @@ public abstract class ChartBase extends NativeTag {
         }
     }
 
+    // =========================================================================
+    // ⭐ MOTOR FIFO (A ILUSÃO DE DESLIZAMENTO TEMPO REAL)
+    // =========================================================================
+    @SuppressWarnings("unchecked")
+    protected void applyStreamingData(Object data, int maxWindow) {
+        javafx.scene.chart.XYChart<String, Number> chart = (javafx.scene.chart.XYChart<String, Number>) activeChart;
+        java.util.List<Map<String, Object>> seriesList = parseSeriesList(data);
+        if (seriesList == null) return;
+
+        for (Map<String, Object> seriesMap : seriesList) {
+            String seriesName = toString(seriesMap.get("name"));
+
+            // 1. Procura a série (linha) já existente no gráfico
+            javafx.scene.chart.XYChart.Series<String, Number> targetSeries = null;
+            for (javafx.scene.chart.XYChart.Series<String, Number> s : chart.getData()) {
+                if (seriesName.equals(s.getName())) {
+                    targetSeries = s;
+                    break;
+                }
+            }
+
+            // 2. Se a série não existir, cria-a pela primeira vez!
+            if (targetSeries == null) {
+                targetSeries = new javafx.scene.chart.XYChart.Series<>();
+                targetSeries.setName(seriesName);
+                chart.getData().add(targetSeries);
+            }
+
+            // 3. ADICIONA APENAS OS NOVOS PONTOS (O Delta)
+            Object valuesObj = seriesMap.get("values");
+            if (valuesObj instanceof java.util.List) {
+                for (Object item : (java.util.List<?>) valuesObj) {
+                    if (item instanceof Map) {
+                        Map<String, Object> point = (Map<String, Object>) item;
+                        String x = toString(point.get("x"));
+                        double y = toDouble(point.get("y"));
+                        targetSeries.getData().add(new javafx.scene.chart.XYChart.Data<>(x, y));
+                    }
+                }
+            }
+
+            // 4. ⭐ A MAGIA DO TASK MANAGER: Remove os pontos mais velhos!
+            // Isto empurra o eixo X e faz o gráfico deslizar visualmente
+            while (targetSeries.getData().size() > maxWindow) {
+                targetSeries.getData().remove(0);
+            }
+        }
+    }
     protected abstract Chart createChart();
     protected void applySpecificAttributes() {}
     protected void populateData(Object data) {}

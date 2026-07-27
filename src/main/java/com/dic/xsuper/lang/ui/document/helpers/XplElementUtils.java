@@ -37,7 +37,7 @@ public class XplElementUtils {
             }
         });
 
-// getAttribute
+        // getAttribute
         element.fields.put("getAttribute", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
@@ -46,7 +46,7 @@ public class XplElementUtils {
             }
         });
 
-// hasAttribute
+        // hasAttribute
         element.fields.put("hasAttribute", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
@@ -55,7 +55,7 @@ public class XplElementUtils {
             }
         });
 
-// removeAttribute
+        // removeAttribute
         element.fields.put("removeAttribute", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
@@ -65,7 +65,7 @@ public class XplElementUtils {
             }
         });
 
-// getAttributes
+        // getAttributes
         element.fields.put("getAttributes", new XplCallable() {
             @Override public int arity() { return 0; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
@@ -73,7 +73,7 @@ public class XplElementUtils {
             }
         });
 
-// appendChild
+        // appendChild
         element.fields.put("appendChild", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {

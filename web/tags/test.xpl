@@ -45,7 +45,7 @@ let utilizador = { "nome": "Fernando", "idade": 25 };
 let html = """
     <html>
         <body>
-            <Perfil pessoa="{{utilizador}}"></Perfil>
+            <Perfil pessoa="{utilizador}"></Perfil>
             <Avatar imagemUrl="foto.png"></Avatar>
         </body>
     </html>

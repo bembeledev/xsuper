@@ -17,7 +17,11 @@ public class DomEvaluator {
     private final SuperUiEngine engine;
     // ⭐ NOVO: O Map Reativo que controla os Signals
     private final XplReactiveState reactiveState;
-    public DomEvaluator(Interpreter interpreter, SuperUiEngine engine, XplReactiveState reactiveState) {
+    // ⭐ 1. Regex para TEXTO LIVRE (Ex: <div>{{ uptimeCounter }}</div>)
+    // Apanha perfeitamente {{ qualquerCoisa }}
+    private static final java.util.regex.Pattern BINDING_PATTERN = java.util.regex.Pattern.compile("\\{\\{(.*?)\\}\\}");
+
+   public DomEvaluator(Interpreter interpreter, SuperUiEngine engine, XplReactiveState reactiveState) {
         this.interpreter = interpreter;
         this.engine = engine;
         this.reactiveState = reactiveState;
@@ -147,6 +151,7 @@ public class DomEvaluator {
         }
         return result;
     }
+
     /**
      * Processa um nó componente, instanciando a classe XPL correspondente e
      * substituindo o nó pela árvore renderizada.
@@ -154,8 +159,6 @@ public class DomEvaluator {
     // =========================================================================
     // ⚙️ AVALIADOR DE COMPONENTES
     // =========================================================================
-
-
     private List<XplNode> evaluateComponent(XplNode componentNode) {
         // 1. Obter o nome do componente
         String componentName = (String) componentNode.attributes.get("componentName");
@@ -363,12 +366,28 @@ public class DomEvaluator {
 
         if (!items.isEmpty()) {
             for (Object item : items) {
-                interpreter.environment.defineLet(varName, item);
 
-                for (XplNode child : forNode.children) {
-                    if (!child.tag.equals("@empty")) {
-                        result.addAll(evaluateNode(child));
+                // ⭐ A CURA: O ESCOPO SOMBRA (Shadow Scope)
+                // Criamos uma bolha de memória que "vê" os pais, mas não polui a raiz
+                com.dic.xsuper.lang.Environment shadowScope = new com.dic.xsuper.lang.Environment(interpreter.environment);
+                //shadowScope.defineLet(varName, item);
+                shadowScope.values.put(varName, item);
+
+                // Guarda o ambiente original
+                com.dic.xsuper.lang.Environment previousEnv = interpreter.environment;
+
+                try {
+                    // Mergulha o interpretador na bolha antes de avaliar os filhos
+                    interpreter.environment = shadowScope;
+
+                    for (XplNode child : forNode.children) {
+                        if (!child.tag.equals("@empty")) {
+                            result.addAll(evaluateNode(child));
+                        }
                     }
+                } finally {
+                    // Restaura o ambiente puro (a variável do loop é destruída)
+                    interpreter.environment = previousEnv;
                 }
             }
         } else {
@@ -545,7 +564,7 @@ public class DomEvaluator {
     public String resolveTextBindings(String text, XplNode targetNode) {
         if (text == null || !text.contains("{{")) return text;
 
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\{([^}]+)\\}\\}").matcher(text);
+        java.util.regex.Matcher m = BINDING_PATTERN.matcher(text);
         StringBuffer sb = new StringBuffer();
 
         while (m.find()) {
@@ -557,10 +576,9 @@ public class DomEvaluator {
     }
 
     public String resolveAttributeBindings(String text, XplNode targetNode) {
-        if (text == null || !text.contains("{")) return text;
+        if (text == null || !text.contains("{{")) return text;
 
-        // Regex cega o {{ }} para não haver colisões
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?<!\\{)\\{([^}]+)\\}(?!\\})").matcher(text);
+        java.util.regex.Matcher m = BINDING_PATTERN.matcher(text);
         StringBuffer sb = new StringBuffer();
 
         while (m.find()) {

@@ -101,7 +101,7 @@ public class XplorerApp {
 
         while (true) {
             // Prompt Minimalista estilo Linux/Unix
-            System.out.print(ConsoleTheme.PROMPT + "xplorer ~" + ConsoleTheme.DIRECTORY + Arrays.stream(currentDirectory.toString().split("\\\\")).toList().getLast() + ConsoleTheme.TEXT + " ❯ " + ConsoleTheme.RESET);
+            System.out.print(ConsoleTheme.PROMPT + "xplorer ~ " + ConsoleTheme.DIRECTORY + Arrays.stream(currentDirectory.toString().split("\\\\")).toList().getLast() + ConsoleTheme.TEXT + " ❯ " + ConsoleTheme.RESET);
             String input = scanner.nextLine().trim();
 
             if (input.equalsIgnoreCase("exit") || input.equalsIgnoreCase("quit")) {

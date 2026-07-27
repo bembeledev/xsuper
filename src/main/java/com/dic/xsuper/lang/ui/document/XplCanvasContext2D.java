@@ -33,7 +33,7 @@ public class XplCanvasContext2D extends XplInstance implements XplNativeObject{
         this.fields.put("setFillStyle", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String color = intp.evaluate(args.get(0).expression).toString();
+                String color = intp.evaluate(args.getFirst().expression).toString();
                 try { gc.setFill(Color.web(color)); } catch (Exception ignored) {}
                 return null;
             }
@@ -42,7 +42,7 @@ public class XplCanvasContext2D extends XplInstance implements XplNativeObject{
         this.fields.put("setStrokeStyle", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String color = intp.evaluate(args.get(0).expression).toString();
+                String color = intp.evaluate(args.getFirst().expression).toString();
                 try { gc.setStroke(Color.web(color)); } catch (Exception ignored) {}
                 return null;
             }
@@ -51,7 +51,7 @@ public class XplCanvasContext2D extends XplInstance implements XplNativeObject{
         this.fields.put("setFont", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, List<Expr.CallArg> args) {
-                String fontStyle = intp.evaluate(args.get(0).expression).toString();
+                String fontStyle = intp.evaluate(args.getFirst().expression).toString();
                 try {
                     String[] parts = fontStyle.split("px ");
                     double size = Double.parseDouble(parts[0]);
@@ -190,21 +190,17 @@ public class XplCanvasContext2D extends XplInstance implements XplNativeObject{
         if (nativeModel == null) {
             nativeModel = new XPLModel("CanvasRenderingContext2D", null);
 
-            // Helper para injetar a assinatura das funções sem gerar exceções semânticas!
+            // Helper para injectar a assinatura das funções sem gerar excepções semânticas!
             addVoidMethod(nativeModel, "beginPath", 0);
             addVoidMethod(nativeModel, "closePath", 0);
             addVoidMethod(nativeModel, "stroke", 0);
             addVoidMethod(nativeModel, "fill", 0);
-
             addVoidMethod(nativeModel, "setFillStyle", 1);
             addVoidMethod(nativeModel, "setStrokeStyle", 1);
             addVoidMethod(nativeModel, "setFont", 1);
-
             addVoidMethod(nativeModel, "moveTo", 2);
             addVoidMethod(nativeModel, "lineTo", 2);
-
             addVoidMethod(nativeModel, "fillText", 3);
-
             addVoidMethod(nativeModel, "fillRect", 4);
             addVoidMethod(nativeModel, "strokeRect", 4);
             addVoidMethod(nativeModel, "clearRect", 4);

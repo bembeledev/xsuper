@@ -102,6 +102,12 @@ public class JavaFxRenderer implements XplUiBridge {
                             Node fxNode = tag.build();
                             xplChild.nativeNode = fxNode;
                             registerNodeRecursively(tag);
+                            // ⭐ O ELO PERDIDO: Diz à Janela principal (windowRoot) para esticar o HTML/BODY!
+                            if (windowRoot instanceof javafx.scene.layout.VBox) {
+                                javafx.scene.layout.VBox.setVgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                            } else if (windowRoot instanceof javafx.scene.layout.HBox) {
+                                javafx.scene.layout.HBox.setHgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                            }
                             windowRoot.getChildren().add(fxNode);
                         }
                     }
@@ -140,6 +146,13 @@ public class JavaFxRenderer implements XplUiBridge {
 
                     // Fundamental para não perderes os eventos (cliques, inputs) após o reflow!
                     registerNodeRecursively(tag);
+
+                    // ⭐ O ELO PERDIDO: Diz à Janela principal (windowRoot) para esticar o HTML/BODY!
+                    if (windowRoot instanceof javafx.scene.layout.VBox) {
+                        javafx.scene.layout.VBox.setVgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                    } else if (windowRoot instanceof javafx.scene.layout.HBox) {
+                        javafx.scene.layout.HBox.setHgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                    }
 
                     this.windowRoot.getChildren().add(fxNode);
                 }
@@ -512,6 +525,18 @@ public class JavaFxRenderer implements XplUiBridge {
                 }
             }
 
+            case "flex" -> {
+                // Se for flex: 1, avisamos os motores nativos para crescerem infinitamente!
+                if ("1".equals(valStr) || valStr.startsWith("1 ")) {
+                    javafx.scene.layout.VBox.setVgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                    javafx.scene.layout.HBox.setHgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                    if (fxNode instanceof javafx.scene.layout.Region r) {
+                        r.setMaxHeight(Double.MAX_VALUE);
+                        r.setMaxWidth(Double.MAX_VALUE);
+                    }
+                }
+            }
+
             default -> {
                 fxNode.getProperties().put(prop, newValue);
             }
@@ -521,6 +546,19 @@ public class JavaFxRenderer implements XplUiBridge {
 
     private void setSize(Node node, String sizeType, String value) {
         if (!(node instanceof javafx.scene.layout.Region region)) return;
+        // ⭐ A CURA DOS 100% (Impede que vire 100 pixels mortos!)
+        if (value != null && value.trim().equals("100%")) {
+            if ("width".equalsIgnoreCase(sizeType)) {
+                region.setMaxWidth(Double.MAX_VALUE);
+                // Liberta a largura preferencial para o Flexbox decidir
+                region.setPrefWidth(javafx.scene.layout.Region.USE_COMPUTED_SIZE);
+            } else if ("height".equalsIgnoreCase(sizeType)) {
+                region.setMaxHeight(Double.MAX_VALUE);
+                // Liberta a altura preferencial
+                region.setPrefHeight(javafx.scene.layout.Region.USE_COMPUTED_SIZE);
+            }
+            return; // Aborta! Não deixa ir para o Double.parseDouble()
+        }
         double val = parseSize(value);
         if (Double.isNaN(val)) return;
         switch (sizeType) {
@@ -537,11 +575,24 @@ public class JavaFxRenderer implements XplUiBridge {
 
     private double parseSize(String value) {
         if (value == null || value.isEmpty()) return Double.NaN;
-        value = value.trim();
-        // Remove unidades (px, em, %) e converte para double
-        value = value.replaceAll("[^0-9.\\-]", "");
+        value = value.trim().toLowerCase();
+
+        boolean isVh = value.endsWith("vh");
+        boolean isVw = value.endsWith("vw");
+
+        String numeric = value.replaceAll("[^0-9.\\-]", "");
         try {
-            return Double.parseDouble(value);
+            double val = Double.parseDouble(numeric);
+
+            // ⭐ TRADUZIR VH E VW PARA PIXELS REAIS DO ECRÃ!
+            if (isVh && com.dic.xsuper.lang.ui.SuperUiEngine.getInstance() != null) {
+                return (val / 100.0) * com.dic.xsuper.lang.ui.SuperUiEngine.getInstance().getViewportHeight();
+            }
+            if (isVw && com.dic.xsuper.lang.ui.SuperUiEngine.getInstance() != null) {
+                return (val / 100.0) * com.dic.xsuper.lang.ui.SuperUiEngine.getInstance().getViewportWidth();
+            }
+
+            return val;
         } catch (NumberFormatException e) {
             return Double.NaN;
         }

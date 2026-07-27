@@ -291,7 +291,7 @@ public class XplCssParser {
                 // Usamos o método parseSelector() nativo que já entende as variáveis {{...}} e as vírgulas!
                 String selector = parseSelector();
 
-                if (selector != null && !selector.isEmpty()) {
+                if (!selector.isEmpty()) {
                     XplNode childRule = new XplNode("rule");
                     childRule.attributes.put("selector", selector);
                     parseBlock(childRule);

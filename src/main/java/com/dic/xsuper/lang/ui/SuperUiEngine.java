@@ -42,8 +42,6 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // Janela Principal
     MainWindow mainWindow;
 
-    // 1. O Registo Global de Keyframes (Adiciona ao topo da SuperUiEngine)
-    private final Map<String, XplKeyframeAnimation> keyframesRegistry = new HashMap<>();
 
     // ─── Pilares da Engine ──────────────────────────────────────────────────
 
@@ -51,7 +49,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     private XplUiBridge rendererBridge;         // A ponte para o Pintor (JavaFX)
     private final DomEvaluator evaluator;       // O purificador de árvores (@if, @for)
 
-
+    // ⭐ PADRÃO OURO: Marca se a UI precisa de ser redesenhada no próximo frame
+    private boolean isDirty = false;
 
     // ⭐ OS NOVOS PILARES DOS SIGNALS (REATIVIDADE)
     private final XplReactivityRenderer reactivityRenderer;
@@ -82,6 +81,9 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     // Mapa que associa o nome da tag personalizada à sua classe XPL
     private final Map<String, XplClass> componentRegistry = new HashMap<>();
 
+    public Interpreter getInterpreter() {
+        return interpreter;
+    }
 
     // Instâncias isoladas dos subsistemas de CSS
     // Instância global do Listener
@@ -110,6 +112,16 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
 
     // ─── Construtor ─────────────────────────────────────────────────────────
     public SuperUiEngine(Interpreter interpreter, XplUiBridge rendererBridge) {
+
+
+        // ⭐ A CURA DO LIFECYCLE: Acorda o motor gráfico do JavaFX no exato momento
+        // em que a SuperUiEngine nasce, para podermos usar o Platform.runLater à vontade!
+        try {
+            javafx.application.Platform.startup(() -> {});
+        } catch (IllegalStateException e) {
+            // Ignora silenciosamente: O Toolkit já estava acordado!
+        }
+
         instance = this;
         this.interpreter = interpreter;
         this.rendererBridge = rendererBridge;
@@ -203,8 +215,22 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
      */
     public void updateVariable(String varName, Object newValue) {
         if (reactiveState != null) {
+            // 1. Atualiza o estado na memória (rápido e síncrono)
             reactiveState.put(varName, newValue);
-            renderCycle();
+
+            // 2. BATCHING ASSÍNCRONO (O Segredo da Performance)
+            if (!isDirty) {
+                isDirty = true; // Marca a UI como "suja" (precisa de banho)
+
+                // 3. Agenda a renderização para o próximo ciclo livre da Main Thread
+                javafx.application.Platform.runLater(() -> {
+                    try {
+                        renderCycle(); // Renderiza TUDO de uma vez só!
+                    } finally {
+                        isDirty = false; // A UI está lavada, limpa a flag.
+                    }
+                });
+            }
         }
     }
 

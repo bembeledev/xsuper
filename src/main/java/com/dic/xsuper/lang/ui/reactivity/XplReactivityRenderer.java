@@ -33,15 +33,25 @@ public class XplReactivityRenderer {
         if (node._internalUid == null) return;
 
         // =========================================================================
-        // NÍVEL 1: CIRURGIA DE ATRIBUTOS (ex: class={modalClass})
+        // NÍVEL 1: CIRURGIA DE ATRIBUTOS (ex: class={modalClass} ou style="color: {{log.color}}")
         // =========================================================================
         if (node.bindings != null && !node.bindings.isEmpty()) {
             for (Map.Entry<String, String> binding : node.bindings.entrySet()) {
                 String attrName = binding.getKey();
-                String expression = binding.getValue();
 
-                Object newValue = engine.getDomEvaluator().evaluateExpressionXPL(expression);
-                String strValue = newValue != null ? String.valueOf(newValue) : "";
+                String strValue = binding.getValue();
+
+                // ⭐ ROTEADOR INTELIGENTE
+                // Se for um Template String com chavetas (Ex: "{cpuData}" ou "color: {{log.color}}")
+                if (strValue.contains("{{")) {
+                    strValue = engine.getDomEvaluator().resolveAttributeBindings(strValue, node);
+                    strValue = engine.getDomEvaluator().resolveTextBindings(strValue, node);
+                }
+                // Se for um binding XPL puro (Ex: cpuData) sem chavetas
+                else {
+                    Object newValue = engine.getDomEvaluator().evaluateExpressionXPL(strValue);
+                    strValue = newValue != null ? String.valueOf(newValue) : "";
+                }
 
                 node.setAttribute(attrName, strValue);
 

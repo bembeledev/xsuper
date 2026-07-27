@@ -9,7 +9,7 @@ public final class HtmlTagUtils {
             "id", "class", "style", "title", "tabindex", "hidden", "lang", "dir",
             "accesskey", "draggable", "spellcheck", "contenteditable", "translate",
             "role", "slot", "inert", "popover",
-            "fill", "stroke", "stroke-width"
+            "fill", "stroke", "stroke-width","context-menu"
     );
 
     // ⭐ 1. A NOVA LISTA EXCLUSIVA DE SHAPES SVG
@@ -57,12 +57,12 @@ public final class HtmlTagUtils {
             "option", "textarea", "output", "progress", "meter", "fieldset", "legend",
 
             // Interação
-            "details", "summary", "menu", "menuitem",
+            "details", "summary", "menu", "menuitem", "contextmenu",
 
             // Scripting & Vector (Canvas e SVG integrados)
             "canvas", "svg", "math", "chart",
             "path", "circle", "rect", "line", "polygon", "polyline",
-            "ellipse", "arc", "quadcurve", "cubiccurve",
+            "ellipse", "arc", "quadcurve", "cubiccurve", "editor",
 
             // Nós especiais (internos)
             "#text", "#comment", "#document-fragment", "root", "content",
@@ -180,8 +180,10 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("legend", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("details", List.of("open"));
         TAG_SPECIFIC_ATTRIBUTES.put("summary", List.of());
-        TAG_SPECIFIC_ATTRIBUTES.put("menu", List.of("type", "label"));
-        TAG_SPECIFIC_ATTRIBUTES.put("menuitem", List.of("type", "label", "icon", "disabled", "checked", "radiogroup", "command"));
+        TAG_SPECIFIC_ATTRIBUTES.put("contextmenu", List.of());
+        TAG_SPECIFIC_ATTRIBUTES.put("menu", List.of("label", "icon", "disabled"));
+        TAG_SPECIFIC_ATTRIBUTES.put("menuitem", List.of("label", "icon", "shortcut", "disabled", "separator", "href"));
+        TAG_SPECIFIC_ATTRIBUTES.put("menubar", List.of());
         TAG_SPECIFIC_ATTRIBUTES.put("canvas", List.of("width", "height"));
         TAG_SPECIFIC_ATTRIBUTES.put("svg", List.of("width", "height", "viewBox"));
         TAG_SPECIFIC_ATTRIBUTES.put("math", List.of());
@@ -219,7 +221,8 @@ public final class HtmlTagUtils {
                 "colors",        // paleta de cores
                 "animation",     // boolean ou objeto
                 "tooltip",       // boolean ou objeto
-                "legend"         // boolean ou objeto
+                "legend",         // boolean ou objeto
+                "streaming"
         ));
         TAG_SPECIFIC_ATTRIBUTES.put("hr", List.of("orientation"));
         TAG_SPECIFIC_ATTRIBUTES.put("dialog", List.of(
@@ -304,6 +307,16 @@ public final class HtmlTagUtils {
         TAG_SPECIFIC_ATTRIBUTES.put("animation", List.of(
                 "id", "sprite", "frames", "frame-width", "frame-height", "columns", "rows",
                 "start-frame", "end-frame", "duration", "loop", "auto-play", "on-complete"
+        ));
+
+        TAG_SPECIFIC_ATTRIBUTES.put("editor", List.of(
+                "content",      // O texto propriamente dito (Aceita {{variavel}})
+                "editable",     // true/false (Se serve apenas para leitura ou edição)
+                "wrap-text",    // true/false (Quebra de linha automática para documentos)
+                "line-numbers", // true/false (Mostrar a calha de números de linha)
+                "tab-size",      // int (Tamanho da indentação)
+                "soft-tabs",
+                "syntax"
         ));
     }
 

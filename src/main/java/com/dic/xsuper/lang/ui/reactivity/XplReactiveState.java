@@ -2,6 +2,8 @@ package com.dic.xsuper.lang.ui.reactivity;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * O Estado Reactivo do Componente (Estilo Angular Signals).
@@ -12,8 +14,8 @@ public class XplReactiveState {
     // Onde os valores reais vivem
     private final Map<String, Object> state = new HashMap<>();
 
-    // Os "Ouvidos Pesados": [Nome da Variável] -> [Lista de Nós DOM que dependem dela]
-    private final Map<String, Set<XplNode>> listeners = new HashMap<>();
+    // ⭐ A CURA FINAL: O Mapa principal TEM de ser um ConcurrentHashMap!
+    private final Map<String, Set<XplNode>> listeners = new ConcurrentHashMap<>();
 
     // O motor que fará a cirurgia de atualização
     private final XplReactivityRenderer renderer;
@@ -49,8 +51,13 @@ public class XplReactiveState {
         if (affectedNodes != null && !affectedNodes.isEmpty()) {
             System.out.println("[Signal] ⚡ Variável '" + key + "' mudou! A atualizar " + affectedNodes.size() + " nó(s)...");
 
-            // Manda o motor atualizar APENAS estes nós
-            for (XplNode node : affectedNodes) {
+            // ⭐ A CURA DO CRASH: O Snapshot Seguro
+            // Copiamos a lista de nós para a RAM isolada. Assim, se o DomEvaluator
+            // injetar novos nós no mapa original, o iterador não explode!
+            java.util.List<XplNode> nosSeguros = new java.util.ArrayList<>(affectedNodes);
+
+            // Manda o motor atualizar APENAS a cópia fotográfica!
+            for (XplNode node : nosSeguros) {
                 renderer.patchPartialDom(node, this.state);
             }
         }
@@ -68,7 +75,8 @@ public class XplReactiveState {
             if (!word.isEmpty() && !Character.isDigit(word.charAt(0))
                     && !word.equals("true") && !word.equals("false") && !word.equals("null")) {
 
-                listeners.computeIfAbsent(word, k -> new HashSet<>()).add(dependentNode);
+                // ⭐ A CURA DA CONCORRÊNCIA: Usar CopyOnWriteArraySet em vez de HashSet puro
+                listeners.computeIfAbsent(word, k -> new CopyOnWriteArraySet<>()).add(dependentNode);
             }
         }
     }

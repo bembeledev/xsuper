@@ -1,6 +1,7 @@
 package com.dic.xsuper.lang.ui.tags.navigation;
 
 import com.dic.xsuper.lang.ui.html.XplNode;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -14,6 +15,14 @@ public class MenuHelper {
     public static Menu buildMenu(XplNode node) {
         String label = (String) node.attributes.getOrDefault("label", "Menu");
         Menu menu = new Menu(label);
+
+        // ⭐ INJEÇÃO DE ÍCONES PARA SUB-MENUS
+        String icon = (String) node.attributes.get("icon");
+        if (icon != null && !icon.isEmpty()) {
+            Label iconLabel = new Label(icon);
+            iconLabel.setStyle("-fx-font-size: 14px;");
+            menu.setGraphic(iconLabel);
+        }
 
         if (node.attributes.containsKey("disabled") && "true".equalsIgnoreCase(node.attributes.get("disabled").toString())) {
             menu.setDisable(true);
@@ -46,6 +55,14 @@ public class MenuHelper {
         }
 
         MenuItem item = new MenuItem(label);
+
+        // ⭐ INJEÇÃO DE ÍCONES PARA ITENS
+        String icon = (String) node.attributes.get("icon");
+        if (icon != null && !icon.isEmpty()) {
+            Label iconLabel = new Label(icon);
+            iconLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #94a3b8;"); // Cor neutra para o ícone
+            item.setGraphic(iconLabel);
+        }
 
         // Atalhos de teclado (com normalização segura para o sinal de mais ++)
         if (node.attributes.containsKey("shortcut")) {

@@ -16,7 +16,6 @@ import java.util.*;
 public class XplDocument extends XplInstance implements XplNativeObject {
 
     // ──────────────────────── Propriedades principais ─────────────────────────
-
     public XplElement documentElement;
     public XplElement body;
     public XplElement head;
@@ -36,7 +35,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     public boolean hidden;
     public boolean visibilityState;
     public long childElementCount;
-
     public static XPLModel nativeModel;
 
     // ─── Índice rápido de elementos por ID ──────────────────────────────────────
@@ -54,7 +52,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
      *
      * @param element O elemento a registar.
      */
-
     public void registerElement(XplElement element) {
         if (element == null) return;
 
@@ -96,9 +93,7 @@ public class XplDocument extends XplInstance implements XplNativeObject {
         elementsById.clear();
     }
 
-
     // ─── Métodos de criação de nós ────────────────────────────────────────────
-
     public XplElement createElement(String tagName) {
         return new XplElement(tagName);
     }
@@ -130,7 +125,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Métodos de selecção ──────────────────────────────────────────────────
-
     public XplElement getElementById(String id) {
         // 1. Tenta o mapa rápido (O(1))
         if (id != null && elementsById.containsKey(id)) {
@@ -170,7 +164,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Navegação e coleções ─────────────────────────────────────────────────
-
     public XplElement getRootNode() {
         return documentElement;
     }
@@ -212,7 +205,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Escrita directa (write/writeln) ──────────────────────────────────────
-
     public void write(String... text) {
         for (String s : text) {
             if (body != null) {
@@ -229,7 +221,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Gestão de eventos (com suporte a funções XPL) ──────────────────────
-
     public XplDocument(XplElement rootElement) {
         super(SuperUiEngine.DOCUMENT_CLASS);
         this.documentElement = rootElement;
@@ -251,7 +242,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
         this.hidden = false;
         this.visibilityState = true;
         this.childElementCount = 1;
-
         invokeMethod();
     }
 
@@ -283,7 +273,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Utilidades ────────────────────────────────────────────────────────────
-
     public XplElement importNode(XplElement node, boolean deep) {
         return node.cloneNode(deep);
     }
@@ -332,9 +321,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Propriedades getter / setter (estilo JS) ────────────────────────────
-
-
-
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getURL() { return URL; }
@@ -358,7 +344,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     public long getChildElementCount() { return childElementCount; }
 
     // ─── Métodos de conversão / serialização ─────────────────────────────────
-
     public String getHTML() {
         if (documentElement == null) return "";
         return documentElement.getOuterHTML();
@@ -370,7 +355,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Métodos de inspecção (para a reflexão XPL) ───────────────────────────
-
     public static XPLModel buildNativeModel() {
         if (nativeModel == null) return XplDocumentUtils.buildNativeModel();
         return nativeModel;
@@ -418,7 +402,6 @@ public class XplDocument extends XplInstance implements XplNativeObject {
     }
 
     // ─── Novos métodos ────────────────────────────────────────────────────────────
-
     @Override
     public void invokeMethod() {
         //Injectar métodos do documentos
@@ -523,8 +506,7 @@ public class XplDocument extends XplInstance implements XplNativeObject {
         return iterator;
     }
 
-// ─── Getters para as novas propriedades ─────────────────────────────
-
+    // ─── Getters para as novas propriedades ─────────────────────────────
     /**
      * Cria um TreeWalker (simplificado).
      */
@@ -534,13 +516,13 @@ public class XplDocument extends XplInstance implements XplNativeObject {
 
     public XplElement getFirstElementChild() {
         if (documentElement == null) return null;
-        return documentElement.getChildren().isEmpty() ? null : documentElement.getChildren().get(0);
+        return documentElement.getChildren().isEmpty() ? null : documentElement.getChildren().getFirst();
     }
 
     public XplElement getLastElementChild() {
         if (documentElement == null) return null;
         List<XplElement> children = documentElement.getChildren();
-        return children.isEmpty() ? null : children.get(children.size() - 1);
+        return children.isEmpty() ? null : children.getLast();
     }
 
     public List<XplElement> getChildren() {
@@ -603,6 +585,5 @@ public class XplDocument extends XplInstance implements XplNativeObject {
             default -> null;
         };
     }
-
 
 }

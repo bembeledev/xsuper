@@ -52,17 +52,14 @@ public class XplCssEvaluator {
             }
         } else {
             // Procura e avalia o primeiro ramo alternativo verdadeiro
-            boolean handled = false;
             for (XplNode child : ifNode.children) {
                 if (child.tag.equals("@elseif")) {
                     if (evaluateXplCondition(child.attributes.get("condition").toString(), context)) {
                         evaluateChildren(child.children, flatParent, context);
-                        handled = true;
                         break;
                     }
                 } else if (child.tag.equals("@else")) {
                     evaluateChildren(child.children, flatParent, context);
-                    handled = true;
                     break;
                 }
             }

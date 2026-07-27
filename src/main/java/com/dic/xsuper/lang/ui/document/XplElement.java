@@ -6,19 +6,18 @@ import com.dic.xsuper.lang.poo.XplInstance;
 import com.dic.xsuper.lang.ui.SuperUiEngine;
 import com.dic.xsuper.lang.ui.document.helpers.XplElementUtils;
 import com.dic.xsuper.lang.ui.event.XplEvent;
-import javafx.scene.canvas.GraphicsContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Classe que replica o comportamento de um HTMLElement no JavaScript.
- * Deve ser tratada como um objeto XPL nativo.
+ * Deve ser tratada como um objecto XPL nativo.
  */
 public class XplElement extends XplInstance implements XplNativeObject{
 
     public static XPLModel nativeModel;
-
 
     // ─── Propriedades estruturais (árvore) ────────────────────────────────────
     public String tagName;
@@ -37,7 +36,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     public com.dic.xsuper.lang.poo.XplInstance hostComponent = null;
 
     // ─── Propriedades de navegação (ponteiros) ──────────────────────────────
-
     public XplElement nextSibling;
     public XplElement previousSibling;
     public XplElement firstChild;
@@ -50,7 +48,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     public String _internalUid = com.dic.xsuper.lang.ui.html.XplNode.generateUid();
 
     // ─── Construtores ──────────────────────────────────────────────────────────
-
     public XplElement(String tagName) {
         super(SuperUiEngine.ELEMENT_CLASS);
         this.tagName = tagName.toLowerCase();
@@ -72,8 +69,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Getters / Setters (substituem os campos estáticos) ──────────────────
-
-    // ID
     public String getId() {
         return (String) attributes.getOrDefault("id", "");
     }
@@ -118,7 +113,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
             // Em vez de um eval sujo, usamos o teu próprio motor léxico e sintático
             // para converter o texto "login();logout();" em Statements reais do teu núcleo!
 
-
             try {
                 Lexer lexer = new Lexer(xplCode, null);
                 List<com.dic.xsuper.lang.Token> tokens = lexer.tokenize();
@@ -157,8 +151,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
                         }
                     }
 
-
-
                     // 2. Injetamos a variável mágica "event"
                     // (Ajuste a classe XplEvent para a sua correspondente, se necessário)
                     globais.defineLet("event", new XplEvent(eventName, this, this));
@@ -184,8 +176,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
             dispatchEvent(event);
         }
     }
-
-
 
     public void setInnerHTML(String html) {
         // ⚠️ SIMPLIFICADO: limpa e cria um nó de texto com o HTML bruto
@@ -273,7 +263,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     public int getOffsetHeight() { return getScroll().getOffsetHeight(); }
 
     // ─── NOVAS PROPRIEDADES UNIVERSAIS (value, name, type, etc) ──────────────
-
     public Object getValue() { return attributes.getOrDefault("value", ""); }
     public void setValue(Object value) { setAttribute("value", value); }
 
@@ -378,9 +367,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
 
         if (!isSyncing && getId() != null && !getId().isEmpty()) {
             SuperUiEngine engine = SuperUiEngine.getInstance();
-            if (engine != null) {
-                //engine.notifyStateChanged(getId(), name, ""); // Envia vazio para apagar no JavaFX
-            }
+            //engine.notifyStateChanged(getId(), name, ""); // Envia vazio para apagar no JavaFX
         }
     }
 
@@ -389,7 +376,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Métodos de manipulação da árvore ─────────────────────────────────────
-
     public void appendChild(XplElement child) {
         if (child == null) return;
         if (child.parentNode != null) {
@@ -471,8 +457,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
         return clone;
     }
 
-    // ─── Atualização dos ponteiros de navegação ──────────────────────────────
-
+    // ─── Actualização dos ponteiros de navegação ──────────────────────────────
     private void updateSiblings() {
         if (children.isEmpty()) {
             firstChild = null;
@@ -491,7 +476,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Navegação e propriedades de posição ──────────────────────────────────
-
     public List<XplElement> getChildren() {
         return Collections.unmodifiableList(children);
     }
@@ -518,7 +502,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Métodos de pesquisa (DOM Core) ──────────────────────────────────────
-
     public XplElement getElementById(String idToFind) {
         if (idToFind.equals(getId())) return this;
         for (XplElement child : children) {
@@ -569,7 +552,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
         }
     }
 
-    public List<XplElement> querySelectorAll(String selector) {
+    public List<XplElement> querySelectorAll(@NotNull String selector) {
         if (selector.startsWith("#")) {
             XplElement el = getElementById(selector.substring(1));
             return el != null ? List.of(el) : Collections.emptyList();
@@ -581,7 +564,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Métodos de classe CSS ──────────────────────────────────────────────────
-
     public void addClass(String className) {
         Set<String> classes = new HashSet<>(getClassList());
         classes.add(className);
@@ -607,7 +589,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Estilos (inline) ─────────────────────────────────────────────────────
-
     public void setStyle(String property, String value) {
         String currentStyle = (String) attributes.getOrDefault("style", "");
         Map<String, String> styles = parseStyle(currentStyle);
@@ -641,8 +622,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Eventos (nativos Java) ──────────────────────────────────────────────
-
-    private Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
+    private final Map<String, List<XplEventListener>> eventListeners = new HashMap<>();
 
     public void addEventListener(String type, XplEventListener listener) {
         eventListeners.computeIfAbsent(type, k -> new ArrayList<>()).add(listener);
@@ -670,7 +650,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // Em XplElement.java
-
     @Override
     public void set(com.dic.xsuper.lang.Token name, Object value) {
         String propName = name.lexeme;
@@ -690,10 +669,7 @@ public class XplElement extends XplInstance implements XplNativeObject{
         setAttribute(propName, value);
     }
 
-
-
-    // ─── ATUALIZAR O GETPROPERTY E GETDOMOBJECT ─────────────────────────────
-
+    // ─── ACTUALIZAR O GET_PROPERTY E GET_DOM_OBJECT ─────────────────────────────
     @Override
     public Object getProperty(String propertyName) {
         return switch (propertyName) {
@@ -737,7 +713,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
             default -> null;
         };
     }
-
 
     public static XPLModel buildNativeModel() {
         if (nativeModel == null) return XplElementUtils.buildNativeModel();
@@ -814,7 +789,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
         }
     }
 
-
     /**
      * Verifica se este elemento contém o nó especificado.
      * Um nó contém a si próprio (returns true se node == this).
@@ -830,11 +804,9 @@ public class XplElement extends XplInstance implements XplNativeObject{
         return false;
     }
 
-
-
     // ─── Ponte para funções XPL como ouvintes ────────────────────────────────
-
     /**
+     *
      * Adaptador que converte uma função XPL (XplFunction) num XplEventListener.
      */
     public static class XplFunctionListener implements XplEventListener {
@@ -865,7 +837,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Métodos utilitários ──────────────────────────────────────────────────
-
     public XplElement getClosest(String selector) {
         XplElement current = this;
         while (current != null) {
@@ -906,7 +877,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
     }
 
     // ─── Conversão para dicionário XPL ──────────────────────────────────────
-
     public Map<String, Object> getDOMObject() {
         Map<String, Object> map = new LinkedHashMap<>();
 
@@ -947,7 +917,6 @@ public class XplElement extends XplInstance implements XplNativeObject{
 
         // Filhos (serialização recursiva)
         map.put("children", children.stream().map(XplElement::getDOMObject).collect(Collectors.toList()));
-
 
         return map;
     }

@@ -82,6 +82,8 @@ public abstract class NativeTag{
         addChildren();
         bindEvents();
 
+        bindContextMenu();
+
         // 🌐 PADRÃO DA WEB: Qualquer nó vira scroll se tiver "overflow: auto" ou "scroll"
         Map<String, String> styles = getRawStyles();
         String overflow = styles.getOrDefault("overflow", "visible").toLowerCase();
@@ -122,6 +124,31 @@ public abstract class NativeTag{
 
         // ⭐ A 2ª ÂNCORA: Liga o Nó Físico ao Cérebro (NativeTag)
         fxNode.getProperties().put("xpl_native_tag", this);
+
+        // ==========================================================
+        // ⭐ O TRADUTOR UNIVERSAL DO FLEXBOX (Comportamento de Browser)
+        // ==========================================================
+        // 1. As Tags Raiz do W3C nascem a pedir o ecrã inteiro!
+        boolean isRoot = "html".equalsIgnoreCase(sourceNode.tag) || "body".equalsIgnoreCase(sourceNode.tag);
+
+        // 2. Ou se o CSS mandou esticar este elemento especificamente...
+        boolean requestsGrowth = styles.containsKey("flex") && styles.get("flex").startsWith("1");
+        if (styles.containsKey("height") && (styles.get("height").equals("100%") || styles.get("height").equals("100vh"))) requestsGrowth = true;
+        if (styles.containsKey("width") && (styles.get("width").equals("100%") || styles.get("width").equals("100vw"))) requestsGrowth = true;
+
+        if (isRoot || requestsGrowth) {
+            // Usamos o Platform.runLater porque, no exato milissegundo do build(),
+            // o JavaFX ainda não anexou este nó ao Pai. Esperamos 1 frame e damos a ordem!
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.Parent parent = fxNode.getParent();
+                if (parent instanceof javafx.scene.layout.VBox) {
+                    javafx.scene.layout.VBox.setVgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                } else if (parent instanceof javafx.scene.layout.HBox) {
+                    javafx.scene.layout.HBox.setHgrow(fxNode, javafx.scene.layout.Priority.ALWAYS);
+                }
+            });
+        }
+        // ==========================================================
 
         if (overflowY.equals("auto") || overflowY.equals("scroll") ||
                 overflowX.equals("auto") || overflowX.equals("scroll")) {
@@ -226,18 +253,53 @@ public abstract class NativeTag{
     protected void addChildren() {
         if (fxNode instanceof javafx.scene.layout.Pane pane) {
 
-
-            // ⭐ 1. LÓGICA DO GRID (Calcula colunas automaticamente!)
+            // ⭐ 1. LÓGICA DO GRID E LAYOUTS
             switch (fxNode) {
 
-                case CustomLayoutPane customPane -> {
+                case com.dic.xsuper.lang.ui.layout.panes.CustomLayoutPane customPane -> {
                     customPane.populateChildren(children, cssContext);
                 }
                 case null, default -> {
-                    // StackPane e outros
+                    // StackPane, VBox, HBox e outros
                     for (NativeTag child : children) {
                         Node childNode = child.build();
+
                         applyJavaFxMargins(childNode, child); // ⭐ Aplica margem!
+
+                        // ==========================================================
+                        // ⭐ 2. O TRADUTOR W3C INTELIGENTE (Instinto + CSS)
+                        // ==========================================================
+                        boolean requestsGrowth = child.isGreedyByDefault(); // Lê o instinto natural
+
+                        java.util.Map<String, String> childStyles = child.getRawStyles();
+
+                        // O CSS do programador tem sempre a palavra final
+                        if (childStyles.containsKey("flex")) {
+                            requestsGrowth = childStyles.get("flex").startsWith("1");
+                        }
+                        if (childStyles.containsKey("flex-grow")) {
+                            requestsGrowth = childStyles.get("flex-grow").trim().equals("1");
+                        }
+                        if (childStyles.containsKey("height") && (childStyles.get("height").trim().equals("100%") || childStyles.get("height").trim().equals("100vh"))) {
+                            requestsGrowth = true;
+                        }
+                        if (childStyles.containsKey("width") && (childStyles.get("width").trim().equals("100%") || childStyles.get("width").trim().equals("100vw"))) {
+                            requestsGrowth = true;
+                        }
+
+                        String childTagName = child.getSourceNode().tag.toLowerCase();
+
+                        // O HTML, o BODY e as tags "Gulosas" recebem Priority.ALWAYS
+                        if (requestsGrowth || "html".equals(childTagName) || "body".equals(childTagName)) {
+                            if (pane instanceof javafx.scene.layout.VBox) {
+                                javafx.scene.layout.VBox.setVgrow(childNode, javafx.scene.layout.Priority.ALWAYS);
+                            }
+                            if (pane instanceof javafx.scene.layout.HBox) {
+                                javafx.scene.layout.HBox.setHgrow(childNode, javafx.scene.layout.Priority.ALWAYS);
+                            }
+                        }
+                        // ==========================================================
+
                         pane.getChildren().add(childNode);
                     }
                 }
@@ -322,7 +384,7 @@ public abstract class NativeTag{
             String heightStr = style.get("height");
             if ("100%".equals(heightStr)) {
                 region.setMaxHeight(Double.MAX_VALUE);
-                region.setPrefHeight(10);
+                region.setPrefHeight(Region.USE_PREF_SIZE);
             } else {
                 float h = resolvedStyles.boxSize.getHeightPixels(cssContext);
                 if (h > 0) {
@@ -331,6 +393,7 @@ public abstract class NativeTag{
                     css.append("-fx-max-height: ").append(h).append("px; ");
                 }
             }
+
             // Padding CSS
             css.append("-fx-padding: ")
                     .append(resolvedStyles.padding.getTopPixels(cssContext)).append("px ")
@@ -401,6 +464,67 @@ public abstract class NativeTag{
     }
 
 
+    // =========================================================================
+    // ⭐ SISTEMA DE MENUS DE CONTEXTO GLOBAIS REUTILIZÁVEIS
+    // =========================================================================
+    protected void bindContextMenu() {
+        if (fxNode == null || sourceNode.attributes == null) return;
+
+        // Verifica se o programador XPL pediu um menu para esta tag
+        Object menuIdAttr = sourceNode.attributes.get("context-menu");
+
+        if (menuIdAttr != null) {
+            String menuId = menuIdAttr.toString();
+
+            // O JavaFX dispara isto no clique direito do rato ou tecla de menu do teclado!
+            fxNode.setOnContextMenuRequested(event -> {
+                // ⭐ A CURA DOS DUPLICADOS: Impede o evento de "borbulhar" para o Pai.
+                // Se clicares numa tag com menu que está dentro de outra tag com menu, só abre o mais pequeno!
+                event.consume();
+
+                // 1. Usa o Singleton da Engine para mergulhar no VDOM
+                com.dic.xsuper.lang.ui.SuperUiEngine engine = com.dic.xsuper.lang.ui.SuperUiEngine.getInstance();
+                if (engine != null && engine.getActiveDom() != null) {
+
+                    // 2. Procura a tag <contextmenu> em qualquer parte da memória usando o ID
+                    com.dic.xsuper.lang.ui.html.XplNode menuVirtualNode = engine.getActiveDom().getElementById(menuId);
+
+                    if (menuVirtualNode != null && menuVirtualNode.nativeNode instanceof javafx.scene.Node dummyNode) {
+
+                        // 3. Lê o menu que a ContextMenuTag guardou em segredo!
+                        Object rawMenu = dummyNode.getProperties().get("xpl_context_menu");
+
+                        if (rawMenu instanceof javafx.scene.control.ContextMenu ctxMenu) {
+                            // 4. Exibe o menu exatamente na coordenada (X,Y) do ecrã onde o rato clicou
+                            ctxMenu.show(fxNode, event.getScreenX(), event.getScreenY());
+                        }
+                    } else {
+                        System.err.println("[NativeTag] Aviso: O menu de contexto com id '" + menuId + "' não foi encontrado no DOM.");
+                    }
+                }
+            });
+        }
+    }
+
+    // =========================================================================
+    // ⭐ INSTINTOS NATURAIS DA TAG (User Agent Defaults)
+    // =========================================================================
+
+    /**
+     * Define se a tag, por sua natureza semântica, deve tentar expandir-se no Layout do pai.
+     * Ex: <tabs>, <editor>, <web>, <main> devem devolver TRUE.
+     * Ex: <button>, <span>, <label> devem devolver FALSE.
+     */
+    public boolean isGreedyByDefault() {
+        return false; // A maioria das tags só ocupa o espaço do seu conteúdo
+    }
+
+    /**
+     * Injeta regras de CSS invisíveis antes do CSS do programador ser lido.
+     */
+    protected void applyUserAgentStyles() {
+        // As tags filhas podem usar isto para definir o seu comportamento natural!
+    }
 
     // ⭐ O TRADUTOR EXATO DE CORES (ARGB -> RGBA CSS)
     protected String toJavaFxCssColor(int argb) {

@@ -57,11 +57,10 @@ public class XplScroll {
     private String normalizeOverflow(String value) {
         if (value == null) return "visible";
         String v = value.trim().toLowerCase();
-        switch (v) {
-            case "visible": case "hidden": case "scroll": case "auto":
-                return v;
-            default: return "visible";
-        }
+        return switch (v) {
+            case "visible", "hidden", "scroll", "auto" -> v;
+            default -> "visible";
+        };
     }
 
     // ─── Atualização a partir de CSS ─────────────────────────────

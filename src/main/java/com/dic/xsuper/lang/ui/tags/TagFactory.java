@@ -8,6 +8,7 @@ import com.dic.xsuper.lang.ui.tags.controls.date.MonthInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.date.TimeInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.date.WeekInputTag;
 import com.dic.xsuper.lang.ui.tags.controls.select.SelectTag;
+import com.dic.xsuper.lang.ui.tags.editor.EditorTag;
 import com.dic.xsuper.lang.ui.tags.game.*;
 import com.dic.xsuper.lang.ui.tags.interactive.*;
 import com.dic.xsuper.lang.ui.tags.list.LiTag;
@@ -167,6 +168,7 @@ public class TagFactory {
             case "spawner" -> new SpawnerTag(node);
             case "trigger" -> new TriggerTag(node);
             case "animation" -> new AnimationTag(node);
+            case "editor" -> new EditorTag(node);
 
             default -> new ContainerTag(node);
         };

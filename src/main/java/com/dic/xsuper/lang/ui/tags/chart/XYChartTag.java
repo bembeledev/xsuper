@@ -58,8 +58,64 @@ public class XYChartTag extends NativeTag {
     @Override
     public void onReactiveAttributeChange(String attrName, Object newValue) {
         super.onReactiveAttributeChange(attrName, newValue);
+
         if ("data".equalsIgnoreCase(attrName)) {
-            Platform.runLater(() -> injectOrUpdateData(newValue));
+            boolean isStreaming = sourceNode.attributes.containsKey("streaming");
+
+            Platform.runLater(() -> {
+                if (isStreaming) {
+                    int maxWindow = 10;
+                    try { maxWindow = Integer.parseInt(sourceNode.attributes.get("streaming").toString()); }
+                    catch (Exception ignored) {}
+
+                    applyStreamingData(newValue, maxWindow);
+                } else {
+                    injectOrUpdateData(newValue);
+                }
+            });
+        }
+    }
+
+    // =========================================================================
+    // ⭐ MOTOR FIFO (Para Biblioteca Hansolo)
+    // =========================================================================
+    @SuppressWarnings("unchecked")
+    private void applyStreamingData(Object rawData, int maxWindow) {
+        if (!(rawData instanceof List)) return;
+        List<Map<String, Object>> seriesList = (List<Map<String, Object>>) rawData;
+
+        for (Map<String, Object> seriesMap : seriesList) {
+            String seriesName = seriesMap.getOrDefault("name", "Série").toString();
+
+            // 1. Obtém ou cria a série viva
+            eu.hansolo.fx.charts.series.XYSeries<eu.hansolo.fx.charts.data.XYChartItem> series = liveSeries.get(seriesName);
+            if (series == null) {
+                series = new eu.hansolo.fx.charts.series.XYSeries<>();
+                series.setName(seriesName);
+                series.setChartType(chartType);
+                liveSeries.put(seriesName, series);
+                if (xyPane != null) xyPane.getListOfSeries().add(series);
+            }
+
+            // 2. Injeta os novos pontos
+            List<Map<String, Object>> values = (List<Map<String, Object>>) seriesMap.get("values");
+            if (values != null) {
+                for (Map<String, Object> val : values) {
+                    Object xObj = val.get("x");
+                    Object yObj = val.get("y");
+
+                    double yVal = (yObj instanceof Number) ? ((Number)yObj).doubleValue() : parseDoubleSeguro(yObj);
+                    double xVal = (xObj instanceof Number) ? ((Number)xObj).doubleValue() : series.getItems().size();
+                    String xName = (xObj != null) ? xObj.toString() : "";
+
+                    series.getItems().add(new eu.hansolo.fx.charts.data.XYChartItem(xVal, yVal, xName));
+                }
+            }
+
+            // 3. ⭐ FIFO HANSOLO: Elimina a cauda!
+            while (series.getItems().size() > maxWindow) {
+                series.getItems().remove(0);
+            }
         }
     }
 

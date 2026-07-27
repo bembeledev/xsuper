@@ -169,9 +169,8 @@ public class XplCssLexer {
                 break;
         }
     }
+
     // ---- Métodos auxiliares ----
-
-
     private void scanWord() {
         // ⭐ 1. DETETAR VARIÁVEL CSS (--variavel)
         if (source.startsWith("--", start)) {
@@ -220,20 +219,10 @@ public class XplCssLexer {
             addToken(XplCssTokenType.SELECTOR, text);
         }
     }
-    // O "Raio-X": Verifica se a declaração termina num Bloco ou num Ponto e Vírgula
-    private boolean isHeadingTowardsBrace(int fromIndex) {
-        for (int i = fromIndex; i < source.length(); i++) {
-            char c = source.charAt(i);
-            if (c == '{') return true;
-            if (c == ';' || c == '}') return false;
-        }
-        return false;
-    }
 
     private void scanDirective() {
         while (isAlphaNumeric(peek()) || peek() == '-') advance();
         String text = source.substring(start + 1, current); // sem o '@'
-
         XplCssTokenType type = switch (text) {
             case "if" -> XplCssTokenType.AT_IF;
             case "elseif" -> XplCssTokenType.AT_ELSEIF;
@@ -246,12 +235,12 @@ public class XplCssLexer {
             case "arm" -> XplCssTokenType.AT_ARM;
             case "none" -> XplCssTokenType.AT_NONE;
             case "empty" -> XplCssTokenType.AT_EMPTY;
-            // Suporte a futuras diretivas CSS nativas
+            // Suporte a futuras directivas CSS nativas
             case "media" -> XplCssTokenType.AT_MEDIA;
             case "keyframes" -> XplCssTokenType.AT_KEYFRAMES;
             case "import" -> XplCssTokenType.AT_IMPORT;
             case "extend" -> XplCssTokenType.AT_EXTEND;
-            default -> throw new RuntimeException("Diretiva CSS desconhecida na linha " + line + ": @" + text);
+            default -> throw new RuntimeException("Directiva CSS desconhecida na linha " + line + ": @" + text);
         };
         addToken(type);
     }
@@ -282,14 +271,6 @@ public class XplCssLexer {
         }
         String number = source.substring(start, current);
         addToken(XplCssTokenType.NUMBER, number);
-    }
-
-    private void scanIdentifier() {
-        while (isAlphaNumeric(peek()) || peek() == '-' || peek() == '_' || peek() == '.') {
-            advance();
-        }
-        String text = source.substring(start, current);
-        addToken(XplCssTokenType.IDENTIFIER, text);
     }
 
     private void scanLineComment() {

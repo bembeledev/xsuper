@@ -670,6 +670,7 @@ public class XplDocumentUtils {
         }
         return XplDocument.nativeModel;
     }
+
     public static void invokeMethod( XplDocument document) {
         // ─── Criação de nós ──────────────────────────────────────────────
         document.fields.put("createElement", new XplCallable() {
@@ -1341,9 +1342,7 @@ public class XplDocumentUtils {
             }
         });
 
-        // ─── NOVOS MÉTODOS ─────────────────────────────────────────────────────
-
-// contains
+        // contains
         document.fields.put("contains", new XplCallable() {
             @Override
             public int arity() {
@@ -1357,7 +1356,7 @@ public class XplDocumentUtils {
             }
         });
 
-// hasFocus
+        // hasFocus
         document.fields.put("hasFocus", new XplCallable() {
             @Override
             public int arity() {
@@ -1370,7 +1369,7 @@ public class XplDocumentUtils {
             }
         });
 
-// getSelection
+        // getSelection
         document.fields.put("getSelection", new XplCallable() {
             @Override
             public int arity() {
@@ -1383,7 +1382,7 @@ public class XplDocumentUtils {
             }
         });
 
-// elementFromPoint
+        // elementFromPoint
         document.fields.put("elementFromPoint", new XplCallable() {
             @Override
             public int arity() {
@@ -1398,7 +1397,7 @@ public class XplDocumentUtils {
             }
         });
 
-// elementsFromPoint
+        // elementsFromPoint
         document.fields.put("elementsFromPoint", new XplCallable() {
             @Override
             public int arity() {
@@ -1413,7 +1412,7 @@ public class XplDocumentUtils {
             }
         });
 
-// createEvent
+        // createEvent
         document.fields.put("createEvent", new XplCallable() {
             @Override
             public int arity() {
@@ -1427,7 +1426,7 @@ public class XplDocumentUtils {
             }
         });
 
-// createNodeIterator
+        // createNodeIterator
         document.fields.put("createNodeIterator", new XplCallable() {
             @Override
             public int arity() {
@@ -1442,7 +1441,7 @@ public class XplDocumentUtils {
             }
         });
 
-// createTreeWalker
+        // createTreeWalker
         document.fields.put("createTreeWalker", new XplCallable() {
             @Override
             public int arity() {
@@ -1457,7 +1456,7 @@ public class XplDocumentUtils {
             }
         });
 
-// ─── GETTERS PARA AS NOVAS PROPRIEDADES (como método) ──────────────
+        // ─── GETTERS PARA AS NOVAS PROPRIEDADES (como método) ──────────────
         document.fields.put("getChildren", new XplCallable() {
             @Override
             public int arity() {

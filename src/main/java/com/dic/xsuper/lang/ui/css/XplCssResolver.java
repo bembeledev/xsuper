@@ -23,7 +23,7 @@ public class XplCssResolver {
                         String varName = child.attributes.get("name").toString();
                         // As variáveis no :root geralmente têm um value expression ou literal como filho
                         if (!child.children.isEmpty()) {
-                            XplNode valNode = child.children.get(0);
+                            XplNode valNode = child.children.getFirst();
                             rootVariables.put(varName, valNode.attributes.get("data").toString());
                         }
                     }

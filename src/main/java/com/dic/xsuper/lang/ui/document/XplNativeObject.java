@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface XplNativeObject {
     /**
-     * Permite ao interpretador interrogar o objeto para executar um método.
+     * Permite ao interpretador interrogar o objecto para executar um método.
      */
     void invokeMethod();
     default Object invokeMethod(String methodName, List<Object> args, Interpreter interpreter){

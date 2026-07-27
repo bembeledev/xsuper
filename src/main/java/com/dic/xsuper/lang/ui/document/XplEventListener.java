@@ -10,7 +10,7 @@ import com.dic.xsuper.lang.ui.event.XplEvent;
 public interface XplEventListener {
     /**
      * Método chamado quando o evento ocorre.
-     * @param event O objeto evento.
+     * @param event O objecto evento.
      */
     void handleEvent(XplEvent event);
 

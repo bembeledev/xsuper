@@ -1,146 +1,38 @@
-# ─── Compilação ─────────────────────────────────────────────────────────────
 target/
-classes/
-*.class
-*.jar
-*.war
-*.ear
-*.nar
-*.zip
-*.tar.gz
-*.rar
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# ─── Logs ──────────────────────────────────────────────────────────────────
-*.log
-logs/
-hs_err_pid*.log
-replay_pid*.log
-
-# ─── IDEs (IntelliJ, Eclipse, VS Code, NetBeans) ────────────────────────
-.idea/
-*.iml
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
 *.iws
+*.iml
 *.ipr
-.idea_modules/
-*.swp
-*.swo
-*~
+
+### Eclipse ###
+.apt_generated
 .classpath
+.factorypath
 .project
-.settings/
-.vscode/
-*.code-workspace
-.nbproject/
-nbactions.xml
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
 build/
-dist/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# ─── Maven ─────────────────────────────────────────────────────────────────
-dependency-reduced-pom.xml
-pom.xml.versionsBackup
-.mvn/
-mvnw
-mvnw.cmd
+### VS Code ###
+.vscode/
 
-# ─── Gradle ──────────────────────────────────────────────────────────────
-.gradle/
-gradle/
-gradle.properties
-gradlew
-gradlew.bat
-
-# ─── Ficheiros de saída (testes, relatórios, dados) ──────────────────────
-*.tmp
-*.temp
-*.out
-*.json
-*.csv
-*.xlsx
-*.xls
-*.pdf
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.ico
-*.db
-*.sqlite
-*.sqlite3
-*.dump
-*.lock
-*.pid
-*.socket
-*.sock
-*.pem
-*.key
-*.crt
-*.csr
-
-# ─── Ficheiros de sistema ────────────────────────────────────────────────
+### Mac OS ###
 .DS_Store
-Thumbs.db
-desktop.ini
-*.bak
-*.orig
-*.old
-
-# ─── Ficheiros de configuração local ─────────────────────────────────────
-application.properties
-application-dev.properties
-application-local.properties
-config.properties
-*.secret
-*.env
-.env.local
-.env.*.local
-
-# ─── Ficheiros do projeto (não versionar) ──────────────────────────────
-*.xpl
-*.super
-tests/
-out/
-temp/
-data/
-
-# ─── Pastas de dependências (evitar subir bibliotecas) ──────────────────
-lib/
-libs/
-deps/
-*.dylib
-*.so
-*.dll
-
-# ─── Relatórios e cobertura de testes ────────────────────────────────────
-coverage/
-test-output/
-surefire-reports/
-failsafe-reports/
-jacoco.exec
-
-# ─── Ficheiros de compilação nativa ──────────────────────────────────────
-*.obj
-*.o
-*.exe
-*.dll
-*.so
-*.dylib
-*.bin
-
-# ─── Bases de dados (evitar ficheiros grandes) ──────────────────────────
-*.db
-*.sqlite
-*.sqlite3
-*.h2.db
-*.mv.db
-*.trace.db
-
-# ─── Ficheiros de backup do sistema ──────────────────────────────────────
-*~
-*.swp
-*.swo
-*.lock
-
-# ─── Ficheiros de configuração de ambiente ──────────────────────────────
-.env
-.env.*
-!.env.example

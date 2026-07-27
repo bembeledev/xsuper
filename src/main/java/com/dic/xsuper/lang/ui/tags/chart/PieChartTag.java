@@ -126,8 +126,14 @@ public class PieChartTag extends ChartBase {
                             (int) (c.getBlue() * 255));
                 } catch (Exception ignored) {}
             }
-            // Aplica via CSS – o seletor .chart-pie-label-line está no labelLinePath
-            chart.setStyle(chart.getStyle() + " .chart-pie-label-line { -fx-stroke: " + colorHex + "; }");
+            final String finalColor = colorHex;
+
+            // ⭐ A CURA: O motor procura as linhas invisíveis depois do gráfico ser desenhado!
+            javafx.application.Platform.runLater(() -> {
+                chart.lookupAll(".chart-pie-label-line").forEach(node ->
+                        node.setStyle("-fx-stroke: " + finalColor + ";")
+                );
+            });
         }
     }
 

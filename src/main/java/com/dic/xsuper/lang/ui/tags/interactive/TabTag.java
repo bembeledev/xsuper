@@ -4,6 +4,7 @@ import com.dic.xsuper.lang.ui.html.XplNode;
 import com.dic.xsuper.lang.ui.layout.LayoutEngine;
 import com.dic.xsuper.lang.ui.tags.NativeTag;
 import javafx.scene.Node;
+import javafx.scene.layout.Region;
 
 public class TabTag extends NativeTag {
 
@@ -13,9 +14,15 @@ public class TabTag extends NativeTag {
 
     @Override
     protected Node createNode() {
-        // Delega para o motor de layout exatamente como a tag <div> e <main> fazem!
-        // Isto permite-te usar 'display: grid' ou 'display: flex' diretamente na <tab>
-        return LayoutEngine.resolveLayout(this).createContainer(this);
+        Node container = LayoutEngine.resolveLayout(this).createContainer(this);
+
+        // ⭐ BLINDAGEM MÁXIMA: Remove a resistência para o StackPane conseguir esticar a Aba
+        if (container instanceof Region region) {
+            region.setMinSize(0, 0);
+            region.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        }
+
+        return container;
     }
 
     @Override
@@ -29,6 +36,10 @@ public class TabTag extends NativeTag {
 
     public boolean isActiveByDefault() {
         return sourceNode.attributes.containsKey("active") &&
+
                 !"false".equalsIgnoreCase(sourceNode.attributes.get("active").toString());
     }
+
+    @Override
+    public boolean isGreedyByDefault() { return true; }
 }

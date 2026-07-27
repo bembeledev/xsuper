@@ -8,13 +8,9 @@ import javafx.scene.layout.Region;
 
 public class ContextMenuTag extends NativeTag {
 
-    private String targetId = null;
-
     public ContextMenuTag(XplNode sourceNode) {
         super(sourceNode);
-        if (sourceNode.attributes.containsKey("target")) {
-            targetId = sourceNode.attributes.get("target").toString();
-        }
+        // O atributo 'target' foi removido! A ligação é agora gerida globalmente.
     }
 
     @Override
@@ -36,11 +32,7 @@ public class ContextMenuTag extends NativeTag {
         dummy.setVisible(false);
 
         // Guardamos o ContextMenu dentro das propriedades secretas do nó fantasma!
-        // O motor superior pode ler isto mais tarde e aplicar ao verdadeiro alvo (targetId).
         dummy.getProperties().put("xpl_context_menu", contextMenu);
-        if (targetId != null) {
-            dummy.getProperties().put("xpl_context_target", targetId);
-        }
 
         return dummy;
     }
