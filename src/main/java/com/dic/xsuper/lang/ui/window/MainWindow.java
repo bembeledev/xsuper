@@ -73,12 +73,21 @@ public class MainWindow {
             //scroll.setFitToWidth(true); // O conteúdo adapta-se à largura da janela
             // NÃO faças setFitToHeight(true) senão bloqueias o scroll vertical!
 
-            // ⭐ A CURA: O comportamento Web Real
-            // O body (<VBox>) terá no mínimo o tamanho visível do ecrã,
-            // mas é livre de crescer e acionar o scroll se a UI for muito larga!
+            // ⭐ A CURA: O comportamento Web Real (Top-Down Box Model)
+            // O body (<VBox>) terá o tamanho EXATO da área visível do ecrã.
+            // Isto impede que nós de texto gulosos expandam a página para o infinito horizontalmente.
             scroll.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
-                fxBody.setMinWidth(newVal.getWidth());
-                fxBody.setMinHeight(newVal.getHeight()); // Garante que a cor de fundo vai até baixo
+                double viewportWidth = newVal.getWidth();
+                double viewportHeight = newVal.getHeight();
+
+                // ⭐ 1. INJEÇÃO TOP-DOWN (O pai dita a regra)
+                fxBody.setMinWidth(viewportWidth);
+                fxBody.setPrefWidth(viewportWidth);
+                fxBody.setMaxWidth(viewportWidth); // O Segredo Mestre: Bloqueia a largura!
+
+                // 2. A altura continua flexível para permitir o scroll vertical,
+                // mas com um mínimo para pintar o fundo do ecrã inteiro.
+                fxBody.setMinHeight(viewportHeight);
             });
 
             // Força a barra de scroll horizontal a aparecer apenas quando necessário

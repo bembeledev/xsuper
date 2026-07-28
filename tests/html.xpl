@@ -48,9 +48,9 @@ __ui_engine.loadView(html);
 var btn = document.getElementById("12");
 var divs = document.getElementsByTagName("div");
 
-var elemento = divs[0];
+var elemento = divs;
 
-println(elemento.innerHTML);
+println(btn);
 
 
 // 5. O gatilho! O botão é acionado, as funções são resolvidas e executadas.

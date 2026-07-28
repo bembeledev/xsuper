@@ -15,7 +15,10 @@ import com.dic.xsuper.lang.ui.properties.gradient.GradientStop;
 
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 import java.util.*;
 
@@ -97,7 +100,7 @@ public abstract class NativeTag{
             fxNode.getProperties().put("transition", styles.get("transition"));
         }
 
-// ==========================================================
+        // ==========================================================
         // ⭐ 4. O GATILHO DAS ANIMAÇÕES (Agora entregue ao Maestro)
         // ==========================================================
         if (styles.containsKey("animation")) {
@@ -253,55 +256,62 @@ public abstract class NativeTag{
     protected void addChildren() {
         if (fxNode instanceof javafx.scene.layout.Pane pane) {
 
-            // ⭐ 1. LÓGICA DO GRID E LAYOUTS
-            switch (fxNode) {
+            // ⭐ A CASCATA W3C UNIVERSAL
+            // Lista de propriedades que TÊM de escorrer para os filhos
+            String[] inheritableProps = {
+                    "color", "fill", "font-family", "font-size", "font-weight",
+                    "font-style", "text-decoration", "text-shadow", "text-transform",
+                    "text-align", "line-height", "-webkit-font-smoothing",
+                    "-webkit-text-stroke-width", "-webkit-text-stroke-color", "stroke", "stroke-width"
+            };
 
-                case com.dic.xsuper.lang.ui.layout.panes.CustomLayoutPane customPane -> {
-                    customPane.populateChildren(children, cssContext);
-                }
-                case null, default -> {
-                    // StackPane, VBox, HBox e outros
-                    for (NativeTag child : children) {
-                        Node childNode = child.build();
-
-                        applyJavaFxMargins(childNode, child); // ⭐ Aplica margem!
-
-                        // ==========================================================
-                        // ⭐ 2. O TRADUTOR W3C INTELIGENTE (Instinto + CSS)
-                        // ==========================================================
-                        boolean requestsGrowth = child.isGreedyByDefault(); // Lê o instinto natural
-
-                        java.util.Map<String, String> childStyles = child.getRawStyles();
-
-                        // O CSS do programador tem sempre a palavra final
-                        if (childStyles.containsKey("flex")) {
-                            requestsGrowth = childStyles.get("flex").startsWith("1");
+            if (fxNode instanceof CustomLayoutPane customPane) {// Garante a cascata mesmo em layouts customizados
+                for (NativeTag child : children) {
+                    for (String prop : inheritableProps) {
+                        if (this.style.containsKey(prop) && !child.getStyle().containsKey(prop)) {
+                            child.getStyle().put(prop, this.style.get(prop));
                         }
-                        if (childStyles.containsKey("flex-grow")) {
-                            requestsGrowth = childStyles.get("flex-grow").trim().equals("1");
-                        }
-                        if (childStyles.containsKey("height") && (childStyles.get("height").trim().equals("100%") || childStyles.get("height").trim().equals("100vh"))) {
-                            requestsGrowth = true;
-                        }
-                        if (childStyles.containsKey("width") && (childStyles.get("width").trim().equals("100%") || childStyles.get("width").trim().equals("100vw"))) {
-                            requestsGrowth = true;
-                        }
-
-                        String childTagName = child.getSourceNode().tag.toLowerCase();
-
-                        // O HTML, o BODY e as tags "Gulosas" recebem Priority.ALWAYS
-                        if (requestsGrowth || "html".equals(childTagName) || "body".equals(childTagName)) {
-                            if (pane instanceof javafx.scene.layout.VBox) {
-                                javafx.scene.layout.VBox.setVgrow(childNode, javafx.scene.layout.Priority.ALWAYS);
-                            }
-                            if (pane instanceof javafx.scene.layout.HBox) {
-                                javafx.scene.layout.HBox.setHgrow(childNode, javafx.scene.layout.Priority.ALWAYS);
-                            }
-                        }
-                        // ==========================================================
-
-                        pane.getChildren().add(childNode);
                     }
+                }
+                customPane.populateChildren(children, cssContext);
+                // ⭐ INJEÇÃO TOP-DOWN (A Magia Acontece Aqui!)
+                // Antes do filho nascer, o Pai derrama o seu CSS de texto sobre ele
+                // O Tradutor do Flexbox
+            } else {
+                for (NativeTag child : children) {
+
+                    // ⭐ INJEÇÃO TOP-DOWN (A Magia Acontece Aqui!)
+                    // Antes do filho nascer, o Pai derrama o seu CSS de texto sobre ele
+                    for (String prop : inheritableProps) {
+                        if (this.style.containsKey(prop) && !child.getStyle().containsKey(prop)) {
+                            child.getStyle().put(prop, this.style.get(prop));
+                        }
+                    }
+
+                    Node childNode = child.build();
+
+                    applyJavaFxMargins(childNode, child);
+
+                    // O Tradutor do Flexbox
+                    boolean requestsGrowth = child.isGreedyByDefault();
+                    Map<String, String> childStyles = child.getRawStyles();
+
+                    if (childStyles.containsKey("flex")) requestsGrowth = childStyles.get("flex").startsWith("1");
+                    if (childStyles.containsKey("flex-grow"))
+                        requestsGrowth = childStyles.get("flex-grow").trim().equals("1");
+                    if (childStyles.containsKey("height") && (childStyles.get("height").trim().equals("100%") || childStyles.get("height").trim().equals("100vh")))
+                        requestsGrowth = true;
+                    if (childStyles.containsKey("width") && (childStyles.get("width").trim().equals("100%") || childStyles.get("width").trim().equals("100vw")))
+                        requestsGrowth = true;
+
+                    String childTagName = child.getSourceNode().tag.toLowerCase();
+
+                    if (requestsGrowth || "html".equals(childTagName) || "body".equals(childTagName)) {
+                        if (pane instanceof VBox) VBox.setVgrow(childNode, Priority.ALWAYS);
+                        if (pane instanceof HBox) HBox.setHgrow(childNode, Priority.ALWAYS);
+                    }
+
+                    pane.getChildren().add(childNode);
                 }
             }
         }
@@ -369,38 +379,45 @@ public abstract class NativeTag{
             // ⭐ A CURA PARA O WIDTH: 100% E DIMENSÕES FIXAS
             String widthStr = style.get("width");
             if ("100%".equals(widthStr)) {
+                // Se o elemento pedir 100%, dizemos-lhe para ocupar tudo o que o pai der
                 region.setMaxWidth(Double.MAX_VALUE);
             } else {
                 float w = resolvedStyles.boxSize.getWidthPixels(cssContext);
                 if (w > 0) {
-                    // O bloqueio absoluto do W3C Box Model!
-                    css.append("-fx-pref-width: ").append(w).append("px; ");
-                    css.append("-fx-min-width: ").append(w).append("px; ");
-                    css.append("-fx-max-width: ").append(w).append("px; ");
+                    // O bloqueio absoluto do Top-Down Box Model!
+                    // Ao usarmos a API Java direto em vez de CSS (que colide com o BoxSizing),
+                    // o JavaFX sabe exatamente onde pintar a caixa e empurrar os paddings para dentro!
+                    region.setPrefWidth(w);
+                    region.setMinWidth(w);
+                    region.setMaxWidth(w);
                 }
             }
 
-            // O mesmo para o height
+            // O mesmo para o height (Mas o Y costuma crescer mais organicamente)
             String heightStr = style.get("height");
-            if ("100%".equals(heightStr)) {
+            if ("100%".equals(heightStr) || "100vh".equals(heightStr)) {
                 region.setMaxHeight(Double.MAX_VALUE);
                 region.setPrefHeight(Region.USE_PREF_SIZE);
             } else {
                 float h = resolvedStyles.boxSize.getHeightPixels(cssContext);
                 if (h > 0) {
-                    css.append("-fx-pref-height: ").append(h).append("px; ");
-                    css.append("-fx-min-height: ").append(h).append("px; ");
-                    css.append("-fx-max-height: ").append(h).append("px; ");
+                    region.setPrefHeight(h);
+                    region.setMinHeight(h);
+                    region.setMaxHeight(h);
                 }
             }
 
-            // Padding CSS
-            css.append("-fx-padding: ")
-                    .append(resolvedStyles.padding.getTopPixels(cssContext)).append("px ")
-                    .append(resolvedStyles.padding.getRightPixels(cssContext)).append("px ")
-                    .append(resolvedStyles.padding.getBottomPixels(cssContext)).append("px ")
-                    .append(resolvedStyles.padding.getLeftPixels(cssContext)).append("px; ");
+            // ⭐ PADDING CSS VIA API (A Peça Central da Fusão!)
+            // Em vez de passarmos o padding pelo '-fx-padding', passamos pela API nativa.
+            // Isto avisa o JavaFX para contrair as margens de layout interno matematicamente!
+            float pt = resolvedStyles.padding.getTopPixels(cssContext);
+            float pr = resolvedStyles.padding.getRightPixels(cssContext);
+            float pb = resolvedStyles.padding.getBottomPixels(cssContext);
+            float pl = resolvedStyles.padding.getLeftPixels(cssContext);
 
+            if (pt > 0 || pr > 0 || pb > 0 || pl > 0) {
+                region.setPadding(new javafx.geometry.Insets(pt, pr, pb, pl));
+            }
             // Background Gradiente ou Cor Sólida
             if (resolvedStyles.gradients != null && !resolvedStyles.gradients.isEmpty()) {
                 css.append("-fx-background-color: ").append(generateGradientCSS(resolvedStyles.gradients.get(0))).append("; ");

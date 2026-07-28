@@ -83,7 +83,6 @@ public class RunXplCmd implements Command {
                 com.dic.xsuper.lang.ui.XplUiBridge headlessBridge = new XplUiBridge() {
                     @Override public void renderView(XplNode root) {}
                     @Override public void updateProperty(String id, String prop, Object val) {
-                        System.out.println("   🎨 [Terminal UI] " + id + " mudou " + prop + " para " + val);
                     }
                     @Override public void setEngineCallback(EngineCallback callback) {}
 
@@ -92,9 +91,7 @@ public class RunXplCmd implements Command {
 
                     @Override
                     public void invokeMethodOnNode(String targetId, String methodName, Object[] args) {
-
                     }
-
 
                     @Override public void reportError(String message) {
                         System.err.println("Erro UI: " + message);

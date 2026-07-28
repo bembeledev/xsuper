@@ -23,10 +23,12 @@ public class FlexRowPane extends HBox implements CustomLayoutPane {
 
     private void setupAlignment() {
         String align = style.getOrDefault("align-items", "center").toLowerCase().trim();
-        if (align.equals("center")) setAlignment(Pos.CENTER_LEFT);
-        else if (align.equals("flex-end")) setAlignment(Pos.BOTTOM_LEFT);
-        else if (align.equals("flex-start")) setAlignment(Pos.TOP_LEFT);
-        else setAlignment(Pos.CENTER_LEFT);
+        switch (align) {
+            case "center" -> setAlignment(Pos.CENTER_LEFT);
+            case "flex-end" -> setAlignment(Pos.BOTTOM_LEFT);
+            case "flex-start" -> setAlignment(Pos.TOP_LEFT);
+            default -> setAlignment(Pos.CENTER_LEFT);
+        }
     }
 
     @Override
