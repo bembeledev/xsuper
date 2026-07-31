@@ -21,6 +21,7 @@ public enum XplEventType {
     CLOSE("close"),
     /** Botão do mouse solto */
     MOUSEUP("mouseup"),
+
     /** Movimento do mouse */
     MOUSEMOVE("mousemove"),
     /** Mouse entra no elemento (sem bubble) */
