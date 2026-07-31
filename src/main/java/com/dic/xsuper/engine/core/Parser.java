@@ -1582,9 +1582,9 @@ public class Parser {
     // 7. Comparação e Tipagem (<, >, type, instance)
     private Expr comparison() {
         Expr expr = shift();
-        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.TYPE, TokenType.INSTANCE)) {
+        while (match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL, TokenType.TYPE, TokenType.INSTANCE, TokenType.USE)) {
             Token operator = previous();
-            if (operator.type == TokenType.TYPE || operator.type == TokenType.INSTANCE) {
+            if (operator.type == TokenType.TYPE || operator.type == TokenType.INSTANCE|| operator.type == TokenType.USE) {
                 TypeNode type = parseTypeAnnotation();
                 expr = new Expr.TypeCheck(expr, operator, type);
             } else {

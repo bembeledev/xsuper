@@ -108,6 +108,26 @@ public class XPLModel {
         return false;
     }
 
+
+    // ⭐ A VERIFICAÇÃO DE CONTRATOS (INTERFACES) ⭐
+    public boolean implementsInterface(String targetType) {
+        // 1. Eu implemento esta interface diretamente no meu bloco 'implement'?
+        if (implementedInterfaces.contains(targetType)) return true;
+
+        // 2. Se não, será que o meu pai (extends superclass) implementou?
+        if (superclass != null) {
+            if (superclass.implementsInterface(targetType)) return true;
+        }
+
+        // 3. Se eu for uma Variante (as Mam1), o meu modelo Base assinou a interface?
+        if (baseModel != null) {
+            if (baseModel.implementsInterface(targetType)) return true;
+        }
+
+        // Não encontrou a interface em lado nenhum do ADN!
+        return false;
+    }
+
     @Override
     public String toString() {
         return "XPLModel{" +
@@ -119,4 +139,5 @@ public class XPLModel {
                 ", isAbstract=" + isAbstract +
                 '}';
     }
+
 }

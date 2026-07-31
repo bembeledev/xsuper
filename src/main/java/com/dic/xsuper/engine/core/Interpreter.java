@@ -678,7 +678,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
         String baseName = stmt.targetName.lexeme;
 
-
         // =====================================================================
         // ⭐ A MURALHA HÍBRIDA FINAL (SEALED CLASSES BLINDADO) ⭐
         // =====================================================================
@@ -855,7 +854,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
 
-        // ⭐ 3. A GUILHOTINA: VALIDAÇÃO DE CONTRATOS (TYPE CHECKING) ⭐
+        // ⭐ 3. A GUILHOTINA: VALIDAÇÃO DE CONTRATOS E REGISTO (TYPE CHECKING) ⭐
         for (Token interfaceToken : stmt.interfaces) {
             String interfaceName = interfaceToken.lexeme;
             XplInterface contract = registry_Interfaces.get(interfaceName);
@@ -866,12 +865,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             // O motor cruza a lista do contrato com os métodos do activeModel (Usando Busca Genética!)
             for (String requiredMethod : contract.requiredMethods.keySet()) {
-                // Evolução: Em vez de usar apenas containsKey, usa o findMethod para suportar contratos cumpridos por herança!
                 if (activeModel.findMethod(requiredMethod) == null) {
                     throw new ControlFlow.RuntimeError(stmt.targetName,
                             "Quebra de Contrato Fatal: O modelo '" + activeModel.name + "' não implementou o método obrigatório '" + requiredMethod + "()' exigido pela interface '" + interfaceName + "'.");
                 }
             }
+
+            // ⭐ A PEÇA QUE FALTAVA (O COLECIONADOR DE CONTRATOS) ⭐
+            // Depois de validar que a classe cumpriu todas as regras,
+            // guarda o nome da interface na "mochila" do modelo ativo para o operador 'use' a encontrar!
+            activeModel.implementedInterfaces.add(interfaceName);
         }
 
         // ⭐ 4. Instancia a classe e regista-a no escopo do Ficheiro Atual ⭐
@@ -2347,26 +2350,54 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object left = evaluate(expr.left);
         String targetType = expr.rightType.name.lexeme;
 
+        // Proteção global: Se a variável estiver vazia, não é instância, nem tipo, nem usa interface!
+        if (left == null) return false;
+
+        // =================================================================
+        // 1. INSTANCE: Exatidão Pura (Tem de ser exatamente a mesma classe)
+        // =================================================================
         if (expr.operator.type == TokenType.INSTANCE) {
             if (left instanceof XplInstance inst) {
-                // ⭐ VERIFICAÇÃO ADICIONADA
                 if (inst.klass == null) return false;
                 return inst.klass.model.name.equals(targetType);
             }
             return false;
-        } else {
-            // ⭐ TYPE: Validação flexível (aceita primitivos e subclasses)
-            if (left == null) return false;
+        }
+        // =================================================================
+        // 2. USE: Contratos (Implementa esta Interface?)
+        // =================================================================
+        else if (expr.operator.type == TokenType.USE) {
+            if (left instanceof XplInstance inst) {
+                if (inst.klass == null) return false;
+                // Chama o método implementsInterface que adicionámos ao XPLModel!
+                return inst.klass.model.implementsInterface(targetType);
+            }
+            return false;
+        }
+        // =================================================================
+        // 3. TYPE: ADN Flexível (Primitivos e Herança de Classes)
+        // =================================================================
+        else if (expr.operator.type == TokenType.TYPE) {
             if (targetType.equals("int") && left instanceof Long) return true;
             if (targetType.equals("float") && (left instanceof Double || left instanceof Long)) return true;
+
             return switch (left) {
                 case String string when targetType.equals("string") -> true;
                 case Boolean b when targetType.equals("bool") -> true;
                 case List list when targetType.equals("array") -> true;
-                case XplInstance xplInstance -> xplInstance.klass.model.isSubclassOf(targetType); // O ADN bate certo?
+                case XplInstance xplInstance -> {
+                    if (xplInstance.klass == null) yield false;
+
+                    // ⭐ Verifica se é a própria classe OU uma classe filha
+                    if (xplInstance.klass.model.name.equals(targetType)) yield true;
+                    yield xplInstance.klass.model.isSubclassOf(targetType);
+                }
                 default -> false;
             };
         }
+
+        // Fallback de segurança
+        return false;
     }
 
     @Override

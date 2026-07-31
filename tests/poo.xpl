@@ -6,7 +6,6 @@ interface CRUD {
     pub fun getId():int;
 }
 
-
 declare Animal {
     pub nome: string;
     pub especie: string;
@@ -53,6 +52,9 @@ implement Mamifero as Mam2 for CRUD {
 }
 
 var m = new Mam1();
+
+println(m use CRUD);
+
 
 var m2 = new Mam2();
 
