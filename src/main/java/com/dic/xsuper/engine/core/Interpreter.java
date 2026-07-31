@@ -4,7 +4,7 @@ import com.dic.xsuper.dom.node.XplNativeObject;
 import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.ast.Stmt;
 import com.dic.xsuper.engine.ast.TypeNode;
-import com.dic.xsuper.engine.execution.ControlFlow;
+import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
 import com.dic.xsuper.engine.execution.XplFunction;
 import com.dic.xsuper.engine.helpers.ArrayMethods;
@@ -2169,8 +2169,64 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitNewExpr(Expr.New expr) {
         String modelName = expr.className.lexeme;
-        XPLModel model = registry_model.get(modelName);
 
+        // =====================================================================
+        // ⭐ A FÁBRICA JIT DE CLASSES ANÓNIMAS (On-The-Fly) ⭐
+        // =====================================================================
+        if (expr.anonymousMethods != null) {
+            XPLModel targetModel = registry_model.get(modelName);
+            XplInterface targetInterface = registry_Interfaces.get(modelName);
+
+            if (targetModel == null && targetInterface == null) {
+                // Adapta isto ao teu novo sistema de Erros se preferires!
+                throw new ControlFlow.RuntimeError(expr.className, "O tipo base '" + modelName + "' não foi declarado.");
+            }
+
+            // 1. Forja um ADN Fantasma único (Ex: CRUD_Anon_582910)
+            String anonName = modelName + "_Anon_" + System.identityHashCode(expr);
+            XPLModel anonModel = new XPLModel(anonName, (targetModel != null && !targetModel.isGenericBlueprint) ? targetModel : null);
+            anonModel.hasBaseImplementation = true;
+
+            // 2. É herança de Classe ou Implementação de Interface?
+            if (targetModel != null) {
+                if (targetModel.isSealed) throw new ControlFlow.RuntimeError(expr.className, "Classes seladas não podem ser instanciadas anonimamente.");
+                anonModel.fields.putAll(targetModel.fields);
+                anonModel.defaultInstanceFields.putAll(targetModel.defaultInstanceFields);
+            } else {
+                // Guarda a Interface na mochila para passar na Alfândega!
+                anonModel.implementedInterfaces.add(targetInterface.name);
+            }
+
+            // 3. A Guilhotina do @Override nas Classes Anónimas!
+            for (Stmt.Function method : expr.anonymousMethods) {
+                boolean hasOverride = method.decorators != null && method.decorators.stream().anyMatch(d -> d.name.lexeme.equals("Override"));
+                boolean overridesSuper = (anonModel.superclass != null && anonModel.superclass.findMethod(method.name.lexeme) != null);
+                boolean fulfillsInterface = (targetInterface != null && targetInterface.requiredMethods.containsKey(method.name.lexeme));
+
+                if (hasOverride && !overridesSuper && !fulfillsInterface) {
+                    throw new ControlFlow.RuntimeError(method.name, "Erro de Sobreposição: O método '" + method.name.lexeme + "()' na classe anónima tem @Override mas não pertence à base.");
+                }
+                if (!hasOverride && (overridesSuper || fulfillsInterface)) {
+                    throw new ControlFlow.RuntimeError(method.name, "Decorador Ausente: O método '" + method.name.lexeme + "()' na classe anónima exige @Override.");
+                }
+                anonModel.addMethod(method);
+            }
+
+            // 4. Verificação de Contrato (Obrigatório implementar TUDO da Interface!)
+            if (targetInterface != null) {
+                for (String reqMethod : targetInterface.requiredMethods.keySet()) {
+                    if (anonModel.findMethod(reqMethod) == null) {
+                        throw new ControlFlow.RuntimeError(expr.className, "A classe anónima não implementou o método obrigatório '" + reqMethod + "()' exigido pela interface '" + modelName + "'.");
+                    }
+                }
+            }
+
+            // 5. Instancia a Classe Fantasma e executa-a!
+            XplClass anonClass = new XplClass(anonModel, environment);
+            return anonClass.call(this, expr.arguments);
+        }
+
+        XPLModel model;
         // =====================================================================
         // ⭐ DESVIO QUÂNTICO: É uma invocação Genérica? (Ex: new Caixa<int>())
         // =====================================================================
@@ -2795,8 +2851,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (obj instanceof com.dic.xsuper.engine.poo.XplInstance instance) {
                     // 1. Se a classe XPL já foi injetada com sucesso, verifica pelo Nome ou pelo Modelo
                     if (instance.klass != null) {
-                        if (instance.klass.model.name.equals(customTypeName)) return true;
-                        return instance.klass.model.isSubclassOf(customTypeName);
+                        if (instance.klass.model.name.equals(customTypeName)) return true; // É a própria classe?
+                        if (instance.klass.model.isSubclassOf(customTypeName)) return true; // É uma classe filha?
+
+                        // ⭐ 3. A NOVA MAGIA: POLIMORFISMO DE CONTRATOS ⭐
+                        // O parâmetro pediu uma Interface (Ex: CRUD) e esta instância assinou esse contrato?
+                        if (instance.klass.model.implementsInterface(customTypeName)) return true;
                     }
                     // 2. Se for NULL (como no caso dos eventos que nascem "órfãos" da UI),
                     // NÃO FAZEMOS 'return false'. Deixamos a execução passar para o Fallback abaixo!

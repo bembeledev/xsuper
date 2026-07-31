@@ -1979,8 +1979,53 @@ public class Parser {
             }
             consumeSoft(TokenType.RPAREN, ")", "Esperado ')' após os argumentos.");
 
-            // ⭐ Passamos a Lista Estruturada em vez de uma String cega!
-            return new Expr.New(keyword, className, typeArguments, arguments);
+            // =================================================================
+            // ⭐ A NOVA MAGIA: CLASSES ANÓNIMAS ⭐
+            // Se abrir uma chaveta logo após o new CRUD(), é uma classe on-the-fly!
+            // =================================================================
+            java.util.List<Stmt.Function> anonymousMethods = null;
+
+            if (match(TokenType.LBRACE)) {
+                anonymousMethods = new java.util.ArrayList<>();
+
+                while (!check(TokenType.RBRACE) && !isAtEnd()) {
+                    // 1. Lê a anotação @Override
+                    java.util.List<Stmt.DecoratorNode> methodDecorators = new java.util.ArrayList<>();
+                    while (match(TokenType.AT)) {
+                        methodDecorators.add(parseDecoratorNode());
+                    }
+
+                    Token modifier = null;
+                    if (match(TokenType.PUBLIC, TokenType.PRIVATE)) modifier = previous();
+
+                    consumeSoft(TokenType.FUN, "fun", "Esperado 'fun' na classe anónima.");
+                    Token methodName = consumeIdentifierSoft("Esperado nome do método.");
+
+                    consumeSoft(TokenType.LPAREN, "(", "Esperado '('.");
+                    java.util.List<Stmt.Param> params = new java.util.ArrayList<>();
+                    if (!check(TokenType.RPAREN)) {
+                        do {
+                            Token pName = consumeIdentifierSoft("Nome do parâmetro.");
+                            consumeSoft(TokenType.COLON, ":", "Esperado ':'.");
+                            TypeNode pType = parseTypeAnnotation();
+                            params.add(new Stmt.Param(pName, pType, null, false));
+                        } while (match(TokenType.COMMA));
+                    }
+                    consumeSoft(TokenType.RPAREN, ")", "Esperado ')'.");
+
+                    TypeNode retType = null;
+                    if (match(TokenType.COLON)) retType = parseTypeAnnotation();
+
+                    consumeSoft(TokenType.LBRACE, "{", "Esperado '{' no corpo do método anónimo.");
+                    java.util.List<Stmt> methodBody = block();
+
+                    anonymousMethods.add(new Stmt.Function(modifier, false, false, methodName, params, retType, new java.util.ArrayList<>(), methodBody, methodDecorators, new java.util.ArrayList<>()));
+                }
+                consumeSoft(TokenType.RBRACE, "}", "Esperado '}' para fechar a classe anónima.");
+            }
+
+            // ⭐ Passamos a nova lista de métodos anónimos para a AST!
+            return new Expr.New(keyword, className, typeArguments, arguments, anonymousMethods);
         }
         throw error(peek(), "Expressão inesperada.");
     }

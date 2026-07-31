@@ -1,6 +1,6 @@
 package com.dic.xsuper.engine.helpers;
 
-import com.dic.xsuper.engine.execution.ControlFlow;
+import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.execution.XplCallable;
@@ -360,11 +360,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("forEach exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("forEach exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -384,11 +383,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("map exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("map exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
@@ -409,11 +407,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("filter exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("filter exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
@@ -437,11 +434,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException(methodName + " exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException(methodName + " exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         boolean isRight = methodName.equals("reduceRight");
 
                         Object accumulator;
@@ -487,11 +483,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("flatMap exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("flatMap exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         List<Object> result = new ArrayList<>();
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
@@ -516,11 +511,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("find exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("find exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -542,11 +536,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("findIndex exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("findIndex exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -568,11 +561,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("findLast exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("findLast exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = list.size() - 1; i >= 0; i--) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -594,11 +586,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("findLastIndex exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("findLastIndex exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = list.size() - 1; i >= 0; i--) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -620,11 +611,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("some exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("some exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -646,11 +636,10 @@ public class ArrayMethods {
                         if (args.isEmpty()) {
                             throw new RuntimeException("every exige uma função callback.");
                         }
-                        Object callback = args.get(0);
-                        if (!(callback instanceof XplCallable)) {
+                        Object callback = args.getFirst();
+                        if (!(callback instanceof XplCallable fn)) {
                             throw new RuntimeException("every exige uma função callback.");
                         }
-                        XplCallable fn = (XplCallable) callback;
                         for (int i = 0; i < list.size(); i++) {
                             List<Object> callArgs = new ArrayList<>();
                             callArgs.add(list.get(i));
@@ -673,8 +662,7 @@ public class ArrayMethods {
                         boolean inPlace = methodName.equals("sort");
                         List<Object> target = inPlace ? list : new ArrayList<>(list);
 
-                        if (!args.isEmpty() && args.get(0) instanceof XplCallable) {
-                            XplCallable comparator = (XplCallable) args.get(0);
+                        if (!args.isEmpty() && args.getFirst() instanceof XplCallable comparator) {
                             for (int i = 1; i < target.size(); i++) {
                                 int j = i;
                                 while (j > 0) {

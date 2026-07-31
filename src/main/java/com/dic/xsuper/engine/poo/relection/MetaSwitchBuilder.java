@@ -5,7 +5,7 @@ import com.dic.xsuper.engine.ast.Stmt;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.core.Token;
 import com.dic.xsuper.engine.core.TokenType;
-import com.dic.xsuper.engine.execution.ControlFlow;
+import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
 import com.dic.xsuper.engine.execution.XplFunction;
 import com.dic.xsuper.engine.poo.XplInstance;

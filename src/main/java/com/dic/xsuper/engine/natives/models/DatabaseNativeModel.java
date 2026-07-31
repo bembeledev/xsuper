@@ -2,7 +2,7 @@ package com.dic.xsuper.engine.natives.models;
 
 import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.core.Interpreter;
-import com.dic.xsuper.engine.execution.ControlFlow;
+import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
 import com.dic.xsuper.engine.execution.XplFunction;
 import com.dic.xsuper.engine.poo.XPLModel;

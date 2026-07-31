@@ -386,16 +386,31 @@ public abstract class Expr {
         public final java.util.List<TypeNode> typeArguments; // ⭐ Atualizado aqui!
         public final java.util.List<CallArg> arguments;
 
-        public New(Token keyword, Token className, java.util.List<TypeNode> typeArguments, java.util.List<CallArg> arguments) {
+        // ⭐ NOVA PROPRIEDADE: Métodos da Classe Anónima ⭐
+        public final List<Stmt.Function> anonymousMethods;
+
+        public New(Token keyword, Token className, java.util.List<TypeNode> typeArguments, java.util.List<CallArg> arguments, List<Stmt.Function> anonymousMethods) {
             this.keyword = keyword;
             this.className = className;
             this.typeArguments = typeArguments;
             this.arguments = arguments;
+            this.anonymousMethods = anonymousMethods;
         }
 
         @Override
         public <R> R accept(Visitor<R> visitor) {
             return visitor.visitNewExpr(this);
+        }
+
+        @Override
+        public String toString() {
+            return "New{" +
+                    "keyword=" + keyword +
+                    ", className=" + className +
+                    ", typeArguments=" + typeArguments +
+                    ", arguments=" + arguments +
+                    ", anonymousMethods=" + anonymousMethods +
+                    '}';
         }
     }
 
