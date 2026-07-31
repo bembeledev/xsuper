@@ -1,9 +1,11 @@
 package com.dic.xsuper.tests.ui;
 
-import com.dic.xsuper.core.CommandRegistry;
-import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.tags.NativeTag;
-import com.dic.xsuper.lang.ui.tags.TagFactory;
+import com.dic.xsuper.cli.core.CommandRegistry;
+import com.dic.xsuper.dom.node.XplNode;
+import com.dic.xsuper.engine.core.Interpreter;
+import com.dic.xsuper.render.javafx.tags.NativeTag;
+import com.dic.xsuper.render.javafx.tags.TagFactory;
+import com.dic.xsuper.render.javafx.core.SuperUiEngine;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
@@ -20,8 +22,8 @@ public class RunApp extends Application {
         CommandRegistry registry = new CommandRegistry();
         java.nio.file.Path currentDir = java.nio.file.Paths.get(".").toAbsolutePath();
 
-        com.dic.xsuper.lang.Interpreter interpreter = new com.dic.xsuper.lang.Interpreter(registry, currentDir);
-        com.dic.xsuper.lang.ui.SuperUiEngine engine = new com.dic.xsuper.lang.ui.SuperUiEngine(interpreter, null);
+        Interpreter interpreter = new Interpreter(registry, currentDir);
+        SuperUiEngine engine = new SuperUiEngine(interpreter, null);
 
         XplNode root = Windows();
 

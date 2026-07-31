@@ -1,12 +1,6 @@
 package com.dic.xsuper.tests.ui;
 
-import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.tags.NativeTag;
-import com.dic.xsuper.lang.ui.tags.TagFactory;
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.ScrollPane;
-import javafx.stage.Stage;
+import com.dic.xsuper.dom.node.XplNode;
 
 /**
  * Teste para listas HTML (ul e ol) com diferentes estilos.

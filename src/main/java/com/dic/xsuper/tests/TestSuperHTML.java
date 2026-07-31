@@ -1,9 +1,9 @@
 package com.dic.xsuper.tests;
 
-import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.html.HtmlLexer;
-import com.dic.xsuper.lang.ui.html.HtmlParser;
-import com.dic.xsuper.lang.ui.html.HtmlToken;
+import com.dic.xsuper.dom.node.XplNode;
+import com.dic.xsuper.dom.html.HtmlLexer;
+import com.dic.xsuper.dom.html.HtmlParser;
+import com.dic.xsuper.dom.html.HtmlToken;
 
 import java.util.List;
 

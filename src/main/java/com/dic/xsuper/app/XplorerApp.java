@@ -1,8 +1,8 @@
 package com.dic.xsuper.app;
 
-import com.dic.xsuper.commands.standard.*;
-import com.dic.xsuper.commands.xsuper.*;
-import com.dic.xsuper.core.CommandRegistry;
+import com.dic.xsuper.cli.commands.standard.*;
+import com.dic.xsuper.cli.commands.xsuper.*;
+import com.dic.xsuper.cli.core.CommandRegistry;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.nio.file.Path;

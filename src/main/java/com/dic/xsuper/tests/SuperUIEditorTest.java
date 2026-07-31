@@ -1,4 +1,4 @@
-package com.dic.xsuper.lang.ui.tags.editor;
+package com.dic.xsuper.render.javafx.tags.editor;
 
 import javafx.application.Application;
 import javafx.scene.Scene;

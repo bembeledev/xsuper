@@ -1,7 +1,7 @@
 package com.dic.xsuper.tests;
 
-import com.dic.xsuper.lang.Lexer;
-import com.dic.xsuper.lang.Token;
+import com.dic.xsuper.engine.core.Lexer;
+import com.dic.xsuper.engine.core.Token;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.util.List;

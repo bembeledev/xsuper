@@ -1,7 +1,7 @@
 package com.dic.xsuper.tests.ui;
 
 
-import com.dic.xsuper.lang.ui.html.XplNode;
+import com.dic.xsuper.dom.node.XplNode;
 import javafx.scene.layout.VBox;
 
 /**

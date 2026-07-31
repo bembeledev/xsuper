@@ -1,8 +1,8 @@
 package com.dic.xsuper.tests.ui;
 
-import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.tags.NativeTag;
-import com.dic.xsuper.lang.ui.tags.TagFactory;
+import com.dic.xsuper.dom.node.XplNode;
+import com.dic.xsuper.render.javafx.tags.NativeTag;
+import com.dic.xsuper.render.javafx.tags.TagFactory;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;

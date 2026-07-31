@@ -1,12 +1,12 @@
 package com.dic.xsuper.tests;
 
-import com.dic.xsuper.lang.Interpreter;
-import com.dic.xsuper.lang.ui.SuperUiEngine;
-import com.dic.xsuper.lang.ui.event.XplEvent;
-import com.dic.xsuper.lang.ui.html.XplNode;
-import com.dic.xsuper.lang.ui.XplUiBridge;
-import com.dic.xsuper.lang.ui.document.XplDocument;
-import com.dic.xsuper.lang.ui.document.XplElement;
+import com.dic.xsuper.engine.core.Interpreter;
+import com.dic.xsuper.render.javafx.core.SuperUiEngine;
+import com.dic.xsuper.dom.event.XplEvent;
+import com.dic.xsuper.dom.node.XplNode;
+import com.dic.xsuper.render.javafx.core.XplUiBridge;
+import com.dic.xsuper.dom.node.XplDocument;
+import com.dic.xsuper.dom.node.XplElement;
 
 /**
  * Teste Headless da SuperUiEngine, sem JavaFX.

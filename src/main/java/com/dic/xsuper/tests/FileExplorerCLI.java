@@ -1,10 +1,10 @@
 package com.dic.xsuper.tests;
-import com.dic.xsuper.controller.XFileController;
-import com.dic.xsuper.controller.XFileProperties;
-import com.dic.xsuper.model.XFileIO;
-import com.dic.xsuper.model.XFileReader;
-import com.dic.xsuper.model.XFileRun;
-import com.dic.xsuper.model.XFileWriter;
+import com.dic.xsuper.cli.controller.XFileController;
+import com.dic.xsuper.cli.controller.XFileProperties;
+import com.dic.xsuper.cli.model.XFileIO;
+import com.dic.xsuper.cli.model.XFileReader;
+import com.dic.xsuper.cli.model.XFileRun;
+import com.dic.xsuper.cli.model.XFileWriter;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

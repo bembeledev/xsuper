@@ -1,0 +1,12 @@
+package com.dic.xsuper.engine.execution;
+
+import com.dic.xsuper.engine.ast.Expr;
+import com.dic.xsuper.engine.core.Interpreter;
+
+public interface XplCallable {
+    // Retorna o número de argumentos exigidos (-1 se aceitar número variável, ex: 1 ou 2)
+    int arity();
+
+    // O que acontece quando a função é chamada
+    Object call(Interpreter interpreter, java.util.List<Expr.CallArg> arguments);
+}

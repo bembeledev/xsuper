@@ -28,6 +28,20 @@ println("Estados disponíveis: " + Estado.keys().join(" | "));
 println("O Enum tem 'ERRO'? " + Estado.has("ERRO"));
 println("Total de estados: " + Estado.size);
 
+
+enum Resposta {
+    SUCESSO(dados),
+    ERRO(codigo, mensagem),
+    PENDENTE
+}
+
+// O Enum aceita parâmetros ao ser instanciado!
+let meuEstado = Resposta.ERRO(404, "Página não encontrada");
+
+// E podemos aceder aos dados como se fosse um objeto!
+println(meuEstado.codigo); // Imprime: 404
+
+
 println("\n==========================================", "#00FFFF");
 println("             TESTES CONCLUIDOS            ", "#00FFFF");
 println("==========================================", "#00FFFF");

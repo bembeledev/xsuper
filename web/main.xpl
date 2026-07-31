@@ -242,5 +242,4 @@ fun getFullPage(contentHtml: string):string {
 // 9. INICIALIZAÇÃO DO SISTEMA
 // ============================================================
 __ui_engine.loadView(getFullPage(loginContent()));
-__ui_engine.renderCycle();
 __ui_engine.showWindow("Sistema de Autenticação XPL", 800, 600);

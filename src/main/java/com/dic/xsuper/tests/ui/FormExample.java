@@ -1,6 +1,6 @@
 package com.dic.xsuper.tests.ui;
 
-import com.dic.xsuper.lang.ui.html.XplNode;
+import com.dic.xsuper.dom.node.XplNode;
 
 /**
  * Exemplo de formulário XPL com validação, convertido para XplNode.
