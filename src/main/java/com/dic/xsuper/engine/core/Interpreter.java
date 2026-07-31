@@ -732,28 +732,62 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (baseModel.isGenericBlueprint) {
             baseModel.hasBaseImplementation = true;
 
-            // ⭐ A ALFÂNDEGA DE HOOKS (VIA DECORADORES DE MÉTODO) ⭐
+
+            // =====================================================================
+            // ⭐ A ALFÂNDEGA DE MÉTODOS E AUDITORIA DO @Override ⭐
+            // =====================================================================
             for (Stmt.Function method : stmt.methods) {
+                boolean hasOverrideDecorator = false;
 
-                // 1. O método tem algum autocolante de Listener &(...) em cima dele?
-                if (method.listeners != null) {
-                    for (Stmt.DecoratorNode dec : method.listeners) {
-                        String hookName = dec.name.lexeme;
+                // 1. Vasculha os decoradores à procura do @Override e dos Hooks
+                if (method.decorators != null) {
+                    for (Stmt.DecoratorNode dec : method.decorators) {
+                        String decName = dec.name.lexeme;
 
-                        // 2. Mapeia a anotação para o sistema nervoso central do XPL!
-                        if (hookName.contains("Init")) {
-                            baseModel.metaInitHook = method.name.lexeme;
-                        } else if (hookName.contains("Get")) {
-                            baseModel.metaGetHook = method.name.lexeme;
-                        } else if (hookName.contains("Set")) {
-                            baseModel.metaSetHook = method.name.lexeme;
-                        } else if (hookName.contains("End") || hookName.contains("Morrer")) {
-                            baseModel.metaEndHook = method.name.lexeme;
+                        if (decName.equals("Override")) {
+                            hasOverrideDecorator = true; // Detetou o decorador!
+                        }
+                        // Os teus hooks originais de Metaprogramação
+                        else if (decName.contains("Init")) { baseModel.metaInitHook = method.name.lexeme; }
+                        else if (decName.contains("Get")) { baseModel.metaGetHook = method.name.lexeme; }
+                        else if (decName.contains("Set")) { baseModel.metaSetHook = method.name.lexeme; }
+                        else if (decName.contains("End") || decName.contains("Morrer")) { baseModel.metaEndHook = method.name.lexeme; }
+                    }
+                }
+
+                // ⭐ 2. VERIFICAÇÃO DE ADN (SUPERCLASSE)
+                // O modelo pai já tem este método?
+                boolean overridesSuper = (baseModel.superclass != null && baseModel.superclass.findMethod(method.name.lexeme) != null);
+
+                // ⭐ 3. VERIFICAÇÃO DE CONTRATOS (INTERFACES)
+                // Este método pertence a alguma interface assinada neste bloco 'implement'?
+                boolean fulfillsInterface = false;
+                if (stmt.interfaces != null) {
+                    for (Token interfaceToken : stmt.interfaces) {
+                        XplInterface contract = registry_Interfaces.get(interfaceToken.lexeme);
+                        if (contract != null && contract.requiredMethods.containsKey(method.name.lexeme)) {
+                            fulfillsInterface = true;
+                            break; // Encontrou na interface, não precisa procurar mais!
                         }
                     }
                 }
 
-                // 3. Adiciona o método à classe finalmente
+                // =====================================================================
+                // ⭐ A SENTENÇA DO @Override (Fail-Fast)
+                // =====================================================================
+                // REGRA 1: Prometeu sobrepor, mas escreveu mal o nome ou não existe?
+                if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
+                    throw new ControlFlow.RuntimeError(method.name,
+                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
+                }
+
+                // REGRA 2: Sobrepôs em silêncio sem colocar a placa de @Override?
+                if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
+                    throw new ControlFlow.RuntimeError(method.name,
+                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+                }
+
+                // 4. Se sobreviveu à auditoria, adiciona finalmente o método à classe!
                 baseModel.addMethod(method);
             }
             System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
@@ -768,34 +802,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ⭐ 2. A BIFURCAÇÃO (BASE vs VARIANTE) ⭐
         if (stmt.aliasName == null) {
             // ---> É UMA IMPLEMENTAÇÃO DE BASE! <---
-            // Modificamos o próprio baseModel diretamente para NÃO perder as flags!
             baseModel.hasBaseImplementation = true;
 
-            // Injeta os métodos diretamente no ADN do modelo base
-            // ⭐ A ALFÂNDEGA DE HOOKS (VIA DECORADORES DE MÉTODO) ⭐
-            for (Stmt.Function method : stmt.methods) {
-
-                // 1. O método tem algum autocolante @(...) em cima dele?
-                if (method.decorators != null) {
-                    for (Stmt.DecoratorNode dec : method.decorators) {
-                        String hookName = dec.name.lexeme;
-
-                        // 2. Mapeia a anotação para o sistema nervoso central do XPL!
-                        if (hookName.contains("Init")) {
-                            baseModel.metaInitHook = method.name.lexeme;
-                        } else if (hookName.contains("Get")) {
-                            baseModel.metaGetHook = method.name.lexeme;
-                        } else if (hookName.contains("Set")) {
-                            baseModel.metaSetHook = method.name.lexeme;
-                        } else if (hookName.contains("End") || hookName.contains("Morrer")) {
-                            baseModel.metaEndHook = method.name.lexeme;
-                        }
-                    }
-                }
-
-                // 3. Adiciona o método à classe finalmente
-                baseModel.addMethod(method);
-            }
             if (stmt.isAbstract) {
                 baseModel.isAbstract = true; // Carimba o modelo na RAM como Abstrato!
             }
@@ -808,14 +816,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             // Criamos uma ramificação limpa
             activeModel = new XPLModel(variantName, baseModel.superclass);
-
-            //salva o nome da variante
             baseModel.variantAliases.add(activeModel.name);
-
-            // Uma variante É uma implementação base de si mesma!
             activeModel.hasBaseImplementation = true;
 
-            // ⭐ A PEÇA QUE FALTAVA: A Variante também pode ser abstrata! ⭐
             if (stmt.isAbstract) {
                 activeModel.isAbstract = true;
             }
@@ -823,17 +826,63 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // Copia a memória (fields) do modelo base para a variante
             activeModel.fields.putAll(baseModel.fields);
 
-            // Injeta os métodos específicos da variante
-            for (Stmt.Function method : stmt.methods) {
-                activeModel.addMethod(method);
-            }
-
-
             // Regista a nova variante no Registry Interno, sem apagar a Base!
             registry_model.put(variantName, activeModel);
-
-            // Log da injeção
             System.out.println("[XPL Engine] -> Injetando Comportamento (Variante): " + variantName + " (Base: " + baseName + ")");
+        }
+
+        // =====================================================================
+        // ⭐ A ALFÂNDEGA DE MÉTODOS E AUDITORIA DO @Override (UNIFICADA) ⭐
+        // =====================================================================
+        for (Stmt.Function method : stmt.methods) {
+            boolean hasOverrideDecorator = false;
+
+            // 1. Vasculha os decoradores à procura do @Override e dos Hooks
+            if (method.decorators != null) {
+                for (Stmt.DecoratorNode dec : method.decorators) {
+                    String decName = dec.name.lexeme;
+
+                    if (decName.equals("Override")) {
+                        hasOverrideDecorator = true; // Detetou o decorador!
+                    }
+                    // Os teus hooks originais de Metaprogramação
+                    else if (decName.contains("Init")) { activeModel.metaInitHook = method.name.lexeme; }
+                    else if (decName.contains("Get")) { activeModel.metaGetHook = method.name.lexeme; }
+                    else if (decName.contains("Set")) { activeModel.metaSetHook = method.name.lexeme; }
+                    else if (decName.contains("End") || decName.contains("Morrer")) { activeModel.metaEndHook = method.name.lexeme; }
+                }
+            }
+
+            // ⭐ 2. VERIFICAÇÃO DE ADN (SUPERCLASSE)
+            boolean overridesSuper = (activeModel.superclass != null && activeModel.superclass.findMethod(method.name.lexeme) != null);
+
+            // ⭐ 3. VERIFICAÇÃO DE CONTRATOS (INTERFACES)
+            boolean fulfillsInterface = false;
+            if (stmt.interfaces != null) {
+                for (Token interfaceToken : stmt.interfaces) {
+                    XplInterface contract = registry_Interfaces.get(interfaceToken.lexeme);
+                    if (contract != null && contract.requiredMethods.containsKey(method.name.lexeme)) {
+                        fulfillsInterface = true;
+                        break;
+                    }
+                }
+            }
+
+            // =====================================================================
+            // ⭐ A SENTENÇA DO @Override (Fail-Fast)
+            // =====================================================================
+            if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
+                throw new ControlFlow.RuntimeError(method.name,
+                        "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
+            }
+
+            if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
+                throw new ControlFlow.RuntimeError(method.name,
+                        "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+            }
+
+            // 4. Se sobreviveu à auditoria, adiciona finalmente o método ao modelo ativo!
+            activeModel.addMethod(method);
         }
 
 

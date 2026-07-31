@@ -34,21 +34,25 @@ implement Animal as Fish {
 }
 
 implement Mamifero as Mam1 for CRUD {
+
+
+    @Override
     pub fun add(nome: string) {
         // Agora o objeto sabe o seu próprio nome!
         println("A guardar o animal [" + this.nome + "] na Base de Dados A...");
     }
-
+    @Override
     pub fun delete(id: int) {
         println("A eliminar " + this.nome + " com o id: " + id);
     }
-    pub fun getId():int{return this.verIdade();}
+
+    @Override pub fun getId():int{return this.verIdade();}
 }
 
 implement Mamifero as Mam2 for CRUD {
-     pub fun add() { println("A guardar Mam2 na Base de Dados B..."); }
-     pub fun delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
-     pub fun getId():int{return this.id;}
+    @Override pub fun add() { println("A guardar Mam2 na Base de Dados B..."); }
+    @Override pub fun delete(id: int) { println("A eliminar Mam1 com id: "+ id); }
+    @Override pub fun getId():int{return this.id;}
 }
 
 var m = new Mam1();
