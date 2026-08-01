@@ -1,4 +1,4 @@
-package com.dic.xsuper.engine.poo;
+package com.dic.xsuper.engine.poo.enums;
 
 import com.dic.xsuper.engine.execution.XplCallable;
 import com.dic.xsuper.engine.core.Interpreter;

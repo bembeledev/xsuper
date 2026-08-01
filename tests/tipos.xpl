@@ -4,6 +4,8 @@ declare Cao extends Animal { pub raca: string; } implement Cao {}
 var c = new Cao();
 var n = 12.5;
 
+debugger;
+
 // 1. O TYPEOF
 println("typeof n: " + typeof(n)); // float
 println("typeof c: " + typeof(c)); // Cao

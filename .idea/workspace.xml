@@ -4,16 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat: implementação de Classes Anónimas JIT e Polimorfismo de Contratos&#10;&#10;Esta atualização eleva o motor a um nível de arquitetura empresarial, permitindo&#10;a injeção de dependências estrita e a criação dinâmica de classes em tempo de execução.&#10;&#10;Principais Alterações:&#10;* AST &amp; Parser:&#10;  - Expandido o nó `Expr.New` para suportar a captura de blocos de métodos (`anonymousMethods`).&#10;  - Atualizado o `Parser` para consumir corpos de classes anónimas on-the-fly (`new CRUD() { ... }`).&#10;  - Corrigido um bug de loop infinito no consumo de decoradores (check vs match).&#10;&#10;* Interpreter (Runtime):&#10;  - Injeção da fábrica JIT no `visitNewExpr` para sintetizar Modelos Fantasmas na RAM, aplicando rigorosamente as regras de @Override e validação de contratos.&#10;  - Atualizada a Alfândega Quântica (`checkTypeMatch`) para suportar verdadeiro Polimorfismo de Interfaces: parâmetros tipados como contratos (ex: `fun(alvo: CRUD)`) aceitam agora qualquer classe ou variante que os implemente.">
-      <change afterPath="$PROJECT_DIR$/tests/debbuger.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat: integração do Debugger Nativo com suporte a Breakpoints via CLI&#10;&#10;Esta atualização introduz o suporte completo a breakpoints guiados por IDE &#10;e rastreio de linhas em tempo de execução, unindo a execução base ao REPL interactivo.&#10;&#10;Principais Alterações:&#10;* Parser &amp; AST:&#10;  - Adicionado o carimbo automático de linhas (`stmt.astLine`) em todas as &#10;    instruções processadas no método `statement()`.&#10;&#10;* CLI &amp; Interpreter (Runtime):&#10;  - Implementado o recetor do parâmetro `--breakpoints=x,y,z` na linha de comandos.&#10;  - Adicionada a verificação na alfândega de execução (`execute`) do Interpretador &#10;    para pausar a Thread nativamente e acionar o REPL interativo ao atingir uma linha marcada.">
+      <change afterPath="$PROJECT_DIR$/tests/stack.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/ast/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/ast/Stmt.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/dependency-reduced-pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Lexer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/TokenType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/TokenType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplEnum.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/enums/XplEnum.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplEnumVariant.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/enums/XplEnumVariant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplMethodGroup.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/tipos.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tipos.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/xpl.bat" beforeDir="false" afterPath="$PROJECT_DIR$/xpl.bat" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,6 +77,7 @@
     &quot;Application.UIFromHTML.executor&quot;: &quot;Run&quot;,
     &quot;Application.XplRuntime.executor&quot;: &quot;Run&quot;,
     &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.xpl.executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [deploy].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
@@ -197,15 +199,28 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="xpl" type="BatchConfigurationType" factoryName="Batch" temporary="true">
+      <module name="FileManager" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SCRIPT_NAME" value="xpl.bat" />
+      <option name="PARAMETERS" value="" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Application.SuperUIEditorTest" />
       <item itemvalue="Application.XplRuntime" />
       <item itemvalue="Application.AnimandoNodeEControl" />
       <item itemvalue="Application.Main" />
+      <item itemvalue="Batch.xpl" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Main" />
+        <item itemvalue="Batch.xpl" />
         <item itemvalue="Application.SuperUIEditorTest" />
         <item itemvalue="Application.XplRuntime" />
         <item itemvalue="Application.AnimandoNodeEControl" />
@@ -220,14 +235,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1781622929272</updated>
-    </task>
-    <task id="LOCAL-00015" summary="feat(core): implementar 'switch expressions' sem break e com retorno implícito&#10;&#10;- Adiciona a estrutura `Expr.Switch` e `SwitchCase` na AST para suportar roteamento de dados baseado em valores puros.&#10;- Elimina a necessidade da palavra-chave `break`, implementando auto-escape após a correspondência de qualquer caso.&#10;- Permite agregação de múltiplos alvos de teste na mesma linha (`case A, B, C:`).&#10;- Integra o nó ao mecanismo de Implicit Yielding para capturar o valor gerado pelo bloco vencedor diretamente numa atribuição.">
-      <option name="closed" value="true" />
-      <created>1781988852645</created>
-      <option name="number" value="00015" />
-      <option name="presentableId" value="LOCAL-00015" />
-      <option name="project" value="LOCAL" />
-      <updated>1781988852645</updated>
     </task>
     <task id="LOCAL-00016" summary="feat(core): implementar expressão de pattern matching ('match') com guardas lógicas&#10;&#10;- Adiciona as estruturas `Expr.Match` e `MatchArm` à AST para desconstrução avançada de dados.&#10;- Habilita 5 frentes de inspeção no Parser: verificação de tipo (`type T`), literais exatos, guardas compostas (`if cond`), guardas puras e fallback semântico (`none:` / `default:`).&#10;- Padroniza o fechamento de cada braço com ponto e vírgula (`;`) para garantir estabilidade máxima na fiação sintática.&#10;- Implementa o motor de metadados em tempo de execução (`checkTypeMatch`) capaz de resolver coerção entre tipos primitivos da JVM e instâncias de classes XPL.&#10;- Acopla a estrutura ao mecanismo de Implicit Yielding para ejeção limpa do valor calculado no braço vencedor.">
       <option name="closed" value="true" />
@@ -613,7 +620,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785540195555</updated>
     </task>
-    <option name="localTasksCounter" value="64" />
+    <task id="LOCAL-00064" summary="feat: integração do Debugger Nativo com suporte a Breakpoints via CLI&#10;&#10;Esta atualização introduz o suporte completo a breakpoints guiados por IDE &#10;e rastreio de linhas em tempo de execução, unindo a execução base ao REPL interactivo.&#10;&#10;Principais Alterações:&#10;* Parser &amp; AST:&#10;  - Adicionado o carimbo automático de linhas (`stmt.astLine`) em todas as &#10;    instruções processadas no método `statement()`.&#10;&#10;* CLI &amp; Interpreter (Runtime):&#10;  - Implementado o recetor do parâmetro `--breakpoints=x,y,z` na linha de comandos.&#10;  - Adicionada a verificação na alfândega de execução (`execute`) do Interpretador &#10;    para pausar a Thread nativamente e acionar o REPL interativo ao atingir uma linha marcada.">
+      <option name="closed" value="true" />
+      <created>1785542419888</created>
+      <option name="number" value="00064" />
+      <option name="presentableId" value="LOCAL-00064" />
+      <option name="project" value="LOCAL" />
+      <updated>1785542419889</updated>
+    </task>
+    <option name="localTasksCounter" value="65" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -645,7 +660,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="origin/main" />
                       </list>
                     </value>
                   </entry>
@@ -658,7 +673,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix(ui): resolve media query evaluation, cascade repainting, and ghost size in JavaFX engine&#10;&#10;- Implement JavaFxMediaListener to handle dynamic viewport width changes and avoid initial phantom sizing issues[cite: 5].&#10;- Add unified cascade repainting logic in the media listener to prevent state clobbering during window resizing[cite: 5].&#10;- Integrate deep CSS property value extraction and media query processing into SuperUiEngine[cite: 3].&#10;- Update XplMediaNode conditions parser and evaluation logic[cite: 5]." />
     <MESSAGE value="fix(ui): preserve media query states and enable structural hard reflow&#10;&#10;- Fix XplMediaNode state retention (`isActive`) in JavaFxMediaListener.addMediaNode during virtual DOM re-creations.&#10;- Connect media listener triggers to MainWindow.forceLayoutRebuild for seamless structural layout updates (hard reflow) on window resize breakpoints.&#10;- Isolate and correctly apply active media query rules to the virtual DOM tree before layout evaluation." />
     <MESSAGE value="refactor(ui): implement atomic internal UIDs and fix DOM re-rendering&#10;&#10;- refactor: replace fragile ID-based lookups with AtomicLong-based '_internalUid' &#10;  for robust and collision-free element tracking.&#10;- fix(renderer): implement efficient &quot;Internal Transplant&quot; (clear/rebuild) in &#10;  JavaFxRenderer to respect LayoutEngine boundaries and flexbox calculations.&#10;- fix: resolve UI event loss during re-renders by syncing inline events &#10;  from Live DOM to Virtual DOM during the synchronization pass.&#10;- fix: resolve 'UnsupportedOperationException' by using internal element &#10;  cleanup methods instead of unmodifiable collection manipulation.&#10;- perf: optimize DOM hydration by preserving event listeners and &#10;  host components during layout updates." />
     <MESSAGE value="fix(ui): resolve infinite layout loops and CSS state contamination&#10;&#10;- fix: prevent infinite resize loops in MediaListener by switching from Scene width &#10;  (affected by scrollbars) to Window width.&#10;- refactor(engine): remove CSS style caching in SuperUiEngine to prevent state &#10;  contamination between responsive breakpoints.&#10;- feat(renderer): implement full &quot;Hard Reflow&quot; in JavaFxRenderer to properly &#10;  recreate layout structures (HBox/VBox) upon media query transitions.&#10;- fix: ensure accurate reconciliation of UI components and event listeners during &#10;  total layout rebuilds." />
@@ -683,7 +697,8 @@
     <MESSAGE value="feat: implementação do operador `use` para validação semântica de interfaces&#10;&#10;Esta atualização introduz o operador quântico `use` para verificar contratos (Interfaces) &#10;em tempo de execução, separando semanticamente a verificação de herança (`type`), &#10;identidade exata (`instance`) e assinatura de contratos (`use`).&#10;&#10;Principais Alterações:&#10;* Lexer &amp; Parser:&#10;  - Adicionada a palavra-chave e token `USE`.&#10;  - Integrado o token `USE` no bloco de precedência de expressões lógicas e de comparação (`comparison()`).&#10;&#10;* AST &amp; Modelos (XPLModel):&#10;  - Adicionada a propriedade `implementedInterfaces` (a &quot;mochila&quot; de contratos).&#10;  - Criado o método de busca genética `implementsInterface(nome)`, que suporta verificação recursiva em superclasses e modelos base (Variantes).&#10;&#10;* Interpreter (Runtime):&#10;  - Atualizado `visitImplementDeclStmt` (A Guilhotina) para carimbar as interfaces no ADN do `activeModel` logo após a validação do contrato.&#10;  - Refatorado `visitTypeCheckExpr` com Pattern Matching avançado do Java, isolando as lógicas de `instance`, `type` e o novo `use`, adicionando proteção global contra NullPointerExceptions." />
     <MESSAGE value="fix: unificação da validação de @Override e correção de falha em Variantes&#10;&#10;O motor permitia que classes Variantes (ex: `implement Mamifero as Mam1`) &#10;contornassem a validação obrigatória do decorador `@Override` devido a uma &#10;duplicação do ciclo de injeção de métodos na &quot;Rota B&quot; do Interpretador.&#10;&#10;Principais Alterações:&#10;* Interpreter (visitImplementDeclStmt):&#10;  - Removidos os ciclos `for` duplicados de injeção de métodos na bifurcação de Modelos Base e Variantes.&#10;  - Criada a &quot;Alfândega de Métodos (Unificada)&quot; executada após a resolução do `activeModel`.&#10;  - Garantida a aplicação estrita do &quot;fail-fast&quot; para `@Override` ausente ou inválido em 100% das classes concretas.&#10;  - Refatoração de código redundante, tornando a injeção de comportamentos mais linear e segura." />
     <MESSAGE value="feat: implementação de Classes Anónimas JIT e Polimorfismo de Contratos&#10;&#10;Esta atualização eleva o motor a um nível de arquitetura empresarial, permitindo&#10;a injeção de dependências estrita e a criação dinâmica de classes em tempo de execução.&#10;&#10;Principais Alterações:&#10;* AST &amp; Parser:&#10;  - Expandido o nó `Expr.New` para suportar a captura de blocos de métodos (`anonymousMethods`).&#10;  - Atualizado o `Parser` para consumir corpos de classes anónimas on-the-fly (`new CRUD() { ... }`).&#10;  - Corrigido um bug de loop infinito no consumo de decoradores (check vs match).&#10;&#10;* Interpreter (Runtime):&#10;  - Injeção da fábrica JIT no `visitNewExpr` para sintetizar Modelos Fantasmas na RAM, aplicando rigorosamente as regras de @Override e validação de contratos.&#10;  - Atualizada a Alfândega Quântica (`checkTypeMatch`) para suportar verdadeiro Polimorfismo de Interfaces: parâmetros tipados como contratos (ex: `fun(alvo: CRUD)`) aceitam agora qualquer classe ou variante que os implemente." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: implementação de Classes Anónimas JIT e Polimorfismo de Contratos&#10;&#10;Esta atualização eleva o motor a um nível de arquitetura empresarial, permitindo&#10;a injeção de dependências estrita e a criação dinâmica de classes em tempo de execução.&#10;&#10;Principais Alterações:&#10;* AST &amp; Parser:&#10;  - Expandido o nó `Expr.New` para suportar a captura de blocos de métodos (`anonymousMethods`).&#10;  - Atualizado o `Parser` para consumir corpos de classes anónimas on-the-fly (`new CRUD() { ... }`).&#10;  - Corrigido um bug de loop infinito no consumo de decoradores (check vs match).&#10;&#10;* Interpreter (Runtime):&#10;  - Injeção da fábrica JIT no `visitNewExpr` para sintetizar Modelos Fantasmas na RAM, aplicando rigorosamente as regras de @Override e validação de contratos.&#10;  - Atualizada a Alfândega Quântica (`checkTypeMatch`) para suportar verdadeiro Polimorfismo de Interfaces: parâmetros tipados como contratos (ex: `fun(alvo: CRUD)`) aceitam agora qualquer classe ou variante que os implemente." />
+    <MESSAGE value="feat: integração do Debugger Nativo com suporte a Breakpoints via CLI&#10;&#10;Esta atualização introduz o suporte completo a breakpoints guiados por IDE &#10;e rastreio de linhas em tempo de execução, unindo a execução base ao REPL interactivo.&#10;&#10;Principais Alterações:&#10;* Parser &amp; AST:&#10;  - Adicionado o carimbo automático de linhas (`stmt.astLine`) em todas as &#10;    instruções processadas no método `statement()`.&#10;&#10;* CLI &amp; Interpreter (Runtime):&#10;  - Implementado o recetor do parâmetro `--breakpoints=x,y,z` na linha de comandos.&#10;  - Adicionada a verificação na alfândega de execução (`execute`) do Interpretador &#10;    para pausar a Thread nativamente e acionar o REPL interativo ao atingir uma linha marcada." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: integração do Debugger Nativo com suporte a Breakpoints via CLI&#10;&#10;Esta atualização introduz o suporte completo a breakpoints guiados por IDE &#10;e rastreio de linhas em tempo de execução, unindo a execução base ao REPL interactivo.&#10;&#10;Principais Alterações:&#10;* Parser &amp; AST:&#10;  - Adicionado o carimbo automático de linhas (`stmt.astLine`) em todas as &#10;    instruções processadas no método `statement()`.&#10;&#10;* CLI &amp; Interpreter (Runtime):&#10;  - Implementado o recetor do parâmetro `--breakpoints=x,y,z` na linha de comandos.&#10;  - Adicionada a verificação na alfândega de execução (`execute`) do Interpretador &#10;    para pausar a Thread nativamente e acionar o REPL interativo ao atingir uma linha marcada." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/FileManager$Main.ic" NAME="Main Coverage Results" MODIFIED="1785092928775" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">

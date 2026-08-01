@@ -11,6 +11,8 @@ import com.dic.xsuper.engine.helpers.ArrayMethods;
 import com.dic.xsuper.engine.helpers.ObjectMethods;
 import com.dic.xsuper.engine.helpers.StringMethods;
 import com.dic.xsuper.engine.poo.*;
+import com.dic.xsuper.engine.poo.enums.XplEnum;
+import com.dic.xsuper.engine.poo.enums.XplEnumVariant;
 import com.dic.xsuper.engine.poo.relection.*;
 import com.dic.xsuper.utils.ConsoleTheme;
 
@@ -34,6 +36,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ⭐ A LISTA DE BREAKPOINTS PARA A TUA IDE / FILEMANAGER ⭐
     // A IDE pode fazer: interpreter.activeBreakpoints.add(15); antes de correr o script!
     public final java.util.List<Integer> activeBreakpoints = new java.util.ArrayList<>();
+    public boolean isStepping = false;       // Controla se estamos no modo "passo-a-passo"
+    private int lastSteppedLine = -1;        // Evita que o motor pare múltiplas vezes na mesma linha da AST
+
+    // =========================================================================
+    // ⭐ PILHA DE CHAMADAS (CALL STACK)
+    // =========================================================================
+    public final java.util.Stack<String> callStack = new java.util.Stack<>();
+
+
 
     // Guarda o Metadado completo dos Tipos para podermos executar Listeners/Validadores!
     public final java.util.Map<String, Stmt.TypeAliasDecl> typeAliasMetadata = new java.util.HashMap<>();
@@ -199,25 +210,31 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public void execute(Stmt stmt) {
         if (stmt == null) return;
 
-        // =========================================================================
-        // ⭐ 1. SINAL DE MORTE (Cancela a execução a pedido da IDE / Botão Stop)
-        // =========================================================================
+        // 1. SINAL DE MORTE
         if (Thread.currentThread().isInterrupted()) {
             throw new ControlFlow.RuntimeError(null, "Thread XPL foi morta e abortada com sucesso.");
         }
 
         // =========================================================================
-        // ⭐ 2. ALFÂNDEGA DO DEBUGGER (Paragem por linha configurada pela IDE)
+        // ⭐ 2. A NOVA ALFÂNDEGA DO DEBUGGER (Com Step-Through) ⭐
         // =========================================================================
-        if (stmt.astLine != -1 && this.activeBreakpoints.contains(stmt.astLine)) {
-            // ⭐ Cria um mini token temporal apenas para mostrar a linha correta no log!
-            Token fakeToken = new Token(TokenType.IDENTIFIER, "", null, stmt.astLine, 0, null);
-            triggerDebugger(fakeToken, "IDE Breakpoint -> Linha " + stmt.astLine);
+        if (stmt.astLine != -1) {
+            boolean isBreakpoint = this.activeBreakpoints.contains(stmt.astLine);
+            boolean shouldStep = this.isStepping && stmt.astLine != this.lastSteppedLine;
+
+            // Se for um breakpoint da IDE OU se estivermos a caminhar linha a linha...
+            if (isBreakpoint || shouldStep) {
+
+                this.lastSteppedLine = stmt.astLine; // Regista a linha onde estamos para não repetir paragens
+                String source = isBreakpoint ? "IDE Breakpoint" : "Step";
+
+                // Cria o token fantasma para o terminal exibir a linha correta
+                Token fakeToken = new Token(TokenType.IDENTIFIER, "", null, stmt.astLine, 0, null);
+                triggerDebugger(fakeToken, source + " -> Linha " + stmt.astLine);
+            }
         }
 
-        // =========================================================================
-        // ⭐ 3. EXECUÇÃO NORMAL DA AST
-        // =========================================================================
+        // 3. EXECUÇÃO NORMAL
         stmt.accept(this);
     }
 
@@ -1250,7 +1267,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         System.out.println("\n" + ConsoleTheme.TEXT + "==========================================================");
         System.out.println("🛑 BREAKPOINT ATIVADO (" + triggerSource + ")");
         System.out.println("📍 Ficheiro: " + path + " | Linha: " + line);
-        System.out.println("💡 Escreve o nome de uma variável para inspecionar o valor, ou 'c' para continuar.");
+        System.out.println("💡 Escreve o nome de uma variável, 's' (step) para avançar linha a linha, ou 'c' para continuar livremente, ou 'bt'(stack) para ver a pilha de execução.");
         System.out.println("==========================================================" + ConsoleTheme.RESET);
 
         java.util.Scanner scanner = new java.util.Scanner(System.in);
@@ -1262,9 +1279,32 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
             String command = scanner.nextLine().trim();
 
+            // ⭐ NOVO: O Comando "Step"
+            if (command.equals("s") || command.equals("step")) {
+                this.isStepping = true;
+                break; // Levanta a barreira e pára imediatamente na próxima linha da AST!
+            }
+
+            // O Comando "Continue"
             if (command.equals("c") || command.equals("continue")) {
+                this.isStepping = false;      // Desliga o modo passo-a-passo
+                this.lastSteppedLine = -1;    // Limpa a memória de rastreio
                 System.out.println(ConsoleTheme.TEXT + "▶ A retomar a execução do motor..." + ConsoleTheme.RESET);
-                break; // Quebra o loop e o código XPL volta a correr!
+                break; // Levanta a barreira e corre até ao próximo Breakpoint!
+            }
+
+            // ⭐ NOVO: O Comando "Stack"
+            if (command.equals("stack") || command.equals("bt")) {
+                System.out.println(ConsoleTheme.TEXT + "📍 Call Stack atual:" + ConsoleTheme.RESET);
+                if (this.callStack.isEmpty()) {
+                    System.out.println("  0. <Escopo Global>");
+                } else {
+                    for (int i = this.callStack.size() - 1; i >= 0; i--) {
+                        System.out.println("  " + (i + 1) + ". " + this.callStack.get(i));
+                    }
+                    System.out.println("  0. <Escopo Global>");
+                }
+                continue; // Volta a pedir input no terminal
             }
 
             if (command.isEmpty()) continue;
@@ -3141,15 +3181,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // ⭐ INTERCETOR DE SPREAD NOS ARGUMENTOS! ⭐
-        // Criamos uma nova fila onde os arrays desempacotados se vão misturar com os argumentos normais.
         java.util.List<Expr.CallArg> processedArgs = new java.util.ArrayList<>();
 
         for (Expr.CallArg arg : expr.arguments) {
             if (arg.expression instanceof Expr.Spread spread) {
-                // Se for um spread, temos de avaliar AGORA para saber o que desempacotar!
                 Object iterable = evaluate(spread.expression);
                 if (iterable instanceof java.util.List<?> list) {
-                    // Despejamos cada item da lista como se fosse um argumento individual injetado
                     for (Object item : list) {
                         processedArgs.add(new Expr.CallArg(null, new Expr.Literal(item)));
                     }
@@ -3157,24 +3194,43 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     throw new ControlFlow.RuntimeError(spread.operator, "O operador spread '...' em argumentos requer um Array.");
                 }
             } else {
-                // Mantemos o PASSE DIRECTO PURO (TRUE LAZY BINDING) para todos os outros argumentos!
                 processedArgs.add(arg);
             }
         }
 
+        // =========================================================================
+        // ⭐ RASTREADOR DA CALL STACK (PUSH)
+        // =========================================================================
+        String funcName = "<função anónima ou classe>";
+        if (expr.callee instanceof Expr.Variable) {
+            funcName = ((Expr.Variable) expr.callee).name.lexeme;
+        } else if (expr.callee instanceof Expr.Get) {
+            funcName = ((Expr.Get) expr.callee).name.lexeme;
+        }
+
+        // O motor regista onde estamos a entrar!
+        this.callStack.push(funcName + "() na linha " + expr.paren.line);
+
         try {
             // Entregamos a fila já processada (expandida) directamente à função ou classe!
             return function.call(this, processedArgs);
+
         } catch (ControlFlow.RuntimeError erroNativo) {
-            // Preserva a coordenada exacta (linha/coluna) do erro disparado pelo Binder!
             throw erroNativo;
         } catch (RuntimeException erroJava) {
-            // ⭐ A VACINA DO DEBUGGER: Se a mensagem for nula (ex: NullPointerException),
-            // imprime o rasto no terminal para sabermos exactamente onde a bomba rebentou!
             if (erroJava.getMessage() == null) {
                 erroJava.printStackTrace();
             }
             throw new ControlFlow.RuntimeError(expr.paren, "Falha Nativa no Motor Java: " + erroJava);
+
+        } finally {
+            // =====================================================================
+            // ⭐ RASTREADOR DA CALL STACK (POP)
+            // =====================================================================
+            // Limpa a função da pilha mal a execução termine, MESMO QUE EXPLODA COM ERRO!
+            if (!this.callStack.isEmpty()) {
+                this.callStack.pop();
+            }
         }
     }
 
