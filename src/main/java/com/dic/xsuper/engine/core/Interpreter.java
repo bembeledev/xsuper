@@ -175,9 +175,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         try {
             // A CADEIA DE GLOBAIS AUTOMÁTICA PARA O SCRIPT PRINCIPAL
             Environment parentEnv = this.globals;
-            if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
-                parentEnv = this.moduleManager.loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0), this, this.globals).localEnvironment;
+            String projectGlobals = this.moduleManager.getProjectGlobalsModule();
+
+            if (projectGlobals != null) {
+                // 1. É um projeto SDM! (ex: carrega "com.exemplo.meu_projeto.globals")
+                String globalsPath = projectGlobals.replace(".", "/") + ".xpl";
+
+                if (this.moduleManager.resolvePhysicalFile(globalsPath) != null) {
+                    parentEnv = this.moduleManager.loadModule(
+                            projectGlobals,
+                            new Token(TokenType.IDENTIFIER, projectGlobals, null, 0, 0),
+                            this,
+                            this.globals
+                    ).localEnvironment;
+                }
+            } else {
+                // 2. É um script solto (avulso). Fallback para o comportamento antigo.
+                if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
+                    parentEnv = this.moduleManager.loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0), this, this.globals).localEnvironment;
+                }
             }
+
             this.environment = parentEnv;
 
             for (Stmt statement : statements) {
@@ -1408,8 +1426,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
 
     // ⭐ NOVO: Resolve a hierarquia cascata de escopos globais do projeto/módulo
+    // ⭐ NOVO: Resolve a hierarquia cascata de escopos globais do projeto/módulo
     private Environment resolveGlobalsChain(String modulePath) {
         Environment currentParent = this.globals;
+
+        String projectGlobals = this.moduleManager.getProjectGlobalsModule();
         boolean isGlobalsFile = modulePath.equals("globals") || modulePath.endsWith(".globals");
 
         if (!isGlobalsFile) {
@@ -1422,14 +1443,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     return this.moduleManager.loadModule(pkgGlobals1, new Token(TokenType.IDENTIFIER, "globals", null, 0, 0), this, this.globals).localEnvironment;
                 }
             }
-            // 2. Fallback para o globals raiz do projeto geral
-            if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
+
+            // 2. Fallback para o globals raiz do projeto geral (SDM ou Solto)
+            if (projectGlobals != null) {
+                String globalsPath = projectGlobals.replace(".", "/") + ".xpl";
+                if (this.moduleManager.resolvePhysicalFile(globalsPath) != null) {
+                    return this.moduleManager.loadModule(projectGlobals, new Token(TokenType.IDENTIFIER, projectGlobals, null, 0, 0), this, this.globals).localEnvironment;
+                }
+            } else if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
                 return this.moduleManager.loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0), this, this.globals).localEnvironment;
             }
         } else {
             // Se for um globals de pacote, ele herda do globals raiz da aplicação se existir
-            if (modulePath.contains(".") && !modulePath.equals("globals")) {
-                if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
+            if (modulePath.contains(".") && !modulePath.equals("globals") && (projectGlobals == null || !modulePath.equals(projectGlobals))) {
+
+                if (projectGlobals != null) {
+                    String globalsPath = projectGlobals.replace(".", "/") + ".xpl";
+                    if (this.moduleManager.resolvePhysicalFile(globalsPath) != null) {
+                        return this.moduleManager.loadModule(projectGlobals, new Token(TokenType.IDENTIFIER, projectGlobals, null, 0, 0), this, this.globals).localEnvironment;
+                    }
+                } else if (this.moduleManager.resolvePhysicalFile("globals.xpl") != null) {
                     return this.moduleManager.loadModule("globals", new Token(TokenType.IDENTIFIER, "globals", null, 0, 0), this, this.globals).localEnvironment;
                 }
             }

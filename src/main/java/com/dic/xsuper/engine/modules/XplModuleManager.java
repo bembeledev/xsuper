@@ -226,4 +226,31 @@ public class XplModuleManager {
 
         return newModule;
     }
+
+    // =========================================================================
+    // ⭐ DETETOR DE NAMESPACE DO PROJETO (SDM) ⭐
+    // =========================================================================
+    public String getProjectGlobalsModule() {
+        File manifest = new File(projectDirectory.toFile(), "package.spm");
+
+        if (manifest.exists() && manifest.isFile()) {
+            try {
+                String spmContent = Files.readString(manifest.toPath());
+                String group = extractManifestValue(spmContent, "group");
+                String name = extractManifestValue(spmContent, "name");
+
+                if (group != null && name != null) {
+                    // Retorna a assinatura oficial: ex: "com.exemplo.meu_projeto.globals"
+                    return group + "." + name + ".globals";
+                }
+            } catch (Exception ignored) {}
+        }
+        return null; // Não tem SDM (é um script solto)
+    }
+
+    private String extractManifestValue(String content, String key) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(key + "\\s*:\\s*\"([^\"]+)\"").matcher(content);
+        if (m.find()) return m.group(1);
+        return null;
+    }
 }
