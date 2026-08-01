@@ -854,24 +854,40 @@ public class Parser {
 
 
     private Stmt statement() {
-        // Redirecionamento inteligente: Dependendo da palavra-chave inicial, escolhe a regra certa.
-        if (match(TokenType.FOR)) return forDispatcher();
-        // Mudei o nome para organizares melhor os teus For Loops
-        if (match(TokenType.BREAK)) return breakStatement();
-        if (match(TokenType.CONTINUE)) return continueStatement();
-        if (match(TokenType.RETURN)) return returnStatement();
-        if (match(TokenType.TRY)) return tryStatement();
-        if (match(TokenType.THROW)) return throwStatement();
+        // ⭐ 1. Apanha a linha ANTES de consumir qualquer token!
+        int linhaAtual = peek().line;
 
-        if (match(TokenType.DO)) return doWhileStatement();
-        // ESQUELETOS FUTUROS:
-        if (match(TokenType.WHILE)) return whileStatement();
+        Stmt stmt = null;
 
-        // Se abrir chavetas soltas, cria um escopo (bloco) isolado.
-        if (match(TokenType.LBRACE)) return new Stmt.Block(block());
+        // ⭐ 2. Redirecionamento inteligente: Dependendo da palavra, escolhe a regra e guarda no 'stmt'
+        if (match(TokenType.FOR)) stmt = forDispatcher();
+        else if (match(TokenType.BREAK)) stmt = breakStatement();
+        else if (match(TokenType.CONTINUE)) stmt = continueStatement();
+        else if (match(TokenType.RETURN)) stmt = returnStatement();
+        else if (match(TokenType.TRY)) stmt = tryStatement();
+        else if (match(TokenType.THROW)) stmt = throwStatement();
+        else if (match(TokenType.DEBUGGER)) stmt = debuggerStatement();
+        else if (match(TokenType.DO)) stmt = doWhileStatement();
+        else if (match(TokenType.WHILE)) stmt = whileStatement();
 
-        // Se não for nada disso, assume que é uma expressão a tentar calcular algo (ex: a = 10; ou println("ola");)
-        return expressionStatement();
+            // Se abrir chavetas soltas, cria um escopo (bloco) isolado.
+        else if (match(TokenType.LBRACE)) stmt = new Stmt.Block(block());
+
+            // Se não for nada disso, assume que é uma expressão.
+        else stmt = expressionStatement();
+
+        // ⭐ 3. CARIMBO DA IDE: Injeta a linha onde a instrução nasceu!
+        if (stmt != null) {
+            stmt.astLine = linhaAtual;
+        }
+
+        return stmt;
+    }
+
+    private Stmt debuggerStatement() {
+        Token keyword = previous();
+        consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após 'debugger'.");
+        return new Stmt.Debugger(keyword);
     }
 
     private Stmt doWhileStatement() {

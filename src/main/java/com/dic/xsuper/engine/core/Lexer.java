@@ -40,6 +40,7 @@ public class Lexer {
         keywords.put("enum", TokenType.T_ENUM);
         keywords.put("return", TokenType.RETURN);
         keywords.put("use", TokenType.USE);
+        keywords.put("debugger", TokenType.DEBUGGER);
         // No local onde inicializas o teu map de keywords
         keywords.put("true", TokenType.TRUE);
         keywords.put("false", TokenType.FALSE);

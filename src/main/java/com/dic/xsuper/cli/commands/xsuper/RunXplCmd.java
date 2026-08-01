@@ -15,6 +15,7 @@ import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RunXplCmd implements Command {
@@ -76,8 +77,32 @@ public class RunXplCmd implements Command {
             if (statements.isEmpty()) {
                 System.out.println(ConsoleTheme.WARNING + ">> AVISO: A AST está vazia. Não há nada para executar!" + ConsoleTheme.RESET);
             } else {
+
+                // Exemplo de como capturar no teu RunXplCmd.java
+                List<Integer> breakpoints = new ArrayList<>();
+
+                for (String arg : args) {
+                    if (arg.startsWith("--breakpoints=")) {
+                        // Corta o prefixo e apanha apenas "6,15,42"
+                        String numbersStr = arg.substring("--breakpoints=".length());
+
+                        // Divide pela vírgula e converte para Inteiros
+                        for (String num : numbersStr.split(",")) {
+                            try {
+                                breakpoints.add(Integer.parseInt(num.trim()));
+                            } catch (NumberFormatException e) {
+                                // Ignora lixo ou formatação errada
+                            }
+                        }
+                    }
+                }
+
+
                 //System.out.println(ConsoleTheme.TEXT + ">> 5. A iniciar Interpretador..." + ConsoleTheme.RESET);
                 Interpreter interpreter = new Interpreter(this.registry, currentDirectory);
+                interpreter.activeBreakpoints.addAll(breakpoints);
+
+
 
                 XplBootstrapper.bootstrap(interpreter);
 

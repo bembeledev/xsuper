@@ -63,4 +63,5 @@ public enum TokenType {
     AT, ARROW,//=>
     MODULE, IMPORT, EXPORT, ALL,
     GLOBAL, PREFIX, SEALED, DOUBLE_COLON, DO, WHILE, LISTENER, USE,
+    DEBUGGER, // Para a palavra 'debugger'
 }

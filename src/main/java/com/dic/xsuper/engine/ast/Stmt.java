@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public abstract class Stmt {
-
+    public int astLine = -1;
     public interface Visitor<R> {
         R visitExpressionStmt(ExpressionStmt stmt);
         R visitVarDeclStmt(VarDecl stmt);
@@ -33,6 +33,7 @@ public abstract class Stmt {
         R visitGlobalDeclStmt(GlobalDecl globalDecl);
         R visitDoWhileStmt(DoWhile doWhile);
         R visitWhileStmt(While aWhile);
+        R visitDebuggerStmt(Debugger stmt);
     }
 
     public abstract <R> R accept(Visitor<R> visitor);
@@ -844,6 +845,27 @@ public abstract class Stmt {
             return "While{" +
                     "condition=" + condition +
                     ", body=" + body +
+                    '}';
+        }
+    }
+
+    // Adiciona a classe do nó no fundo do ficheiro
+    public static class Debugger extends Stmt {
+        public final Token keyword;
+
+        public Debugger(Token keyword) {
+            this.keyword = keyword;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDebuggerStmt(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Debugger{" +
+                    "keyword=" + keyword +
                     '}';
         }
     }

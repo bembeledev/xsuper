@@ -31,6 +31,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Map<String, XPLModel> registry_model = new HashMap<>();
     private final Map<String, XplInterface> registry_Interfaces = new HashMap<>();
 
+    // ⭐ A LISTA DE BREAKPOINTS PARA A TUA IDE / FILEMANAGER ⭐
+    // A IDE pode fazer: interpreter.activeBreakpoints.add(15); antes de correr o script!
+    public final java.util.List<Integer> activeBreakpoints = new java.util.ArrayList<>();
 
     // Guarda o Metadado completo dos Tipos para podermos executar Listeners/Validadores!
     public final java.util.Map<String, Stmt.TypeAliasDecl> typeAliasMetadata = new java.util.HashMap<>();
@@ -194,10 +197,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     public void execute(Stmt stmt) {
-        // ⭐ VERIFICADOR DE SINAL DE MORTE (CANCELAMENTO) ⭐
+        if (stmt == null) return;
+
+        // =========================================================================
+        // ⭐ 1. SINAL DE MORTE (Cancela a execução a pedido da IDE / Botão Stop)
+        // =========================================================================
         if (Thread.currentThread().isInterrupted()) {
             throw new ControlFlow.RuntimeError(null, "Thread XPL foi morta e abortada com sucesso.");
         }
+
+        // =========================================================================
+        // ⭐ 2. ALFÂNDEGA DO DEBUGGER (Paragem por linha configurada pela IDE)
+        // =========================================================================
+        if (stmt.astLine != -1 && this.activeBreakpoints.contains(stmt.astLine)) {
+            // ⭐ Cria um mini token temporal apenas para mostrar a linha correta no log!
+            Token fakeToken = new Token(TokenType.IDENTIFIER, "", null, stmt.astLine, 0, null);
+            triggerDebugger(fakeToken, "IDE Breakpoint -> Linha " + stmt.astLine);
+        }
+
+        // =========================================================================
+        // ⭐ 3. EXECUÇÃO NORMAL DA AST
+        // =========================================================================
         stmt.accept(this);
     }
 
@@ -1211,6 +1231,53 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
         }
         return null;
+    }
+
+    @Override
+    public Void visitDebuggerStmt(Stmt.Debugger stmt) {
+        // Quando o XPL ler 'debugger;', chama o Motor Interativo!
+        triggerDebugger(stmt.keyword, "Instrução 'debugger;'");
+        return null;
+    }
+
+    // =========================================================================
+    // ⭐ O MOTOR INTERATIVO DE DEBUGGING (REPL) ⭐
+    // =========================================================================
+    private void triggerDebugger(Token token, String triggerSource) {
+        String path = (token != null && token.filePath != null) ? token.filePath : "Script";
+        int line = (token != null) ? token.line : 0;
+
+        System.out.println("\n" + ConsoleTheme.TEXT + "==========================================================");
+        System.out.println("🛑 BREAKPOINT ATIVADO (" + triggerSource + ")");
+        System.out.println("📍 Ficheiro: " + path + " | Linha: " + line);
+        System.out.println("💡 Escreve o nome de uma variável para inspecionar o valor, ou 'c' para continuar.");
+        System.out.println("==========================================================" + ConsoleTheme.RESET);
+
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+
+        // A Thread do XPL fica trancada neste loop até tu dares ordem de soltura!
+        while (true) {
+            System.out.print("\033[33mdebug>\033[0m "); // Amarelo
+            if (!scanner.hasNextLine()) break;
+
+            String command = scanner.nextLine().trim();
+
+            if (command.equals("c") || command.equals("continue")) {
+                System.out.println(ConsoleTheme.TEXT + "▶ A retomar a execução do motor..." + ConsoleTheme.RESET);
+                break; // Quebra o loop e o código XPL volta a correr!
+            }
+
+            if (command.isEmpty()) continue;
+
+            // Tenta avaliar o que tu escreveste
+            try {
+                // Busca a variável na memória exata onde o motor pausou
+                Object value = this.environment.get(command);
+                System.out.println("=> " + stringify(value));
+            } catch (RuntimeException e) {
+                System.err.println("A variável '" + command + "' não existe no escopo atual.");
+            }
+        }
     }
 
     // Auxiliar seguro para garantir que a condição avaliada é um Boolean nativo do XPL

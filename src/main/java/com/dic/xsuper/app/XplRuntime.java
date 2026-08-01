@@ -14,6 +14,7 @@ import com.dic.xsuper.utils.ConsoleTheme;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class XplRuntime {
@@ -79,8 +80,27 @@ public class XplRuntime {
                 projectRoot = Paths.get("").toAbsolutePath().normalize();
             }
 
-            Interpreter interpreter = new Interpreter(registry, projectRoot);
+            // Exemplo de como capturar no teu RunXplCmd.java
+            List<Integer> breakpoints = new ArrayList<>();
 
+            for (String arg : args) {
+                if (arg.startsWith("--breakpoints=")) {
+                    // Corta o prefixo e apanha apenas "6,15,42"
+                    String numbersStr = arg.substring("--breakpoints=".length());
+
+                    // Divide pela vírgula e converte para Inteiros
+                    for (String num : numbersStr.split(",")) {
+                        try {
+                            breakpoints.add(Integer.parseInt(num.trim()));
+                        } catch (NumberFormatException e) {
+                            // Ignora lixo ou formatação errada
+                        }
+                    }
+                }
+            }
+
+            Interpreter interpreter = new Interpreter(registry, projectRoot);
+            interpreter.activeBreakpoints.addAll(breakpoints);
             XplBootstrapper.bootstrap(interpreter);
 
             // 4. Injetar a Headless Bridge
