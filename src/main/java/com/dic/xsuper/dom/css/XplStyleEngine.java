@@ -43,7 +43,7 @@ public class XplStyleEngine {
      * Isto evita poluir o ambiente global do XPL.
      */
     public void compileVariables() {
-        Pattern varPattern = Pattern.compile("var\\((--[^)]+)\\)");
+        Pattern varPattern =Pattern.compile("var\\(\\s*(--[^\\s)]+)\\s*\\)");
 
         for (Map<String, String> declarations : rules.values()) {
             for (Map.Entry<String, String> entry : declarations.entrySet()) {

@@ -132,7 +132,6 @@ let htmlView = """
             <!-- PAINEL LATERAL -->
             <div class="painel-lateral">
                 <span style="font-size: 12px; font-weight: bold; color: #94a3b8; letter-spacing: 1px;">EXPLORADOR</span>
-
                 <!-- ⭐ LISTA DE FICHEIROS (A usar o 'menu-ficheiro') ⭐ -->
                 <div class="item-lista" context-menu="menu-ficheiro">📄 main.xpl</div>
                 <div class="item-lista" context-menu="menu-ficheiro">📄 index.html</div>
@@ -142,19 +141,17 @@ let htmlView = """
             <!-- ÁREA DO EDITOR (A usar o 'menu-editor') -->
             <!-- Repara no flex-grow: 1 -> Agora vai esticar perfeitamente! -->
             <div style="display: flex; flex-direction: column; flex-grow: 1; padding: 15px;" context-menu="menu-editor">
-
                 <tabs tab-active-color="#c678dd" tab-inactive-bg="#282c34" style="flex-grow: 1;">
                     <tab title="main.xpl" active="true">
-
-                        <editor id="codigo-principal"
-                                content="{codigoDemo}"
-                                syntax="{regrasSintaxe}"
-                                line-numbers="true"
-                                style="background-color: #282c34; flex-grow: 1;" />
-
+                        <editor
+                            id="codigo-principal"
+                            content="{codigoDemo}"
+                            syntax="{regrasSintaxe}"
+                            line-numbers="true"
+                            style="background-color: #282c34; flex-grow: 1;"
+                        />
                     </tab>
                 </tabs>
-
             </div>
         </div>
 
@@ -176,5 +173,5 @@ let htmlView = """
 // 4. BOOT DA ENGINE
 // ============================================================
 __ui_engine.loadView(htmlView);
-__ui_engine.renderCycle();
+// __ui_engine.renderCycle();
 __ui_engine.showWindow("Teste de Context Menu e Layout W3C", 1100, 700);

@@ -46,18 +46,18 @@ public class XplCssResolver {
 
             // Se contiver var(, tentar resolver
             if (str.contains("var(")) {
-                // Remover aspas se existirem
                 if (str.startsWith("\"") && str.endsWith("\"")) {
                     str = str.substring(1, str.length() - 1);
                 }
-                // Resolver a variável
-                java.util.regex.Pattern p = java.util.regex.Pattern.compile("var\\((--[^)]+)\\)");
+
+                // ⭐ A MESMA REGEX AQUI!
+                java.util.regex.Pattern p = java.util.regex.Pattern.compile("var\\(\\s*(--[^\\s)]+)\\s*\\)");
                 java.util.regex.Matcher m = p.matcher(str);
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 while (m.find()) {
                     String varName = m.group(1);
                     String resolved = rootVariables.getOrDefault(varName, "");
-                    m.appendReplacement(sb, resolved);
+                    m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(resolved));
                 }
                 m.appendTail(sb);
                 return sb.toString();

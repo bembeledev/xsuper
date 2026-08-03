@@ -708,6 +708,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             model.addField(field);
         }
 
+        // 1. Injeta os Decoradores estáticos (Ex: @Serializable)
+        if (stmt.decorators != null && !stmt.decorators.isEmpty()) {
+            model.decoratorNodes.addAll(stmt.decorators);
+        }
+
+        // 2. Injeta os Listeners reativos (Ex: &Validate)
+        if (stmt.listeners != null && !stmt.listeners.isEmpty()) {
+            model.decoratorNodes.addAll(stmt.listeners);
+        }
 
         registry_model.put(modelName, model);
         this.environment.defineConst(modelName, model);
@@ -830,16 +839,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 // =====================================================================
                 // ⭐ A SENTENÇA DO @Override (Fail-Fast)
                 // =====================================================================
-                // REGRA 1: Prometeu sobrepor, mas escreveu mal o nome ou não existe?
-                if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
-                    throw new ControlFlow.RuntimeError(method.name,
-                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
-                }
+                boolean isConstructor = method.name.lexeme.equals("init"); // ⭐ NOVO
 
-                // REGRA 2: Sobrepôs em silêncio sem colocar a placa de @Override?
-                if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
-                    throw new ControlFlow.RuntimeError(method.name,
-                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+                if (!isConstructor) { // ⭐ SÓ APLICA AS REGRAS SE NÃO FOR O CONSTRUTOR
+                    // REGRA 1: Prometeu sobrepor, mas escreveu mal o nome ou não existe?
+                    if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
+                        throw new ControlFlow.RuntimeError(method.name,
+                                "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
+                    }
+
+                    // REGRA 2: Sobrepôs em silêncio sem colocar a placa de @Override?
+                    if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
+                        throw new ControlFlow.RuntimeError(method.name,
+                                "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+                    }
                 }
 
                 // 4. Se sobreviveu à auditoria, adiciona finalmente o método à classe!
@@ -926,14 +939,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             // =====================================================================
             // ⭐ A SENTENÇA DO @Override (Fail-Fast)
             // =====================================================================
-            if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
-                throw new ControlFlow.RuntimeError(method.name,
-                        "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
-            }
+            boolean isConstructor = method.name.lexeme.equals("init"); // ⭐ NOVO
 
-            if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
-                throw new ControlFlow.RuntimeError(method.name,
-                        "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+            if (!isConstructor) { // ⭐ SÓ APLICA AS REGRAS SE NÃO FOR O CONSTRUTOR
+                // REGRA 1: Prometeu sobrepor, mas escreveu mal o nome ou não existe?
+                if (hasOverrideDecorator && !overridesSuper && !fulfillsInterface) {
+                    throw new ControlFlow.RuntimeError(method.name,
+                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não está a sobrepor nenhum método da superclasse nem a cumprir nenhum contrato de interface.");
+                }
+
+                // REGRA 2: Sobrepôs em silêncio sem colocar a placa de @Override?
+                if (!hasOverrideDecorator && (overridesSuper || fulfillsInterface)) {
+                    throw new ControlFlow.RuntimeError(method.name,
+                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com o decorador @Override.");
+                }
             }
 
             // 4. Se sobreviveu à auditoria, adiciona finalmente o método ao modelo ativo!
@@ -1089,6 +1108,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             this.registry_model.put(decName, modelo);
         }
 
+
+        // =====================================================================
+        // ⭐ MAGIA DO COMPILADOR: INJEÇÃO SINTÁTICA IMPLÍCITA ⭐
+        // O motor adiciona 'target', 'property' e 'value' aos campos do Listener!
+        // =====================================================================
+        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
+        TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
+        TypeNode stringType = new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0));
+
+        if (!modelo.fields.containsKey("target")) {
+            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "target", null, 0, 0), anyType));
+            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "property", null, 0, 0), stringType));
+            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "value", null, 0, 0), anyType));
+        }
+
+
         // ⭐ LÊ OS DADOS (FIELDS) ⭐
         if (stmt.fields != null) {
             for (Stmt.FieldDecl campo : stmt.fields) {
@@ -1141,13 +1176,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 if (listenerModel.metaSetHook != null) {
                     Stmt.Function onAssignFunc = listenerModel.findMethod(listenerModel.metaSetHook);
                     if (onAssignFunc != null) {
+
+                        // ⭐ O TARGET É A API REFLECT
+                        listenerInstance.fields.put("target", com.dic.xsuper.engine.natives.models.ReflectNativeModel.createReflectionInstance(value, this, null));
+                        listenerInstance.fields.put("event", "SET");
+                        listenerInstance.fields.put("property", originToken.lexeme);
+                        listenerInstance.fields.put("value", value);
+
                         XplFunction onAssignCallable = new XplFunction(onAssignFunc, listenerInstance.klass.closure, listenerModel);
 
-                        java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
-                        hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value))); // O novo valor validado
-
                         try {
-                            onAssignCallable.bind(listenerInstance).call(this, hookArgs);
+                            // ⭐ ZERO ARGUMENTOS
+                            onAssignCallable.bind(listenerInstance).call(this, new java.util.ArrayList<>());
                         } catch (ControlFlow.RuntimeError e) {
                             throw new ControlFlow.RuntimeError(originToken, "Violação de Tipo ('" + typeName + "'): " + e.getMessage());
                         }
@@ -1180,15 +1220,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             execute(stmt.declaration);
             String symbolName = null;
             Token symbolToken = exportTokenBase;
-            if (stmt.declaration instanceof Stmt.DeclareDecl d) {
-                symbolName = d.name.lexeme;
-                symbolToken = d.name;
-            } else if (stmt.declaration instanceof Stmt.Function f) {
-                symbolName = f.name.lexeme;
-                symbolToken = f.name;
-            } else if (stmt.declaration instanceof Stmt.VarDecl v) {
-                symbolName = v.name.lexeme;
-                symbolToken = v.name;
+            switch (stmt.declaration) {
+                case Stmt.DeclareDecl d -> {
+                    symbolName = d.name.lexeme;
+                    symbolToken = d.name;
+                }
+                case Stmt.Function f -> {
+                    symbolName = f.name.lexeme;
+                    symbolToken = f.name;
+                }
+                case Stmt.VarDecl v -> {
+                    symbolName = v.name.lexeme;
+                    symbolToken = v.name;
+                }
+                default -> {
+                }
             }
 
             if (symbolName != null) {
@@ -1291,6 +1337,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         java.util.Scanner scanner = new java.util.Scanner(System.in);
 
         // A Thread do XPL fica trancada neste loop até tu dares ordem de soltura!
+        label:
         while (true) {
             System.out.print("\033[33mdebug>\033[0m "); // Amarelo
             if (!scanner.hasNextLine()) break;
@@ -1298,31 +1345,38 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             String command = scanner.nextLine().trim();
 
             // ⭐ NOVO: O Comando "Step"
-            if (command.equals("s") || command.equals("step")) {
-                this.isStepping = true;
-                break; // Levanta a barreira e pára imediatamente na próxima linha da AST!
-            }
+            switch (command) {
+                case "s":
+                case "step":
+                    this.isStepping = true;
+                    break label; // Levanta a barreira e pára imediatamente na próxima linha da AST!
 
-            // O Comando "Continue"
-            if (command.equals("c") || command.equals("continue")) {
-                this.isStepping = false;      // Desliga o modo passo-a-passo
-                this.lastSteppedLine = -1;    // Limpa a memória de rastreio
-                System.out.println(ConsoleTheme.TEXT + "▶ A retomar a execução do motor..." + ConsoleTheme.RESET);
-                break; // Levanta a barreira e corre até ao próximo Breakpoint!
-            }
 
-            // ⭐ NOVO: O Comando "Stack"
-            if (command.equals("stack") || command.equals("bt")) {
-                System.out.println(ConsoleTheme.TEXT + "📍 Call Stack atual:" + ConsoleTheme.RESET);
-                if (this.callStack.isEmpty()) {
-                    System.out.println("  0. <Escopo Global>");
-                } else {
-                    for (int i = this.callStack.size() - 1; i >= 0; i--) {
-                        System.out.println("  " + (i + 1) + ". " + this.callStack.get(i));
+                // O Comando "Continue"
+                case "c":
+                case "continue":
+                    this.isStepping = false;      // Desliga o modo passo-a-passo
+
+                    this.lastSteppedLine = -1;    // Limpa a memória de rastreio
+
+                    System.out.println(ConsoleTheme.TEXT + "▶ A retomar a execução do motor..." + ConsoleTheme.RESET);
+                    break label; // Levanta a barreira e corre até ao próximo Breakpoint!
+
+
+                // ⭐ NOVO: O Comando "Stack"
+                case "stack":
+                case "bt":
+                    System.out.println(ConsoleTheme.TEXT + "📍 Call Stack atual:" + ConsoleTheme.RESET);
+                    if (this.callStack.isEmpty()) {
+                        System.out.println("  0. <Escopo Global>");
+                    } else {
+                        for (int i = this.callStack.size() - 1; i >= 0; i--) {
+                            System.out.println("  " + (i + 1) + ". " + this.callStack.get(i));
+                        }
+                        System.out.println("  0. <Escopo Global>");
                     }
-                    System.out.println("  0. <Escopo Global>");
-                }
-                continue; // Volta a pedir input no terminal
+                    continue; // Volta a pedir input no terminal
+
             }
 
             if (command.isEmpty()) continue;
@@ -1387,10 +1441,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else {
             for (Stmt.ImportSymbol sym : stmt.symbols) {
                 String targetName = sym.originalName.lexeme;
+
+                // O símbolo não está na lista de exports?
                 if (!module.exports.containsKey(targetName)) {
+
+                    // ⭐ A CLAREZA DO ERRO: É Dependência Circular?
+                    if (module.isCompiling) {
+                        throw new ControlFlow.RuntimeError(sym.originalName,
+                                "Dependência Circular Detetada 🔄: O módulo '" + stmt.modulePath +
+                                        "' ainda está a ser compilado. Ele foi importado de volta antes de conseguir exportar o símbolo '" +
+                                        targetName + "'. Verifique a arquitetura para evitar que os módulos se importem mutuamente.");
+                    }
+
+                    // Erro normal (O utilizador escreveu mal ou esqueceu-se do 'export')
                     throw new ControlFlow.RuntimeError(sym.originalName,
-                            "O módulo '" + stmt.modulePath + "' não exporta o símbolo '" + targetName + "'.");
+                            "Erro de Importação: O módulo '" + stmt.modulePath + "' terminou de compilar, mas não exporta o símbolo '" + targetName + "'.");
                 }
+
                 Object importedValue = module.exports.get(targetName);
                 String baseLocalName = (sym.aliasName != null) ? sym.aliasName.lexeme : targetName;
                 String nomeFinal = sufixoPrefixo + baseLocalName;
@@ -1470,15 +1537,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return currentParent;
     }
 
-    private java.io.File resolvePhysicalFile(String relativePath) {
-        relativePath = relativePath.replace("\\", "/");
-        String[] searchPaths = {".", "src", "lib"};
-        for (String base : searchPaths) {
-            java.io.File f = new java.io.File(base, relativePath);
-            if (f.exists() && f.isFile()) return f;
-        }
-        return null;
-    }
 
 
     // Detetor proativo de buracos negros (Ciclos infinitos):
@@ -2111,7 +2169,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     if (dec.klass.model.metaGetHook != null) {
                         Stmt.Function hookFunc = dec.klass.model.findMethod(dec.klass.model.metaGetHook);
                         if (hookFunc != null) {
-                            new XplFunction(hookFunc, dec.klass.closure, dec.klass.model).bind(dec).call(this, java.util.Collections.emptyList());
+
+                            // ⭐ O TARGET É A API REFLECT
+                            dec.fields.put("target", com.dic.xsuper.engine.natives.models.ReflectNativeModel.createReflectionInstance(instance, this, null));
+                            dec.fields.put("event", "GET");
+                            dec.fields.put("property", expr.name.lexeme);
+                            dec.fields.put("value", instance.fields.get(expr.name.lexeme));
+                            // ⭐ ZERO ARGUMENTOS!
+                            new XplFunction(hookFunc, dec.klass.closure, dec.klass.model).bind(dec).call(this, new java.util.ArrayList<>());
                         }
                     }
                 }
@@ -2343,12 +2408,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 boolean overridesSuper = (anonModel.superclass != null && anonModel.superclass.findMethod(method.name.lexeme) != null);
                 boolean fulfillsInterface = (targetInterface != null && targetInterface.requiredMethods.containsKey(method.name.lexeme));
 
-                if (hasOverride && !overridesSuper && !fulfillsInterface) {
-                    throw new ControlFlow.RuntimeError(method.name, "Erro de Sobreposição: O método '" + method.name.lexeme + "()' na classe anónima tem @Override mas não pertence à base.");
+                boolean isConstructor = method.name.lexeme.equals("init"); // ⭐ NOVO
+
+                if (!isConstructor) { // ⭐ SÓ JULGA SE NÃO FOR O CONSTRUTOR
+                    if (hasOverride && !overridesSuper && !fulfillsInterface) {
+                        throw new ControlFlow.RuntimeError(method.name, "Erro de Sobreposição: O método '" + method.name.lexeme + "()' na classe anónima tem @Override mas não pertence à base.");
+                    }
+                    if (!hasOverride && (overridesSuper || fulfillsInterface)) {
+                        throw new ControlFlow.RuntimeError(method.name, "Decorador Ausente: O método '" + method.name.lexeme + "()' na classe anónima exige @Override.");
+                    }
                 }
-                if (!hasOverride && (overridesSuper || fulfillsInterface)) {
-                    throw new ControlFlow.RuntimeError(method.name, "Decorador Ausente: O método '" + method.name.lexeme + "()' na classe anónima exige @Override.");
-                }
+
                 anonModel.addMethod(method);
             }
 
@@ -2467,10 +2537,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                     if (dec.klass.model.metaSetHook != null) {
                         Stmt.Function hookFunc = dec.klass.model.findMethod(dec.klass.model.metaSetHook);
                         if (hookFunc != null) {
+
+                            // ⭐ O TARGET AGORA É O OBJETO DA NOSSA API 'REFLECT'!
+                            dec.fields.put("target", com.dic.xsuper.engine.natives.models.ReflectNativeModel.createReflectionInstance(instance, this, null));
+                            dec.fields.put("event", "SET");
+                            dec.fields.put("property", expr.name.lexeme);
+                            dec.fields.put("value", value);
+
                             XplFunction hookCallable = new XplFunction(hookFunc, dec.klass.closure, dec.klass.model);
-                            java.util.List<Expr.CallArg> hookArgs = new java.util.ArrayList<>();
-                            hookArgs.add(new Expr.CallArg(null, new Expr.Literal(value))); // Envia o novo valor!
-                            hookCallable.bind(dec).call(this, hookArgs);
+
+                            // ⭐ ZERO ARGUMENTOS! O XPL fica super limpo.
+                            hookCallable.bind(dec).call(this, new java.util.ArrayList<>());
                         }
                     }
                 }
@@ -3427,6 +3504,5 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return ConsoleTheme.TEXT;
     }
-
-
+    
 }

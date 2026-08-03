@@ -16,6 +16,21 @@ public class W3cCssAdapter {
     public static void applyW3cToNative(Node fxNode, Map<String, String> w3cStyles, StringBuilder currentFxCss) {
         if (fxNode == null || w3cStyles == null) return;
 
+
+        // ════════════════════════════════════════════════════════════════════════
+        // ⭐ ESCUDO ANTI-WARNINGS DO JAVAFX
+        // O XplStyleEngine JÁ resolveu as variáveis do utilizador!
+        // Aqui apenas limpamos o que o JavaFX não suporta via String nativa.
+        // ════════════════════════════════════════════════════════════════════════
+        String safeBaseCss = currentFxCss.toString()
+                .replaceAll("-fx-transform\\s*:[^;]+;", "")
+                .replaceAll("-fx-transition\\s*:[^;]+;", "")
+                .replaceAll("-fx-animation\\s*:[^;]+;","");
+
+        currentFxCss.setLength(0);
+        currentFxCss.append(safeBaseCss);
+
+
         // ─── 1. Suporte Nativo a Opacidade ──────────────────────────────────────
         if (w3cStyles.containsKey("opacity")) {
             try { fxNode.setOpacity(Double.parseDouble(w3cStyles.get("opacity"))); } catch (Exception ignored) {}

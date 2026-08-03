@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Pessoas</title>
+    <style>
+        /* ===== RESET ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== HEADER / NAV ===== */
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+        }
+        .logo span {
+            color: #6366f1;
+        }
+
+        .nav {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #475569;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+        .nav a:hover {
+            color: #6366f1;
+        }
+        .nav a.active {
+            color: #6366f1;
+            font-weight: 600;
+        }
+        .nav .btn {
+            background: #6366f1;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 99px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .nav .btn:hover {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            flex: 1;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .page-header .actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 99px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #0f172a;
+            padding: 10px 24px;
+            border-radius: 99px;
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+            transition: background 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrapper {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        table thead {
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        table th {
+            text-align: left;
+            padding: 16px 20px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0f172a;
+        }
+
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Badge de status */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .badge.active {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        .badge.inactive {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .badge.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #6366f1;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-cell .name {
+            font-weight: 500;
+        }
+
+        .user-cell .email {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .actions-cell .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+            font-size: 1rem;
+        }
+        .actions-cell .icon-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .actions-cell .icon-btn.delete:hover {
+            color: #dc2626;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+            padding: 24px 32px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                padding: 16px;
+            }
+            .nav {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .page-header .actions {
+                justify-content: center;
+            }
+            table th,
+            table td {
+                padding: 12px 16px;
+                font-size: 0.85rem;
+            }
+            .user-cell .email {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 12px;
+            }
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+            .actions-cell .icon-btn span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="logo">Nexus<span>.</span></div>
+        <nav class="nav">
+            <a href="#">Início</a>
+            <a href="#" class="active">Pessoas</a>
+            <a href="#">Sobre</a>
+            <a href="#">Contato</a>
+            <a href="#" class="btn">Entrar</a>
+        </nav>
+    </header>
+
+    <!-- ===== MAIN ===== -->
+    <main class="container">
+        <div class="page-header">
+            <h1>Pessoas</h1>
+            <div class="actions">
+                <a href="#" class="btn-primary">+ Nova pessoa</a>
+                <button class="btn-outline">Exportar</button>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Status</th>
+                            <th>Função</th>
+                            <th>Último acesso</th>
+                            <th style="text-align: right;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linha 1 -->
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">AR</div>
+                                    <div>
+                                        <div class="name">Ana Ribeiro</div>
+                                        <span class="email">ana.ribeiro@email.com</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge active">Ativo</span></td>
+                            <td>Administradora</td>
+                            <td>12/02/2026 14:32</td>
+                            <td style="text-align: right;">
+                                <div class="actions-cell">
+                                    <button class="icon-btn" title="Editar">✏️</button>
+                                    <button class="icon-btn delete" title="Excluir">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Linha 2 -->
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">JC</div>
+                                    <div>
+                                        <div class="name">João Costa</div>
+                                        <span class="email">joao.costa@email.com</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge pending">Pendente</span></td>
+                            <td>Desenvolvedor</td>
+                            <td>10/02/2026 09:15</td>
+                            <td style="text-align: right;">
+                                <div class="actions-cell">
+                                    <button class="icon-btn" title="Editar">✏️</button>
+                                    <button class="icon-btn delete" title="Excluir">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Linha 3 -->
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">MS</div>
+                                    <div>
+                                        <div class="name">Mariana Souza</div>
+                                        <span class="email">mariana.souza@email.com</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge inactive">Inativo</span></td>
+                            <td>Designer</td>
+                            <td>05/02/2026 16:40</td>
+                            <td style="text-align: right;">
+                                <div class="actions-cell">
+                                    <button class="icon-btn" title="Editar">✏️</button>
+                                    <button class="icon-btn delete" title="Excluir">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Linha 4 -->
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">PL</div>
+                                    <div>
+                                        <div class="name">Pedro Lima</div>
+                                        <span class="email">pedro.lima@email.com</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge active">Ativo</span></td>
+                            <td>Gerente</td>
+                            <td>11/02/2026 11:02</td>
+                            <td style="text-align: right;">
+                                <div class="actions-cell">
+                                    <button class="icon-btn" title="Editar">✏️</button>
+                                    <button class="icon-btn delete" title="Excluir">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Linha 5 -->
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">CF</div>
+                                    <div>
+                                        <div class="name">Carla Fernandes</div>
+                                        <span class="email">carla.fernandes@email.com</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge pending">Pendente</span></td>
+                            <td>Analista</td>
+                            <td>09/02/2026 08:30</td>
+                            <td style="text-align: right;">
+                                <div class="actions-cell">
+                                    <button class="icon-btn" title="Editar">✏️</button>
+                                    <button class="icon-btn delete" title="Excluir">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        &copy; 2026 Nexus. Todos os direitos reservados.
+    </footer>
+
+</body>
+</html>

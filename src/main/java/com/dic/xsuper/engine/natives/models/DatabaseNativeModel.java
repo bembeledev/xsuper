@@ -133,7 +133,7 @@ public class DatabaseNativeModel {
                         }
                     }
                     case "transaction": {
-                        Object funcObj = args.get(0);
+                        Object funcObj = args.getFirst();
                         if (!(funcObj instanceof XplFunction func)) {
                             throw new ControlFlow.RuntimeError(null, "transaction espera uma função () => { ... }");
                         }
@@ -223,28 +223,18 @@ public class DatabaseNativeModel {
         private void setParameters(PreparedStatement stmt, List<Object> params) throws SQLException {
             for (int i = 0; i < params.size(); i++) {
                 Object val = params.get(i);
-                if (val == null) {
-                    stmt.setNull(i + 1, Types.NULL);
-                } else if (val instanceof String) {
-                    stmt.setString(i + 1, (String) val);
-                } else if (val instanceof Number) {
-                    stmt.setObject(i + 1, val);
-                } else if (val instanceof Boolean) {
-                    stmt.setBoolean(i + 1, (Boolean) val);
-                } else if (val instanceof Date) {
-                    stmt.setDate(i + 1, (Date) val);
-                } else if (val instanceof LocalDate) {
-                    stmt.setDate(i + 1, java.sql.Date.valueOf((LocalDate) val));
-                } else if (val instanceof LocalDateTime) {
-                    stmt.setTimestamp(i + 1, java.sql.Timestamp.valueOf((LocalDateTime) val));
-                } else if (val instanceof LocalTime) {
-                    stmt.setTime(i + 1, java.sql.Time.valueOf((LocalTime) val));
-                } else if (val instanceof java.util.Date) {
-                    stmt.setDate(i + 1, new java.sql.Date(((java.util.Date) val).getTime()));
-                } else if (val instanceof byte[]) {
-                    stmt.setBytes(i + 1, (byte[]) val);
-                } else {
-                    stmt.setObject(i + 1, val);
+                switch (val) {
+                    case null -> stmt.setNull(i + 1, Types.NULL);
+                    case String string -> stmt.setString(i + 1, string);
+                    case Number number -> stmt.setObject(i + 1, val);
+                    case Boolean b -> stmt.setBoolean(i + 1, b);
+                    case Date date -> stmt.setDate(i + 1, date);
+                    case LocalDate localDate -> stmt.setDate(i + 1, Date.valueOf(localDate));
+                    case LocalDateTime localDateTime -> stmt.setTimestamp(i + 1, Timestamp.valueOf(localDateTime));
+                    case LocalTime localTime -> stmt.setTime(i + 1, Time.valueOf(localTime));
+                    case java.util.Date date -> stmt.setDate(i + 1, new Date(date.getTime()));
+                    case byte[] bytes -> stmt.setBytes(i + 1, bytes);
+                    default -> stmt.setObject(i + 1, val);
                 }
             }
         }
@@ -261,11 +251,9 @@ public class DatabaseNativeModel {
                         columnName = meta.getColumnName(i);
                     }
                     Object value = rs.getObject(i);
-                    if (value instanceof Blob) {
-                        Blob blob = (Blob) value;
+                    if (value instanceof Blob blob) {
                         value = Base64.getEncoder().encodeToString(blob.getBytes(1, (int) blob.length()));
-                    } else if (value instanceof Clob) {
-                        Clob clob = (Clob) value;
+                    } else if (value instanceof Clob clob) {
                         value = clob.getSubString(1, (int) clob.length());
                     } else if (value instanceof Timestamp) {
                         value = ((Timestamp) value).toLocalDateTime();
@@ -365,11 +353,9 @@ public class DatabaseNativeModel {
                             columnName = meta.getColumnName(i);
                         }
                         Object value = rs.getObject(i);
-                        if (value instanceof Blob) {
-                            Blob blob = (Blob) value;
+                        if (value instanceof Blob blob) {
                             value = Base64.getEncoder().encodeToString(blob.getBytes(1, (int) blob.length()));
-                        } else if (value instanceof Clob) {
-                            Clob clob = (Clob) value;
+                        } else if (value instanceof Clob clob) {
                             value = clob.getSubString(1, (int) clob.length());
                         } else if (value instanceof Timestamp) {
                             value = ((Timestamp) value).toLocalDateTime();

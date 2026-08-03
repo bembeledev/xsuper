@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload · Nexus</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+
+        .header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: 700; color: #0f172a; text-decoration: none; }
+        .logo span { color: #6366f1; }
+
+        .container { flex: 1; max-width: 800px; margin: 40px auto; width: 100%; padding: 0 24px; }
+
+        .upload-card { background: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; text-align: center; }
+        .upload-card h2 { margin-bottom: 8px; font-size: 1.8rem; }
+        .upload-card p { color: #64748b; margin-bottom: 24px; font-size: 0.95rem; }
+
+        .drop-zone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px 20px; background: #f8fafc; cursor: pointer; transition: all 0.2s; display: block; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #6366f1; background: #eef2ff; }
+        .drop-zone input[type="file"] { display: none; }
+
+        .btn-select { background: #6366f1; color: #fff; padding: 10px 24px; border-radius: 99px; font-weight: 600; display: inline-block; cursor: pointer; transition: background 0.2s; }
+        .btn-select:hover { background: #4f46e5; }
+
+        /* Botão Principal de Iniciar */
+        .btn-start { background: #10b981; color: #fff; padding: 14px 32px; border-radius: 12px; border: none; font-weight: 600; font-size: 1.1rem; width: 100%; margin-top: 24px; cursor: pointer; transition: background 0.2s, transform 0.1s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .btn-start:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
+        .btn-start:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.7; box-shadow: none; transform: none; }
+
+        /* Fila de Arquivos */
+        .queue { margin-top: 32px; text-align: left; max-height: 400px; overflow-y: auto; padding-right: 8px; }
+        .queue::-webkit-scrollbar { width: 6px; }
+        .queue::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .queue-item { background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid #e2e8f0; }
+        .queue-header { display: flex; justify-content: space-between; font-weight: 500; font-size: 0.95rem; }
+        .queue-status { color: #64748b; font-size: 0.8rem; font-weight: 600; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; }
+
+        .progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-fill { background: #6366f1; height: 100%; width: 0%; transition: width 0.3s ease; }
+
+        .controls { display: flex; gap: 8px; margin-top: 8px; justify-content: space-between; align-items: center; }
+        .controls-group button { background: #cbd5e1; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #334155; transition: all 0.2s; }
+        .controls-group button:hover { background: #94a3b8; color: white; }
+        .btn-remove { background: #fee2e2 !important; color: #ef4444 !important; }
+        .btn-remove:hover { background: #ef4444 !important; color: white !important; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <a href="/" class="logo">Nexus<span>.</span></a>
+</header>
+
+<div class="container">
+    <div class="upload-card">
+        <h2>Gestor de Arquivos</h2>
+        <p>Selecione os arquivos. Limites: Max 50MB no total, 20MB por arquivo.</p>
+
+        <!-- Zona de Upload -->
+        <label class="drop-zone" id="drop-zone">
+            <span class="btn-select">Selecionar Arquivos</span>
+            <p style="margin-top: 12px; margin-bottom: 0;">ou arraste e solte aqui</p>
+            <input type="file" id="file-input" multiple>
+        </label>
+
+        <!-- A Fila Visual -->
+        <div class="queue" id="queue-list"></div>
+
+        <!-- ⭐ O NOVO BOTÃO DE INICIAR (Desativado por padrão) -->
+        <button id="btn-start" class="btn-start" disabled>🚀 Iniciar Upload</button>
+    </div>
+</div>
+
+<script>
+    // =========================================================================
+    // 1. O ESTADO DA APLICAÇÃO (A Memória do Frontend)
+    // =========================================================================
+    const fileInput = document.getElementById('file-input');
+    const queueList = document.getElementById('queue-list');
+    const dropZone = document.getElementById('drop-zone');
+    const btnStart = document.getElementById('btn-start');
+
+    // A nossa fila real de arquivos na memória
+    let uploadQueue = [];
+
+    // =========================================================================
+    // 2. EVENTOS DE ARRASTAR E SELECIONAR
+    // =========================================================================
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) processSelectedFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) processSelectedFiles(e.target.files);
+        fileInput.value = ""; // Reseta o input para poder selecionar o mesmo arquivo duas vezes se apagado
+    });
+
+    // =========================================================================
+    // 3. LÓGICA DA FILA (Adicionar, Remover e Renderizar)
+    // =========================================================================
+    function processSelectedFiles(files) {
+        Array.from(files).forEach(file => {
+            // Cria um ID único local para a UI conseguir encontrar o arquivo
+            const localId = 'file_' + Math.random().toString(36).substr(2, 9);
+
+            uploadQueue.push({
+                localId: localId,
+                fileObj: file,
+                status: 'AGUARDANDO',
+                progress: 0,
+                serverId: null // Só será preenchido quando a API autorizar o Init
+            });
+        });
+        renderQueue();
+    }
+
+    function removerArquivo(localId) {
+        uploadQueue = uploadQueue.filter(item => item.localId !== localId);
+        renderQueue();
+    }
+
+    function renderQueue() {
+        queueList.innerHTML = ''; // Limpa a lista visual
+
+        let totalSize = 0;
+
+        uploadQueue.forEach(item => {
+            totalSize += item.fileObj.size;
+            const sizeMB = (item.fileObj.size / 1024 / 1024).toFixed(2);
+
+            const html = `
+                <div class="queue-item" id="${item.localId}">
+                    <div class="queue-header">
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;" title="${item.fileObj.name}">
+                            ${item.fileObj.name} <span style="color: #94a3b8; font-size: 0.85rem;">(${sizeMB} MB)</span>
+                        </span>
+                        <span class="queue-status" id="status_${item.localId}">${item.status}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="bar_${item.localId}" style="width: ${item.progress}%"></div>
+                    </div>
+                    <div class="controls">
+                        <span style="font-size: 0.8rem; color: #64748b;" id="percent_${item.localId}">${item.progress}%</span>
+                        <div class="controls-group">
+                            <button id="btn_pause_${item.localId}" onclick="alert('Irá pausar no próximo passo!')" disabled>Pausar</button>
+                            <button class="btn-remove" onclick="removerArquivo('${item.localId}')">Remover</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            queueList.insertAdjacentHTML('beforeend', html);
+        });
+
+        // 4. ATIVAR/DESATIVAR O BOTÃO DE INICIAR
+        // Se a fila tiver itens, ativamos o botão!
+        if (uploadQueue.length > 0) {
+            btnStart.disabled = false;
+            btnStart.textContent = `🚀 Iniciar Upload (${uploadQueue.length} arquivo${uploadQueue.length > 1 ? 's' : ''})`;
+        } else {
+            btnStart.disabled = true;
+            btnStart.textContent = `🚀 Iniciar Upload`;
+        }
+    }
+
+    // =========================================================================
+    // 5. O GATILHO (Preparando para os Workers)
+    // =========================================================================
+    btnStart.addEventListener('click', () => {
+        btnStart.disabled = true;
+        btnStart.textContent = "⏳ A Processar...";
+
+        // Remove os botões de "Remover" para não quebrar a lógica enquanto envia
+        document.querySelectorAll('.btn-remove').forEach(btn => btn.style.display = 'none');
+        document.querySelectorAll('[id^="btn_pause_"]').forEach(btn => btn.disabled = false);
+
+        alert("Botão clicado! A UI está pronta. No próximo passo, vamos injetar aqui a lógica de Chunking e os 5 Workers em simultâneo!");
+    });
+</script>
+
+</body>
+</html>

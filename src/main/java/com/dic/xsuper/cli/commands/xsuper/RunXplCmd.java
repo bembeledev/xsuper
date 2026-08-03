@@ -3,6 +3,7 @@ package com.dic.xsuper.cli.commands.xsuper;
 import com.dic.xsuper.app.XplBootstrapper;
 import com.dic.xsuper.cli.core.Command;
 import com.dic.xsuper.cli.core.CommandRegistry;
+
 import com.dic.xsuper.engine.core.Lexer;
 import com.dic.xsuper.engine.core.Parser;
 import com.dic.xsuper.engine.core.Interpreter;
@@ -97,6 +98,14 @@ public class RunXplCmd implements Command {
                     }
                 }
 
+                /*// ⭐ 2. O NOVO PORTÃO DE SEGURANÇA (ANALISADOR SEMÂNTICO)
+                SemanticAnalyzer analyzer = new SemanticAnalyzer(this.registry, currentDirectory);
+                boolean isCodeSafe = analyzer.analyze(statements);
+
+                if (!isCodeSafe) {
+                    System.out.println("⚠️ Execução abortada devido a erros de tipagem/semântica.");
+                    return null; // PÁRA TUDO! O Interpretador nunca chega a correr!
+                }*/
 
                 //System.out.println(ConsoleTheme.TEXT + ">> 5. A iniciar Interpretador..." + ConsoleTheme.RESET);
                 Interpreter interpreter = new Interpreter(this.registry, currentDirectory);
@@ -128,7 +137,7 @@ public class RunXplCmd implements Command {
 
                 // 3. Instancia a Engine passando o interpretador que vai correr o ficheiro.
                 // Isto vai automaticamente injetar '__ui_engine', 'document' e 'ui' nas globais!
-                                SuperUiEngine uiEngine = new SuperUiEngine(interpreter, headlessBridge);
+                                //SuperUiEngine uiEngine = new SuperUiEngine(interpreter, headlessBridge);
                 // ────────────────────────────────────────────────────────────────────────
 
                 interpreter.interpret(statements);

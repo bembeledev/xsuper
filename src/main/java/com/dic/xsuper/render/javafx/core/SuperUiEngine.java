@@ -938,8 +938,8 @@ public class SuperUiEngine extends XplInstance implements XplNativeObject {
     }
 
     public void setXplModel(String tagName, Object tagElement){
-        this.interpreter.registry_model.put(tagName,((XplClass)tagElement).model);
-        interpreter.globals.defineConst(tagName, tagElement);
+        //this.interpreter.registry_model.put(tagName,((XplClass)tagElement).model);
+        //interpreter.globals.defineConst(tagName, tagElement);
         componentRegistry.put(tagName, (XplClass)tagElement);
     }
 

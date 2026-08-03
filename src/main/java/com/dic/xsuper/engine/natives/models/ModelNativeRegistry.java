@@ -67,5 +67,9 @@ public class ModelNativeRegistry {
         ObserverNativeModel.Registry(interpreter);
 
         EventLoopNativeModel.Registry(interpreter);
+
+        SocketNativeModel.Registry(interpreter);
+
+        ReflectNativeModel.Registry(interpreter);
     }
 }

@@ -395,7 +395,7 @@ public abstract class NativeTag{
 
             // ⭐ A CURA PARA O WIDTH: 100% E DIMENSÕES FIXAS
             String widthStr = style.get("width");
-            if ("100%".equals(widthStr)) {
+            if ("100%".equals(widthStr) || "100vh".equals(widthStr)) {
                 // Se o elemento pedir 100%, dizemos-lhe para ocupar tudo o que o pai der
                 region.setMaxWidth(Double.MAX_VALUE);
             } else {
@@ -467,6 +467,17 @@ public abstract class NativeTag{
             // ⭐ A CURA DA SOMBRA (Injeta no StringBuilder!) ⭐
             if (!resolvedStyles.boxShadows.isEmpty()) {
                 css.append(generateBoxShadowCSS(resolvedStyles.boxShadows));
+            }
+        }
+
+        if (style.containsKey("backdrop-filter")) {
+            String blurVal = style.get("backdrop-filter");
+            if (blurVal.contains("blur")) {
+                // Extrai os pixeis (ex: de "blur(8px)" tira o 8)
+                double radius = Double.parseDouble(blurVal.replaceAll("[^0-9.]", ""));
+                // Aplica o efeito W3C nativamente no JavaFX!
+                javafx.scene.effect.BoxBlur blur = new javafx.scene.effect.BoxBlur(radius, radius, 3);
+                fxNode.setEffect(blur);
             }
         }
 

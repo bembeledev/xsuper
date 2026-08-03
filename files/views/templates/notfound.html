@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Não Encontrada · 404</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --text-primary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+        }
+
+        .error-code {
+            font-size: 7rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 16px;
+            text-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--accent);
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 12px 24px;
+            border-radius: 99px;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        <?xpl for { ?>
+
+        <?xpl  println("a{};"); ?>
+
+        <?xpl } ?>
+
+        .progress-bar {
+            background: #334155;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+        .progress-fill {
+            background: var(--accent);
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+        .timer-text {
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="error-code">404</div>
+    <h1>Página não encontrada</h1>
+    <p>A página que estás a procurar pode ter sido removida, alterada ou encontra-se temporariamente indisponível.</p>
+    <a href="/" class="btn">Voltar ao Início</a>
+    <br/>
+    <div>
+        <p class="timer-text">Redirecionando para a página inicial em <strong id="time">10</strong> segundos</p>
+        <div class="progress-bar">
+            <div id="progress" class="progress-fill" style="width: 100%"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var timeEl = document.getElementById('time');
+        var progressEl = document.getElementById('progress');
+
+        var totalSeconds = 1000;
+        var remaining = totalSeconds;
+        var tempo = 10;
+
+        // Atualiza a cada segundo
+        var interval = setInterval(function() {
+
+            remaining--;
+            if (remaining < 0) {
+                clearInterval(interval);
+                // Redireciona para a home
+                window.location.href = '/';
+                return;
+            }
+
+
+
+
+            if(remaining% 100 ==0){
+                tempo = remaining/100;
+            }
+
+            // Atualiza o texto
+            timeEl.textContent = tempo;
+
+            // Atualiza a barra de progresso (percentual restante)
+            var percent = (remaining / totalSeconds) * 100;
+            progressEl.style.width = percent + '%';
+        }, 10);
+    });
+</script>
+</body>
+</html>

@@ -17,19 +17,20 @@ import java.util.Map;
 
 public class XplModuleManager {
 
-    // A estrutura físsica de um módulo em RAM
+    // A estrutura física de um módulo em RAM
     public static class XplModule {
         public final String path;
         public final Map<String, Object> exports = new HashMap<>();
         public boolean exportAll = false;
         public Environment localEnvironment;
+        public boolean isCompiling = true;
 
         public XplModule(String path) {
             this.path = path;
         }
     }
 
-    // A memória cache global de módulos já carregados (Protege contra loops infinitos!)
+    // A memória cache global de módulos já carregados (Protege contra loops infinitos circulares!)
     public final Map<String, XplModule> moduleCache = new HashMap<>();
 
     // Ponteiro quântico para saber que módulo estamos a compilar neste momento
@@ -38,6 +39,12 @@ public class XplModuleManager {
     // Cofre do SDM
     private final Map<String, String> sdmDependencies = new HashMap<>();
     private final Path projectDirectory;
+
+    // =========================================================================
+    // ⭐ O ESCUDO ANTI-STACKOVERFLOW (Profundidade Máxima)
+    // =========================================================================
+    private int currentImportDepth = 0;
+    private static final int MAX_IMPORT_DEPTH = 100; // Limite razoável para qualquer projeto real
 
     public XplModuleManager(Path projectDirectory) {
         this.projectDirectory = projectDirectory;
@@ -67,10 +74,7 @@ public class XplModuleManager {
     public File resolvePhysicalFile(String relativePath) {
         relativePath = relativePath.replace("\\", "/");
 
-        // ⭐ 1. MÓDULOS LOCAIS DO UTILIZADOR (Prioridade Máxima)
-        // O motor verifica primeiro se o ficheiro existe no projeto atual (em src/, lib/, etc.)
-        // Isto garante que os ficheiros do programador nunca quebram e podem até
-        // sobrepor-se (shadowing) a bibliotecas externas se necessário.
+        // 1. MÓDULOS LOCAIS DO UTILIZADOR (Prioridade Máxima)
         String[] localSearchPaths = {".", "src", "lib"};
         for (String base : localSearchPaths) {
             File localFile = new File(base, relativePath);
@@ -79,157 +83,150 @@ public class XplModuleManager {
             }
         }
 
-        // ⭐ 2. MÓDULOS DO COFRE SDM (Inteligência de Isolamento)
-        // Se não encontrou localmente, verifica se o pacote pertence ao sdm.lock
+        // 2. MÓDULOS DO COFRE SDM (Inteligência de Isolamento)
         for (Map.Entry<String, String> dep : sdmDependencies.entrySet()) {
-            String pkgNamespace = dep.getKey(); // ex: com.dic.validators
-            String pkgPrefix = pkgNamespace.replace(".", "/"); // ex: com/dic/validators
+            String pkgNamespace = dep.getKey();
+            String pkgPrefix = pkgNamespace.replace(".", "/");
 
             if (relativePath.startsWith(pkgPrefix)) {
-                // Caminho absoluto guardado no lock (ex: C:\...\validators-1.0.0)
                 String absoluteVaultPath = dep.getValue();
 
-                // O que sobra do import após o namespace (ex: /Validators.xpl)
                 String leftover = relativePath.substring(pkgPrefix.length());
                 if (!leftover.startsWith("/")) leftover = "/" + leftover;
 
-                // Tentativa A: Estrutura perfeita (disk_path / src / namespace / ficheiro)
                 File isolatedFile = new File(absoluteVaultPath + "/src/" + pkgPrefix + leftover);
 
-                // Tentativa B (Fallback): Ficheiro na raiz da pasta src (sem subpastas do namespace)
                 if (!isolatedFile.exists()) {
                     isolatedFile = new File(absoluteVaultPath + "/src" + leftover);
                 }
 
-                // Tentativa C (Fallback): Ficheiro na raiz do pacote (sem pasta src)
                 if (!isolatedFile.exists()) {
                     isolatedFile = new File(absoluteVaultPath + leftover);
                 }
 
-                // Devolve o ficheiro do ambiente isolado
                 if (isolatedFile.exists() && isolatedFile.isFile()) {
                     return isolatedFile;
                 }
             }
         }
 
-        return null; // Módulo realmente não existe em lado nenhum
+        return null;
     }
 
     // =========================================================================
-    // ⭐ A MAGIA QUE PEDISTE: O MANAGER EXECUTA E VALIDA O MÓDULO!
+    // ⭐ A MAGIA QUE PEDISTE: O MANAGER EXECUTA E VALIDA O MÓDULO COM PRE-CACHING
     // =========================================================================
     public XplModule loadModule(String modulePath, Token importKeyword, Interpreter engine, Environment parentEnv) {
+
+        // 1. DEPENDÊNCIAS CIRCULARES PERMITIDAS (Retorna a casca JIT)
         if (moduleCache.containsKey(modulePath)) {
             return moduleCache.get(modulePath);
         }
 
-        String osPath = modulePath.replace(".", "/") + ".xpl";
-        File fileOrDir = resolvePhysicalFile(osPath);
-
-        if (fileOrDir == null) {
-            throw new ControlFlow.RuntimeError(importKeyword, "Módulo não encontrado: '" + modulePath + "'.");
+        // 2. ⭐ BLOQUEIO DE PROFUNDIDADE ABSURDA
+        if (currentImportDepth >= MAX_IMPORT_DEPTH) {
+            throw new ControlFlow.RuntimeError(importKeyword,
+                    "Erro Fatal (StackOverflow Preventivo): Profundidade de importação demasiado alta (> " + MAX_IMPORT_DEPTH + "). " +
+                            "Isto geralmente indica uma arquitetura de projeto com aninhamento insustentável de dependências.");
         }
 
-        System.out.println("[XPL Modularity] -> A compilar módulo: " + modulePath);
-        String source;
+        currentImportDepth++; // Aprofunda na árvore de importações
 
         try {
-            // ⭐ A MAGIA DE LEITURA BLINDADA E DINÂMICA
-            if (fileOrDir.getName().endsWith(".xplx")) {
-                // É UMA BIBLIOTECA COMPACTADA! Lê o código diretamente da memória (VFS)
-                try (java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(fileOrDir)) {
+            String osPath = modulePath.replace(".", "/") + ".xpl";
+            File fileOrDir = resolvePhysicalFile(osPath);
 
-                    // 1. Ler o manifesto package.spm primeiro para descobrir o source_dir
-                    java.util.zip.ZipEntry spmEntry = zipFile.getEntry("package.spm");
-                    String sourceDir = "src"; // Fallback padrão
+            if (fileOrDir == null) {
+                throw new ControlFlow.RuntimeError(importKeyword, "Módulo não encontrado: '" + modulePath + "'.");
+            }
 
-                    if (spmEntry != null) {
-                        try (java.io.InputStream spmIs = zipFile.getInputStream(spmEntry)) {
-                            String spmContent = new String(spmIs.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            System.out.println("[XPL Modularity] -> A compilar módulo: " + modulePath);
+            String source;
 
-                            // Extração JIT do valor source_dir: "pasta"
-                            int idx = spmContent.indexOf("source_dir:");
-                            if (idx != -1) {
-                                int qStart = spmContent.indexOf("\"", idx);
-                                int qEnd = spmContent.indexOf("\"", qStart + 1);
-                                if (qStart != -1 && qEnd != -1) {
-                                    sourceDir = spmContent.substring(qStart + 1, qEnd).trim();
+            try {
+                // Leitura do código-fonte (VFS ou ficheiro local)
+                if (fileOrDir.getName().endsWith(".xplx")) {
+                    try (java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(fileOrDir)) {
+                        java.util.zip.ZipEntry spmEntry = zipFile.getEntry("package.spm");
+                        String sourceDir = "src";
+
+                        if (spmEntry != null) {
+                            try (java.io.InputStream spmIs = zipFile.getInputStream(spmEntry)) {
+                                String spmContent = new String(spmIs.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                                int idx = spmContent.indexOf("source_dir:");
+                                if (idx != -1) {
+                                    int qStart = spmContent.indexOf("\"", idx);
+                                    int qEnd = spmContent.indexOf("\"", qStart + 1);
+                                    if (qStart != -1 && qEnd != -1) {
+                                        sourceDir = spmContent.substring(qStart + 1, qEnd).trim();
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    // 2. Montar o caminho dinâmico respeitando o programador
-                    String finalPath = sourceDir.isEmpty() ? osPath : sourceDir + "/" + osPath;
+                        String finalPath = sourceDir.isEmpty() ? osPath : sourceDir + "/" + osPath;
+                        java.util.zip.ZipEntry entry = zipFile.getEntry(finalPath);
+                        if (entry == null) {
+                            entry = zipFile.getEntry(osPath);
+                        }
+                        if (entry == null) {
+                            throw new java.io.IOException("Caminho não encontrado dentro do pacote selado: " + finalPath);
+                        }
 
-                    java.util.zip.ZipEntry entry = zipFile.getEntry(finalPath);
-                    if (entry == null) {
-                        // Fallback de segurança se o código estiver na raiz
-                        entry = zipFile.getEntry(osPath);
+                        try (java.io.InputStream is = zipFile.getInputStream(entry)) {
+                            source = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                        }
                     }
-                    if (entry == null) {
-                        throw new java.io.IOException("Caminho não encontrado dentro do pacote selado: " + finalPath);
-                    }
-
-                    // 3. Ler o código-fonte final
-                    try (java.io.InputStream is = zipFile.getInputStream(entry)) {
-                        source = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-                    }
+                } else {
+                    source = java.nio.file.Files.readString(fileOrDir.toPath());
                 }
-            } else {
-                // É UM FICHEIRO LOCAL DE DESENVOLVIMENTO
-                source = java.nio.file.Files.readString(fileOrDir.toPath());
-            }
-        } catch (Exception e) {
-            throw new ControlFlow.RuntimeError(importKeyword, "Erro ao ler ficheiro " + osPath + ": " + e.getMessage());
-        }
-
-        // 2. Lexer & Parser normais
-        Lexer lexer = new Lexer(source, modulePath); // Usamos o modulePath como nome do ficheiro para os erros
-        List<Token> tokens = lexer.tokenize();
-        Parser parser = new Parser(tokens);
-        List<Stmt> statements = parser.parse();
-
-        // 3. Criação da estrutura do módulo
-        XplModule newModule = new XplModule(modulePath);
-        Environment moduleEnv = new Environment(parentEnv, 0);
-        newModule.localEnvironment = moduleEnv;
-
-        // Early-Caching (Registar ANTES de executar para evitar Loops Circulares)
-        moduleCache.put(modulePath, newModule);
-
-        // 4. ⭐ INJEÇÃO DE EXECUÇÃO: O Manager usa o Motor para validar e correr o código
-        Environment previousEnv = engine.environment;
-        XplModule previousModule = this.currentCompilingModule;
-
-        try {
-            engine.environment = moduleEnv;
-            this.currentCompilingModule = newModule;
-
-            // O Interpretador apenas executa as árvores AST, o Manager orquestra!
-            for (Stmt stmt : statements) {
-                engine.execute(stmt);
+            } catch (Exception e) {
+                throw new ControlFlow.RuntimeError(importKeyword, "Erro ao ler ficheiro " + osPath + ": " + e.getMessage());
             }
 
-            // Tratamento de Exports
-            if (newModule.exportAll) {
-                newModule.exports.putAll(moduleEnv.values);
+            Lexer lexer = new Lexer(source, modulePath);
+            List<Token> tokens = lexer.tokenize();
+            Parser parser = new Parser(tokens);
+            List<Stmt> statements = parser.parse();
+
+            XplModule newModule = new XplModule(modulePath);
+            Environment moduleEnv = new Environment(parentEnv, 0);
+            newModule.localEnvironment = moduleEnv;
+
+            // ⭐ 3. PRE-CACHING: Regista a "casca" ANTES de executar, curando o Ciclo!
+            moduleCache.put(modulePath, newModule);
+
+            Environment previousEnv = engine.environment;
+            XplModule previousModule = this.currentCompilingModule;
+
+            try {
+                engine.environment = moduleEnv;
+                this.currentCompilingModule = newModule;
+
+                for (Stmt stmt : statements) {
+                    engine.execute(stmt);
+                }
+
+                if (newModule.exportAll) {
+                    newModule.exports.putAll(moduleEnv.values);
+                }
+            } catch (RuntimeException e) {
+                moduleCache.remove(modulePath);
+                throw e;
+            } finally {
+                newModule.isCompiling = false;
+                engine.environment = previousEnv;
+                this.currentCompilingModule = previousModule;
             }
-        } catch (RuntimeException e) {
-            moduleCache.remove(modulePath); // Em caso de erro, limpa o módulo quebrado da RAM
-            throw e;
+
+            return newModule;
+
         } finally {
-            engine.environment = previousEnv;
-            this.currentCompilingModule = previousModule;
+            // ⭐ 4. RETOMA RESPIRAÇÃO SEGURA: Sai do nível de profundidade atual, mesmo que dê erro
+            currentImportDepth--;
         }
-
-        return newModule;
     }
 
-    // =========================================================================
-    // ⭐ DETETOR DE NAMESPACE DO PROJETO (SDM) ⭐
-    // =========================================================================
     public String getProjectGlobalsModule() {
         File manifest = new File(projectDirectory.toFile(), "package.spm");
 
@@ -240,12 +237,11 @@ public class XplModuleManager {
                 String name = extractManifestValue(spmContent, "name");
 
                 if (group != null && name != null) {
-                    // Retorna a assinatura oficial: ex: "com.exemplo.meu_projeto.globals"
                     return group + "." + name + ".globals";
                 }
             } catch (Exception ignored) {}
         }
-        return null; // Não tem SDM (é um script solto)
+        return null;
     }
 
     private String extractManifestValue(String content, String key) {

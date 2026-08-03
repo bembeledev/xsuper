@@ -128,7 +128,7 @@ public class MainWindow {
             scene.getStylesheets().add(cssUri);
 
             // Fundo escuro padrão caso a tag Body não traga cor
-            scene.setFill(javafx.scene.paint.Color.web("#050505"));
+            scene.setFill(javafx.scene.paint.Color.web("#ffffff"));
 
             // Listeners de Redimensionamento
             engine.setViewportSize(finalWidth, finalHeight);

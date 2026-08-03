@@ -19,6 +19,7 @@ implement Element {
         // Não chama loadView aqui
     }
 
+    @Override
     pub fun setStyle(style: string) {
         this.style = style;
     }
@@ -38,13 +39,13 @@ var template = """
 <div>Olá Mundo!</div>
 """;
 
-var temp = """<Element template={template} style="color:red;"/>""";
+var temp = """<Element template="{template}" style="color:red;"/>""";
 
 let html = """
     <html>
         <body>
-            <Element template={template} style="color:red;"/>
-            <Element template={template} style="color:red;"/>
+            <Element template="{template}" style="color:red;"/>
+            <Element template="{template}" style="color:red;"/>
         </body>
     </html>
 """;

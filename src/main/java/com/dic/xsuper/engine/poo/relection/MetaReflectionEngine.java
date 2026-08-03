@@ -44,7 +44,7 @@ public class MetaReflectionEngine {
     // 2. CONSTRUTORES DE METADADOS PROFUNDOS
     // ========================================================
 
-    private static List<Map<String, Object>> buildFieldsMetadata(XPLModel model) {
+    public static List<Map<String, Object>> buildFieldsMetadata(XPLModel model) {
         List<Map<String, Object>> fieldsArray = new ArrayList<>();
         for (Stmt.FieldDecl field : model.fields.values()) {
             Map<String, Object> meta = new HashMap<>();
@@ -59,7 +59,7 @@ public class MetaReflectionEngine {
         return fieldsArray;
     }
 
-    private static List<Map<String, Object>> buildMethodsMetadata(XPLModel model) {
+    public static List<Map<String, Object>> buildMethodsMetadata(XPLModel model) {
         List<Map<String, Object>> methodsArray = new ArrayList<>();
         for (Stmt.Function method : model.methods.values()) {
             Map<String, Object> meta = new HashMap<>();
@@ -72,13 +72,13 @@ public class MetaReflectionEngine {
 
             List<String> exceptions = new ArrayList<>();
             if (method.thrownExceptions != null) {
-                exceptions.addAll(method.thrownExceptions.stream().map(t -> t.lexeme).collect(Collectors.toList()));
+                exceptions.addAll(method.thrownExceptions.stream().map(t -> t.lexeme).toList());
             }
             meta.put("thrownExceptions", exceptions);
 
             List<String> decorators = new ArrayList<>();
             if (method.decorators != null) {
-                decorators.addAll(method.decorators.stream().map(Object::toString).collect(Collectors.toList()));
+                decorators.addAll(method.decorators.stream().map(Object::toString).toList());
             }
             meta.put("decorators", decorators);
 
@@ -99,7 +99,7 @@ public class MetaReflectionEngine {
     }
 
     // ⭐ MÉTODO MADURO: recebe o mapa de aliases e constrói o objeto completo
-    private static Map<String, Object> buildDeclareToObject(XPLModel model, Map<String, TypeNode> typeAliases) {
+    public static Map<String, Object> buildDeclareToObject(XPLModel model, Map<String, TypeNode> typeAliases) {
         Map<String, Object> metaObject = new HashMap<>();
 
         // 1. Informações básicas
@@ -241,6 +241,131 @@ public class MetaReflectionEngine {
                         }
                         yield decs;
                     }
+                    // =========================================================
+                    // ⭐ 1. INTROSPEÇÃO FINA E RÁPIDA
+                    // =========================================================
+                    case "hasMethod" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "hasMethod requer o nome do método.");
+                        String mName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        yield model.findMethod(mName) != null;
+                    }
+                    case "hasField" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "hasField requer o nome da propriedade.");
+                        String fName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        yield model.fields.containsKey(fName);
+                    }
+
+                    // =========================================================
+                    // ⭐ 2. HERANÇA, ÁRVORE E CONTRATOS
+                    // =========================================================
+                    case "getSuperclass" -> model.superclass != null ? model.superclass.name : null;
+                    case "isAbstract" -> model.isAbstract;
+                    case "implementsInterface" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "implementsInterface requer o nome da interface.");
+                        String iName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        yield model.implementsInterface(iName);
+                    }
+                    case "isSubclassOf" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "isSubclassOf requer o nome da classe base.");
+                        String pName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        yield model.isSubclassOf(pName);
+                    }
+
+                    // =========================================================
+                    // ⭐ 3. METAPROGRAMAÇÃO ATIVA (O PODER ABSOLUTO)
+                    // =========================================================
+                    case "newInstance" -> {
+                        // Instancia a classe dinamicamente através da Reflexão!
+                        XplClass klass = new XplClass(model, interpreter.environment);
+                        yield klass.call(interpreter, arguments); // Passa todos os argumentos recebidos para o 'init'!
+                    }
+                    case "cloneInstance" -> {
+                        if (!(target instanceof XplInstance instance)) throw new ControlFlow.RuntimeError(expr.name, "cloneInstance requer uma instância viva (não funciona apenas na classe).");
+                        XplInstance cloned = new XplInstance(instance.klass);
+                        cloned.fields.putAll(instance.fields); // Faz uma cópia da RAM
+                        yield cloned;
+                    }
+                    case "injectField" -> {
+                        if (arguments.size() < 2) throw new ControlFlow.RuntimeError(expr.name, "injectField requer (nome, tipo).");
+                        String fName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        String tName = interpreter.stringify(interpreter.evaluate(arguments.get(1).expression));
+
+                        Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
+                        TypeNode typeNode = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, tName, null, 0, 0));
+
+                        // Injeta a propriedade diretamente no molde da classe!
+                        model.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, fName, null, 0, 0), typeNode));
+                        yield true;
+                    }
+                    // =========================================================
+                    // ⭐ REFLEXÃO MADURA: Acesso e Mutação Silenciosa (Bypass Listeners)
+                    // Podes ler ou alterar variáveis internas em tempo real!
+                    // =========================================================
+                    case "getFieldValue" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "getFieldValue requer o nome da propriedade.");
+                        String propName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+
+                        if (target instanceof XplInstance instance) {
+                            yield instance.fields.get(propName); // Lê a memória bruta!
+                        } else if (target instanceof XplClass klass) {
+                            yield klass.model.staticFields.get(propName);
+                        }
+                        yield null;
+                    }
+
+                    case "setFieldValue" -> {
+                        if (arguments.size() < 2) throw new ControlFlow.RuntimeError(expr.name, "setFieldValue requer o nome da propriedade e o novo valor.");
+                        String propName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+                        Object newVal = interpreter.evaluate(arguments.get(1).expression);
+
+                        if (target instanceof XplInstance instance) {
+                            instance.fields.put(propName, newVal); // Escreve na memória bruta (Bypass aos Listeners!)
+                        } else if (target instanceof XplClass klass) {
+                            klass.model.staticFields.put(propName, newVal);
+                        }
+                        yield true;
+                    }
+
+                    // =========================================================
+                    // ⭐ 4. CAPTURA DE LISTENERS / DECORADORES ATIVOS
+                    // =========================================================
+
+                    // Retorna a lista de instâncias VIVAS dos listeners acoplados ao objeto!
+                    case "getActiveListeners" -> {
+                        if (target instanceof XplInstance instance) {
+                            if (instance.fields.containsKey("__active_listeners__")) {
+                                // Devolve a lista real das instâncias dos listeners!
+                                yield instance.fields.get("__active_listeners__");
+                            }
+                        }
+                        yield new ArrayList<>();
+                    }
+
+                    // Verifica rapidamente se um objeto ou classe tem um determinado listener
+                    case "hasListener" -> {
+                        if (arguments.isEmpty()) throw new ControlFlow.RuntimeError(expr.name, "hasListener requer o nome do listener.");
+                        String lName = interpreter.stringify(interpreter.evaluate(arguments.get(0).expression));
+
+                        // 1. Verifica os listeners VIVOS na memória (se for uma instância)
+                        if (target instanceof XplInstance instance) {
+                            if (instance.fields.containsKey("__active_listeners__")) {
+                                @SuppressWarnings("unchecked")
+                                List<XplInstance> listeners = (List<XplInstance>) instance.fields.get("__active_listeners__");
+                                for (XplInstance l : listeners) {
+                                    if (l.klass.model.name.equals(lName)) yield true;
+                                }
+                            }
+                        }
+
+                        // 2. Verifica a Árvore Genética (AST) se for apenas uma classe
+                        if (model.decoratorNodes != null) {
+                            for (Stmt.DecoratorNode dec : model.decoratorNodes) {
+                                if (dec.name.lexeme.equals(lName)) yield true;
+                            }
+                        }
+                        yield false;
+                    }
+
                     case "getTypeParameters" -> model.typeParameters.stream()
                             .map(t-> t.lexeme)
                             .collect(Collectors.toList());

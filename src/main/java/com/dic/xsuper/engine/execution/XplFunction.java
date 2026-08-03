@@ -165,7 +165,7 @@ public class XplFunction implements XplCallable {
                 throw new ControlFlow.RuntimeError(this.declaration.name,
                         "Tipo de Retorno Inválido: A função '" + this.declaration.name.lexeme +
                                 "' devolveu " + (valorDeRetorno == null ? "null" : valorDeRetorno.getClass().getSimpleName()) +
-                                ", mas a assinatura exigia " + this.declaration.returnType.toString() + ".");
+                                ", mas a assinatura exigia " + this.declaration.returnType + ".");
             }
             return valorDeRetorno;
         }
@@ -174,7 +174,7 @@ public class XplFunction implements XplCallable {
         if (this.declaration.returnType != null && !(this.declaration.returnType instanceof TypeNode.Optional)) {
             throw new ControlFlow.RuntimeError(this.declaration.name,
                     "Falta de Retorno: A função '" + this.declaration.name.lexeme +
-                            "' exige um retorno obrigatório do tipo " + this.declaration.returnType.toString() +
+                            "' exige um retorno obrigatório do tipo " + this.declaration.returnType +
                             ", mas a execução atingiu o fim do bloco sem retornar nenhum valor.");
         }
 

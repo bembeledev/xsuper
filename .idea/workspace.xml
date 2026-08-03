@@ -4,21 +4,82 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat: implementação de Step-Through Debugging e Call Stack nativa&#10;&#10;Esta atualização transforma o motor de breakpoints estáticos num &#10;verdadeiro Step-Through Debugger, permitindo o rastreio linha a linha &#10;e a visualização do histórico de chamadas em tempo real.&#10;&#10;Principais Alterações:&#10;* Interpreter (Runtime &amp; REPL):&#10;  - Adicionado o estado `isStepping` e `lastSteppedLine` ao `execute()` &#10;    para suportar a execução passo-a-passo sem repetição de nós da AST.&#10;  - Adicionado o comando `s` (step) no REPL para avançar linha a linha.&#10;  - Implementada uma Call Stack nativa (`Stack&lt;String&gt; callStack`).&#10;  - Atualizado o `visitCallExpr` com um bloco try/finally (Push/Pop) para &#10;    rastrear a entrada e saída de funções de forma segura, mesmo em caso de erro.&#10;  - Adicionado o comando `stack` (ou `bt`) no REPL para inspecionar o &#10;    caminho de execução (rasto de migalhas).">
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(modularity): injeção dinâmica de contexto global baseada no SDM&#10;&#10;Esta atualização elimina o hardcode do ficheiro genérico &quot;globals.xpl&quot;, &#10;passando o motor a deduzir inteligentemente o módulo de variáveis globais &#10;a partir do namespace (group e name) definido no manifesto package.spm do projeto.&#10;&#10;Principais Alterações:&#10;* XplModuleManager:&#10;  - Adicionado o método `getProjectGlobalsModule` para analisar o ecossistema &#10;    e resolver a assinatura oficial do projeto (ex: com.exemplo.projeto.globals).&#10;&#10;* Interpreter:&#10;  - Refatoração do `interpret()` e `resolveGlobalsChain()` para injetar o &#10;    módulo de globais dinâmico fornecido pelo Manager.&#10;  - Implementação de isolamento rigoroso: scripts avulsos correm limpos &#10;    na sua própria redoma, enquanto os ficheiros pertencentes a um projeto &#10;    SDM recebem a injeção global apropriada ao seu namespace.">
+      <change afterPath="$PROJECT_DIR$/files/backend.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/controller/Controller.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/controller/HomeController.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/controller/PessoaController.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/controller/UploadController.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/controller/UploadViewController.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/dom/Token.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/http/Http.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/http/RequestHttp.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/http/ResponseHttp.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/main.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/project.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/routes/route.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/routes/routes.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/server.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/server/server.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/views/templates/home.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/views/templates/notfound.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/views/templates/pessoa.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/views/templates/upload.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/files/views/view.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticError.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SymbolTable.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ReflectNativeModel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/SocketNativeModel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/read.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/foto.PNG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/listen.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/listenner.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/listerner.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/protocolo.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/tags/super.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssResolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssResolver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplStyleEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplStyleEngine.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/execution/XplFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/execution/XplFunction.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/modules/XplModuleManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/modules/XplModuleManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/BufferNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/BufferNativeModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/DatabaseNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/DatabaseNativeModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ModelNativeRegistry.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ModelNativeRegistry.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplClass.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaReflectionEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaReflectionEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplAnimationEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplAnimationEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/core/SuperUiEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/core/SuperUiEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/css/W3cCssAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/css/W3cCssAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/NativeTag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/NativeTag.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/TextNodeTag.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/TextNodeTag.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/window/MainWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/window/MainWindow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/tags/div.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/div.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/tags/element.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/element.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/tags/menus.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/menus.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/tags/test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/web/tags/test.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="DatabaseLocalColorSettings">
+    <colors>
+      <entry key="28141389-e4fe-4b3f-8f1e-1d40b2093088" value="" />
+    </colors>
+  </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="FxmlFile" />
         <option value="Interface" />
+        <option value="HTML File" />
         <option value="Class" />
       </list>
     </option>
@@ -27,69 +88,87 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RESET_MODE" value="HARD" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;bembeledev&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/bembeledev/xsuper.git&quot;,
+    &quot;accountId&quot;: &quot;1dd4c53a-bc69-445d-8713-f162ecc99758&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/pom.xml" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="KotlinScriptingSettings" supportWarning="false" />
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
   <component name="ProjectId" id="3FDwPudFhHghXXZxhxOc7ohADaz" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
-    &quot;Application.AnimandoNodeEControl.executor&quot;: &quot;Run&quot;,
-    &quot;Application.AnimationDemo.executor&quot;: &quot;Run&quot;,
-    &quot;Application.FileExplorerCLI.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Application.RunApp.executor&quot;: &quot;Run&quot;,
-    &quot;Application.SuperUIEditorTest.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestHeadlessEngine.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestSelect.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestSuperHTML.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUIInputRender.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUIRender.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUIRender02.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUIRenderMaster.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUITableRender.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestUITextRender.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestXplCss.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestXplCssEvaluator.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestXplCssMatcher.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestXplCssResolver.executor&quot;: &quot;Run&quot;,
-    &quot;Application.UIFromHTML.executor&quot;: &quot;Run&quot;,
-    &quot;Application.XplRuntime.executor&quot;: &quot;Run&quot;,
-    &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Batch.xpl.executor&quot;: &quot;Run&quot;,
-    &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.xsuper-xplorer [deploy].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
-    &quot;Maven.xsuper-xplorer [package].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.fileTypes&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
+    "Application.AnimandoNodeEControl.executor": "Run",
+    "Application.AnimationDemo.executor": "Run",
+    "Application.FileExplorerCLI.executor": "Run",
+    "Application.Main.executor": "Run",
+    "Application.RunApp.executor": "Run",
+    "Application.SuperUIEditorTest.executor": "Run",
+    "Application.TestHeadlessEngine.executor": "Run",
+    "Application.TestSelect.executor": "Run",
+    "Application.TestSuperHTML.executor": "Run",
+    "Application.TestUIInputRender.executor": "Run",
+    "Application.TestUIRender.executor": "Run",
+    "Application.TestUIRender02.executor": "Run",
+    "Application.TestUIRenderMaster.executor": "Run",
+    "Application.TestUITableRender.executor": "Run",
+    "Application.TestUITextRender.executor": "Run",
+    "Application.TestXPL.executor": "Run",
+    "Application.TestXplCss.executor": "Run",
+    "Application.TestXplCssEvaluator.executor": "Run",
+    "Application.TestXplCssMatcher.executor": "Run",
+    "Application.TestXplCssResolver.executor": "Run",
+    "Application.UIFromHTML.executor": "Run",
+    "Application.XplRuntime.executor": "Run",
+    "Application.com.dic.xsuper.Main.executor": "Run",
+    "Batch.xpl.executor": "Run",
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Maven.xsuper-xplorer [clean].executor": "Run",
+    "Maven.xsuper-xplorer [deploy].executor": "Run",
+    "Maven.xsuper-xplorer [install].executor": "Run",
+    "Maven.xsuper-xplorer [package].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "jdk.selected.JAVA_MODULE": "21",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/ferna/Documents/GitHub/FileManager/files/controller",
+    "node.js.detected.package.jshint": "true",
+    "node.js.selected.package.jshint": "",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.15712383",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "template.copyright.formatting"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
       <recent name="com.dic.xsuper.lang.ui.tags.game" />
@@ -98,17 +177,21 @@
       <recent name="com.dic.xsuper.lang.ui" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\controller" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web\tags" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui\properties" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\views" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\views\templates" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\routes" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\viewa" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web\tags" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\lib" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests\src" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.dic.xsuper.engine.analysis" />
     </key>
   </component>
   <component name="RunManager" selected="Application.Main">
@@ -128,7 +211,8 @@
     </configuration>
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.app.Main" />
-      <module name="FileManager" />
+      <module name="xsuper-xplorer" />
+      <option name="PROGRAM_PARAMETERS" value="--enable-native-access=ALL-UNNAMED" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.dic.xsuper.app.*" />
@@ -220,6 +304,14 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-63390994e64e-intellij.indexing.shared.core-IU-262.8665.337" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.8665.337" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -228,14 +320,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1781622929272</updated>
-    </task>
-    <task id="LOCAL-00017" summary="feat(v21): impl. operadores de navegação segura (??, ?., !) e Hypervisor de erros&#10;&#10;- Adição dos nós AST do Volume 21: NullCoalesce, OptionalChaining, OptionalCall e Unwrap.&#10;- Unificação DRY do Parser (parseTypeAnnotation) para suporte universal a tipos opcionais (?T).&#10;- Atualização de Stmt.Param para carregar TypeNode em vez de Token bruto.&#10;- Suporte &quot;bilingue&quot; no encadeamento opcional (?.) para XplInstance e java.util.Map.&#10;- Implementação do Hypervisor de Exceções no visitTryStmt: captura de falhas da JVM e transmutação em objetos nativos 'Error' da XPL.&#10;- Correção do modificador de visibilidade ('pub message') na injeção global da superclasse Error.&#10;&#10;Refs: stress_v21.xpl (6/6 passing, 0% JVM leak)">
-      <option name="closed" value="true" />
-      <created>1782059032174</created>
-      <option name="number" value="00017" />
-      <option name="presentableId" value="LOCAL-00017" />
-      <option name="project" value="LOCAL" />
-      <updated>1782059032174</updated>
     </task>
     <task id="LOCAL-00018" summary="feat(v20): impl. Type Aliases (sinónimos de tipo) e resolução quântica na AST&#10;&#10;- Adição da instrução de nível superior 'TypeAliasDecl' na AST.&#10;- Suporte sintático para 'type Apelido = Alvo;' no Parser.&#10;- Implementação do 'resolveConcreteType' no Interpretador para dissolução recursiva de tipos reais.&#10;- Adição de escudo semântico contra referências circulares infinitas e colisões de nomenclatura.&#10;- Integração nativa garantida com o Volume 21 (suporte a Opcionais sobre Aliases, ex: ?Telefone).&#10;&#10;Refs: alias.xpl (4/4 passing, Zero-Cost Abstraction validada)">
       <option name="closed" value="true" />
@@ -621,8 +705,19 @@
       <option name="project" value="LOCAL" />
       <updated>1785573797326</updated>
     </task>
-    <option name="localTasksCounter" value="66" />
+    <task id="LOCAL-00066" summary="feat(modularity): injeção dinâmica de contexto global baseada no SDM&#10;&#10;Esta atualização elimina o hardcode do ficheiro genérico &quot;globals.xpl&quot;, &#10;passando o motor a deduzir inteligentemente o módulo de variáveis globais &#10;a partir do namespace (group e name) definido no manifesto package.spm do projeto.&#10;&#10;Principais Alterações:&#10;* XplModuleManager:&#10;  - Adicionado o método `getProjectGlobalsModule` para analisar o ecossistema &#10;    e resolver a assinatura oficial do projeto (ex: com.exemplo.projeto.globals).&#10;&#10;* Interpreter:&#10;  - Refatoração do `interpret()` e `resolveGlobalsChain()` para injetar o &#10;    módulo de globais dinâmico fornecido pelo Manager.&#10;  - Implementação de isolamento rigoroso: scripts avulsos correm limpos &#10;    na sua própria redoma, enquanto os ficheiros pertencentes a um projeto &#10;    SDM recebem a injeção global apropriada ao seu namespace.">
+      <option name="closed" value="true" />
+      <created>1785575495805</created>
+      <option name="number" value="00066" />
+      <option name="presentableId" value="LOCAL-00066" />
+      <option name="project" value="LOCAL" />
+      <updated>1785575495805</updated>
+    </task>
+    <option name="localTasksCounter" value="67" />
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
   <component name="UnknownFeatures">
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.xpl" />
@@ -666,7 +761,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="refactor(ui): implement atomic internal UIDs and fix DOM re-rendering&#10;&#10;- refactor: replace fragile ID-based lookups with AtomicLong-based '_internalUid' &#10;  for robust and collision-free element tracking.&#10;- fix(renderer): implement efficient &quot;Internal Transplant&quot; (clear/rebuild) in &#10;  JavaFxRenderer to respect LayoutEngine boundaries and flexbox calculations.&#10;- fix: resolve UI event loss during re-renders by syncing inline events &#10;  from Live DOM to Virtual DOM during the synchronization pass.&#10;- fix: resolve 'UnsupportedOperationException' by using internal element &#10;  cleanup methods instead of unmodifiable collection manipulation.&#10;- perf: optimize DOM hydration by preserving event listeners and &#10;  host components during layout updates." />
     <MESSAGE value="fix(ui): resolve infinite layout loops and CSS state contamination&#10;&#10;- fix: prevent infinite resize loops in MediaListener by switching from Scene width &#10;  (affected by scrollbars) to Window width.&#10;- refactor(engine): remove CSS style caching in SuperUiEngine to prevent state &#10;  contamination between responsive breakpoints.&#10;- feat(renderer): implement full &quot;Hard Reflow&quot; in JavaFxRenderer to properly &#10;  recreate layout structures (HBox/VBox) upon media query transitions.&#10;- fix: ensure accurate reconciliation of UI components and event listeners during &#10;  total layout rebuilds." />
     <MESSAGE value="feat: implement fine-grained reactivity and stabilize engine core&#10;&#10;- Implement XplEnvironmentWatcher decorator for non-intrusive reactivity hooks in Environment&#10;- Integrate XplReactiveState and XplReactivityRenderer for fine-grained DOM patching&#10;- Resolve scope capture issues in XplFunction and POO instantiation logic&#10;- Optimize JavaFxRenderer reconciliation to handle ghost text nodes and dynamic CSS updates&#10;- Fix arity validation errors in higher-order functions (callbacks)&#10;- Stabilize engine global scoping and type inference for generic templates" />
     <MESSAGE value="refactor!: migrate standard library to object-oriented native models &amp; parser core&#10;&#10;- Refactor global functions and variables into clean, namespaced OOP native models (Http, Console, Task, Log, Assert, HttpServer, Security, Database, Smtp, Scheduler, Stream, Serial, Crypto, Mongo, Regex, Buffer, Channel, etc.).&#10;- Clean up global scope pollution in NativeVariables and NativeRegistry, encapsulating constants within their respective model structures.&#10;- Update Parser and Interpreter (visitArrowFunctionExpr) to fully support multi-parameter arrow functions ((req, res) =&gt; {}) with robust type inference.&#10;- Consolidate all standard library injections and execution pipelines through ModelNativeRegistry." />
@@ -691,7 +785,8 @@
     <MESSAGE value="feat: implementação de Classes Anónimas JIT e Polimorfismo de Contratos&#10;&#10;Esta atualização eleva o motor a um nível de arquitetura empresarial, permitindo&#10;a injeção de dependências estrita e a criação dinâmica de classes em tempo de execução.&#10;&#10;Principais Alterações:&#10;* AST &amp; Parser:&#10;  - Expandido o nó `Expr.New` para suportar a captura de blocos de métodos (`anonymousMethods`).&#10;  - Atualizado o `Parser` para consumir corpos de classes anónimas on-the-fly (`new CRUD() { ... }`).&#10;  - Corrigido um bug de loop infinito no consumo de decoradores (check vs match).&#10;&#10;* Interpreter (Runtime):&#10;  - Injeção da fábrica JIT no `visitNewExpr` para sintetizar Modelos Fantasmas na RAM, aplicando rigorosamente as regras de @Override e validação de contratos.&#10;  - Atualizada a Alfândega Quântica (`checkTypeMatch`) para suportar verdadeiro Polimorfismo de Interfaces: parâmetros tipados como contratos (ex: `fun(alvo: CRUD)`) aceitam agora qualquer classe ou variante que os implemente." />
     <MESSAGE value="feat: integração do Debugger Nativo com suporte a Breakpoints via CLI&#10;&#10;Esta atualização introduz o suporte completo a breakpoints guiados por IDE &#10;e rastreio de linhas em tempo de execução, unindo a execução base ao REPL interactivo.&#10;&#10;Principais Alterações:&#10;* Parser &amp; AST:&#10;  - Adicionado o carimbo automático de linhas (`stmt.astLine`) em todas as &#10;    instruções processadas no método `statement()`.&#10;&#10;* CLI &amp; Interpreter (Runtime):&#10;  - Implementado o recetor do parâmetro `--breakpoints=x,y,z` na linha de comandos.&#10;  - Adicionada a verificação na alfândega de execução (`execute`) do Interpretador &#10;    para pausar a Thread nativamente e acionar o REPL interativo ao atingir uma linha marcada." />
     <MESSAGE value="feat: implementação de Step-Through Debugging e Call Stack nativa&#10;&#10;Esta atualização transforma o motor de breakpoints estáticos num &#10;verdadeiro Step-Through Debugger, permitindo o rastreio linha a linha &#10;e a visualização do histórico de chamadas em tempo real.&#10;&#10;Principais Alterações:&#10;* Interpreter (Runtime &amp; REPL):&#10;  - Adicionado o estado `isStepping` e `lastSteppedLine` ao `execute()` &#10;    para suportar a execução passo-a-passo sem repetição de nós da AST.&#10;  - Adicionado o comando `s` (step) no REPL para avançar linha a linha.&#10;  - Implementada uma Call Stack nativa (`Stack&lt;String&gt; callStack`).&#10;  - Atualizado o `visitCallExpr` com um bloco try/finally (Push/Pop) para &#10;    rastrear a entrada e saída de funções de forma segura, mesmo em caso de erro.&#10;  - Adicionado o comando `stack` (ou `bt`) no REPL para inspecionar o &#10;    caminho de execução (rasto de migalhas)." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: implementação de Step-Through Debugging e Call Stack nativa&#10;&#10;Esta atualização transforma o motor de breakpoints estáticos num &#10;verdadeiro Step-Through Debugger, permitindo o rastreio linha a linha &#10;e a visualização do histórico de chamadas em tempo real.&#10;&#10;Principais Alterações:&#10;* Interpreter (Runtime &amp; REPL):&#10;  - Adicionado o estado `isStepping` e `lastSteppedLine` ao `execute()` &#10;    para suportar a execução passo-a-passo sem repetição de nós da AST.&#10;  - Adicionado o comando `s` (step) no REPL para avançar linha a linha.&#10;  - Implementada uma Call Stack nativa (`Stack&lt;String&gt; callStack`).&#10;  - Atualizado o `visitCallExpr` com um bloco try/finally (Push/Pop) para &#10;    rastrear a entrada e saída de funções de forma segura, mesmo em caso de erro.&#10;  - Adicionado o comando `stack` (ou `bt`) no REPL para inspecionar o &#10;    caminho de execução (rasto de migalhas)." />
+    <MESSAGE value="feat(modularity): injeção dinâmica de contexto global baseada no SDM&#10;&#10;Esta atualização elimina o hardcode do ficheiro genérico &quot;globals.xpl&quot;, &#10;passando o motor a deduzir inteligentemente o módulo de variáveis globais &#10;a partir do namespace (group e name) definido no manifesto package.spm do projeto.&#10;&#10;Principais Alterações:&#10;* XplModuleManager:&#10;  - Adicionado o método `getProjectGlobalsModule` para analisar o ecossistema &#10;    e resolver a assinatura oficial do projeto (ex: com.exemplo.projeto.globals).&#10;&#10;* Interpreter:&#10;  - Refatoração do `interpret()` e `resolveGlobalsChain()` para injetar o &#10;    módulo de globais dinâmico fornecido pelo Manager.&#10;  - Implementação de isolamento rigoroso: scripts avulsos correm limpos &#10;    na sua própria redoma, enquanto os ficheiros pertencentes a um projeto &#10;    SDM recebem a injeção global apropriada ao seu namespace." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(modularity): injeção dinâmica de contexto global baseada no SDM&#10;&#10;Esta atualização elimina o hardcode do ficheiro genérico &quot;globals.xpl&quot;, &#10;passando o motor a deduzir inteligentemente o módulo de variáveis globais &#10;a partir do namespace (group e name) definido no manifesto package.spm do projeto.&#10;&#10;Principais Alterações:&#10;* XplModuleManager:&#10;  - Adicionado o método `getProjectGlobalsModule` para analisar o ecossistema &#10;    e resolver a assinatura oficial do projeto (ex: com.exemplo.projeto.globals).&#10;&#10;* Interpreter:&#10;  - Refatoração do `interpret()` e `resolveGlobalsChain()` para injetar o &#10;    módulo de globais dinâmico fornecido pelo Manager.&#10;  - Implementação de isolamento rigoroso: scripts avulsos correm limpos &#10;    na sua própria redoma, enquanto os ficheiros pertencentes a um projeto &#10;    SDM recebem a injeção global apropriada ao seu namespace." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/FileManager$Main.ic" NAME="Main Coverage Results" MODIFIED="1785092928775" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">

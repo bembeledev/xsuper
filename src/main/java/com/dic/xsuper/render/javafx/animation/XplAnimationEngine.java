@@ -27,7 +27,14 @@ public class XplAnimationEngine {
      * @param transition Configuração da transição
      */
     public static void applyTransition(Node node, String property, String oldValue, String newValue, XplTransition transition) {
-        if (node == null || transition == null) return;
+        WritableValue<?> targetProperty = resolveJavaFxProperty(node, property);
+
+        if (targetProperty == null) {
+            // Opcional para debug: System.out.println("⚠️ Transição ignorada (não mapeada nativamente): " + property);
+            return;
+        }
+
+        if (transition == null) return;
         // Verifica se a transição se aplica a esta propriedade
         if (!transition.getProperties().contains("all") && !transition.getProperties().contains(property)) {
             return;
@@ -63,6 +70,35 @@ public class XplAnimationEngine {
             List<Timeline> list = activeTimelines.get(node);
             if (list != null) list.remove(timeline);
         });
+    }
+
+    private static WritableValue<?> resolveJavaFxProperty(Node node, String cssProperty) {
+        if (cssProperty == null || node == null) return null;
+
+        // Remove espaços e uniformiza para minúsculas
+        String cleanProp = cssProperty.toLowerCase().trim();
+
+        return switch (cleanProp) {
+            case "opacity" -> node.opacityProperty();
+            case "translate-x", "translatex" -> node.translateXProperty();
+            case "translate-y", "translatey" -> node.translateYProperty();
+            case "translate-z", "translatez" -> node.translateZProperty();
+            case "scale-x", "scalex" -> node.scaleXProperty();
+            case "scale-y", "scaley" -> node.scaleYProperty();
+            case "scale-z", "scalez" -> node.scaleZProperty();
+            case "rotate" -> node.rotateProperty();
+
+            // Dimensões (apenas aplicáveis se o nó for um Contentor/Region)
+            case "width", "min-width", "max-width" ->
+                    (node instanceof Region r) ? r.prefWidthProperty() : null;
+            case "height", "min-height", "max-height" ->
+                    (node instanceof Region r) ? r.prefHeightProperty() : null;
+
+            // Se for "all", "transform" (que exige parse matricial complexo),
+            // ou cores (que o JavaFX não anima diretamente por KeyValue sem um Background),
+            // devolve NULL para ignorar pacificamente e NÃO CRASHAR!
+            default -> null;
+        };
     }
 
     // =========================================================================
