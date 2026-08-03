@@ -31,11 +31,14 @@ implement Mamifero {
     }
 
     pub fun rugir() {
+        this.verDados();
         println(this.nome + " rugiu forte na " + this.localizacao + "!");
     }
 }
 
 println("--- TESTE DE INICIALIZAÇÃO AUTOMÁTICA ---", "#FFFF00");
+
+//var animal = new Animal("Eu",23);
 
 // ⭐ O construtor entra em ação aqui enviando os 3 argumentos diretamente!
 var leao = new Mamifero("Leão Africano", 42, "Savana");

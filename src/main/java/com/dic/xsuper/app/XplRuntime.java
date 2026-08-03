@@ -1,6 +1,8 @@
 package com.dic.xsuper.app;
 
 import com.dic.xsuper.cli.core.CommandRegistry;
+import com.dic.xsuper.engine.analysis.SemanticAnalyzer;
+import com.dic.xsuper.engine.analysis.SemanticError;
 import com.dic.xsuper.engine.core.Lexer;
 import com.dic.xsuper.engine.core.Parser;
 import com.dic.xsuper.engine.core.Interpreter;
@@ -58,6 +60,7 @@ public class XplRuntime {
                 return;
             }
 
+
             // 3. Preparar o Ambiente de Execução
             CommandRegistry registry = new CommandRegistry();
 
@@ -103,22 +106,38 @@ public class XplRuntime {
             interpreter.activeBreakpoints.addAll(breakpoints);
             XplBootstrapper.bootstrap(interpreter);
 
+
             // 4. Injetar a Headless Bridge
             XplUiBridge headlessBridge = new XplUiBridge() {
                 @Override public void renderView(XplNode root) {}
-                @Override public void updateProperty(String id, String prop, Object val) {
-                    //System.out.println("   🎨 [Terminal UI] " + id + " mudou " + prop + " para " + val);
-                }
+                @Override public void updateProperty(String id, String prop, Object val) {}
                 @Override public void setEngineCallback(EngineCallback callback) {}
                 @Override public void rebuildFullView(String targetId, XplNode virtualNode) {}
                 @Override public void invokeMethodOnNode(String targetId, String methodName, Object[] args) {}
-                @Override public void reportError(String message) {
-                    //System.err.println("Erro UI: " + message);
-                }
+                @Override public void reportError(String message) {}
             };
 
-
             new SuperUiEngine(interpreter, headlessBridge);
+
+
+            // =========================================================================
+            // ⭐ A NOVA MURALHA DE SEGURANÇA 2: LIMPEZA SEMÂNTICA MINUCIOSA
+            // =========================================================================
+            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(interpreter);
+            List<SemanticError> semanticErrors = semanticAnalyzer.analyze(statements);
+
+            if (!semanticErrors.isEmpty()) {
+                System.err.println(ConsoleTheme.ERROR + "\n>> Execução abortada: Falha na Análise Semântica (" + semanticErrors.size() + " erro(s) encontrados)." + ConsoleTheme.RESET);
+
+                for (SemanticError err : semanticErrors) {
+                    String path = err.token.filePath != null ? err.token.filePath : target.toString();
+                    System.err.println(path + ":" + err.token.line + ":" + err.token.column + ":\n\tErro Lógico: " + err.getMessage());
+                }
+                return; // Bloqueia a execução antes do Interpretador arrancar!
+            }
+            // =========================================================================
+
+
 
             // 5. Correr o código!
             interpreter.interpret(statements);

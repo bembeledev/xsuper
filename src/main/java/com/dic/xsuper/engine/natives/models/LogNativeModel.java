@@ -6,6 +6,7 @@ import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
 import com.dic.xsuper.engine.poo.XPLModel;
 import com.dic.xsuper.engine.poo.XplClass;
+import com.dic.xsuper.utils.ConsoleTheme; // ⭐ Importamos o teu tema de cores!
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,10 +23,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class LogNativeModel {
 
     public enum Level { DEBUG, INFO, WARN, ERROR }
-    private static Level currentLevel = Level.INFO;
+    private static Level currentLevel = Level.DEBUG; // Padrão baixado para vermos os Debugs
     private static final ConcurrentLinkedQueue<String> history = new ConcurrentLinkedQueue<>();
     private static Path logFile = null;
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+    // Formato reduzido para ficar igual ao Logcat do Android!
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     public static void Registry(Interpreter interpreter) {
         XPLModel model = new XPLModel("Log", null);
@@ -65,12 +68,20 @@ public class LogNativeModel {
         }));
 
         // =========================================================
-        // AÇÕES DE LOG
+        // AÇÕES DE LOG (Nomes por extenso) - Aridade -1 (varargs)
         // =========================================================
-        model.staticFields.put("debug", buildCallable(1, logAction(Level.DEBUG)));
-        model.staticFields.put("info",  buildCallable(1, logAction(Level.INFO)));
-        model.staticFields.put("warn",  buildCallable(1, logAction(Level.WARN)));
-        model.staticFields.put("error", buildCallable(1, logAction(Level.ERROR)));
+        model.staticFields.put("debug", buildCallable(-1, logAction(Level.DEBUG)));
+        model.staticFields.put("info",  buildCallable(-1, logAction(Level.INFO)));
+        model.staticFields.put("warn",  buildCallable(-1, logAction(Level.WARN)));
+        model.staticFields.put("error", buildCallable(-1, logAction(Level.ERROR)));
+
+        // =========================================================
+        // APELIDOS ESTILO ANDROID (Log.d, Log.i, Log.w, Log.e)
+        // =========================================================
+        model.staticFields.put("d", buildCallable(-1, logAction(Level.DEBUG)));
+        model.staticFields.put("i", buildCallable(-1, logAction(Level.INFO)));
+        model.staticFields.put("w", buildCallable(-1, logAction(Level.WARN)));
+        model.staticFields.put("e", buildCallable(-1, logAction(Level.ERROR)));
 
         // =========================================================
         // HISTÓRICO
@@ -81,22 +92,57 @@ public class LogNativeModel {
         interpreter.environment.defineConst("Log", new XplClass(model, interpreter.globals));
     }
 
-    // --- Máquinas de Log ---
+    // --- Máquinas de Log Android-Style ---
     private static NativeAction logAction(Level level) {
         return (intp, args) -> {
-            String msg = getString(intp, args, 0);
+            if (args.isEmpty()) {
+                throw new ControlFlow.RuntimeError(null, "O comando de Log precisa de pelo menos uma mensagem.");
+            }
+
+            // ⭐ Lógica de TAGs do Android
+            String tag = "XPL";
+            String msg = "";
+
+            if (args.size() == 1) {
+                // Ex: Log.i("Servidor iniciado") -> TAG=XPL, MSG="Servidor..."
+                msg = getString(intp, args, 0);
+            } else {
+                // Ex: Log.i("HttpServer", "Servidor iniciado") -> TAG="HttpServer", MSG="Servidor..."
+                tag = getString(intp, args, 0);
+                msg = getString(intp, args, 1);
+            }
+
             if (level.ordinal() >= currentLevel.ordinal()) {
-                String line = String.format("[%s] %s: %s", formatter.format(LocalDateTime.now()), level.name(), msg);
-                history.offer(line);
-                if (history.size() > 10000) history.poll(); // Evita encher a RAM (máximo 10k logs em memória)
+                String time = formatter.format(LocalDateTime.now());
 
-                System.out.println(line); // Output no terminal
+                // 1. Formato Limpo para o Histórico / Ficheiro (Sem cores ANSI)
+                String plainLine = String.format("%s %-5s %s: %s", time, level.name(), tag, msg);
+                history.offer(plainLine);
+                if (history.size() > 10000) history.poll();
 
-                if (logFile != null) { // Output no ficheiro se configurado
+                if (logFile != null) {
                     try {
-                        Files.writeString(logFile, line + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                        Files.writeString(logFile, plainLine + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                     } catch (IOException ignored) {}
                 }
+
+                // 2. Formato Bonito para o Terminal com ConsoleTheme!
+                String color = ConsoleTheme.TEXT;
+                switch (level) {
+                    case DEBUG: color = ConsoleTheme.HEADER;  break; // Cyan Bold
+                    case INFO:  color = ConsoleTheme.SUCCESS; break; // Green Bold
+                    case WARN:  color = ConsoleTheme.COMMAND; break; // Yellow Bold
+                    case ERROR: color = ConsoleTheme.ERROR;   break; // Red Bold
+                }
+
+                // Logcat Style: [Tempo] COR[LEVEL] TAG: Mensagem (Reset)
+                String coloredLine = String.format("%s[%s]%s %-5s %s%s: %s",
+                        ConsoleTheme.TEXT, time,
+                        color, level.name(),
+                        ConsoleTheme.DIRECTORY, tag, // Tag a azul
+                        ConsoleTheme.RESET + " " + msg);
+
+                System.out.println(coloredLine);
             }
             return null;
         };

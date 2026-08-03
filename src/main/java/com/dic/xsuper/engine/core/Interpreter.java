@@ -321,6 +321,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
+    // ⭐ A NOVA POLÍCIA DE MÉTODOS ⭐
+    private void checkMethodAccess(Token name, Stmt.Function method, XPLModel targetModel) {
+        XPLModel currentModel = null;
+        try {
+            currentModel = (XPLModel) environment.get("__current_model");
+        } catch (Exception ignored) {}
+
+        boolean isInsideClass = (currentModel != null && currentModel.name.equals(targetModel.name));
+        boolean isSubclass = (currentModel != null && currentModel.isSubclassOf(targetModel.name));
+
+        if (method.accessModifier != null) {
+            if (method.accessModifier.type == TokenType.PRIVATE && !isInsideClass) {
+                throw new ControlFlow.RuntimeError(name, "Erro de Acesso: O método '" + name.lexeme + "()' é PRIVADO. Só a classe '" + targetModel.name + "' pode aceder.");
+            }
+            if (method.accessModifier.type == TokenType.PROTECTED && !isSubclass) {
+                throw new ControlFlow.RuntimeError(name, "Erro de Acesso: O método '" + name.lexeme + "()' é PROTEGIDO. Só acessível por herança.");
+            }
+        }
+    }
+
+
     // ==========================================
     // EXECUÇÃO DE DECLARAÇÕES (STATEMENTS)
     // ==========================================
@@ -506,7 +527,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         XPLModel currentContext = null;
         try {
             currentContext = (XPLModel) environment.get("__current_model");
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         for (int i = 0; i < typeArgsNodes.size(); i++) {
             // Converte o TypeNode real numa String baseada no Lexema
@@ -541,8 +563,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (registry_model.containsKey(synthesizedName)) {
             return registry_model.get(synthesizedName);
         }
-
-        System.out.println("[XPL Monomorfizador] -> Sintetizando nova classe física na RAM: " + synthesizedName);
 
         // ⭐ O PARTO DA CLASSE CLONE ⭐
         XPLModel clonedModel = new XPLModel(synthesizedName, blueprint.superclass);
@@ -662,7 +682,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // ⭐ ROTA A: É UM MOLDE GENÉRICO? (Ex: declare Caixa<T>)
         // =====================================================================
         if (stmt.typeParameters != null && !stmt.typeParameters.isEmpty()) {
-            System.out.println("[XPL Genéricos] -> Criando Blueprint Estrutural: " + modelName + "<" + stmt.typeParameters.size() + " parâmetro(s)>");
 
             XPLModel blueprint = new XPLModel(modelName, null);
             blueprint.isSealed = stmt.isSealed;
@@ -675,7 +694,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
 
 
-
             registry_generic_models.put(modelName, blueprint);
             this.environment.defineConst(modelName, blueprint);
             return null; // <-- Corta aqui! Não entra no registry_model normal.
@@ -684,7 +702,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // =====================================================================
         // ⭐ ROTA B: É UMA CLASSE CONCRETA NORMAL? (Ex: declare Pessoa)
         // =====================================================================
-        System.out.println("[XPL Engine] -> Compilando Modelo de Dados (Declare): " + modelName);
 
         // 1. Resolve a herança (Extends)
         XPLModel superclass = null;
@@ -726,7 +743,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitInterfaceDeclStmt(Stmt.InterfaceDecl stmt) {
         String interfaceName = stmt.name.lexeme;
-        System.out.println("[XPL Engine] -> Registando Interface: " + interfaceName);
 
 
         // 1. Converte a Declaração da AST num Contrato em Memória
@@ -970,6 +986,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 throw new ControlFlow.RuntimeError(stmt.targetName, "O campo '" + fieldName + "' não existe no 'declare " + activeModel.name + "'.");
             }
 
+            // =====================================================================
+            // ⭐ A GUILHOTINA DO RUN-TIME: VALIDAÇÃO ESTRITA DE TIPO NO DEFAULT ⭐
+            // =====================================================================
+            if (value != null && !checkTypeMatch(value, field.type)) {
+                throw new ControlFlow.RuntimeError(stmt.targetName,
+                        "Erro de Tipo no bloco 'default': O campo '" + fieldName + "' foi declarado como '" + stringifyTypeNode(field.type) + "', mas tentou-se atribuir um valor do tipo '" + getXplTypeName(value) + "'.");
+            }
+
             if (field.isStatic) {
                 activeModel.staticFields.put(fieldName, value); // Vai para a memória estática global
             } else {
@@ -1023,6 +1047,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitThrowStmt(Stmt.Throw stmt) {
         Object value = evaluate(stmt.value);
+
+        // =====================================================================
+        // ⭐ A GUILHOTINA NATIVA DO THROW (RUN-TIME) ⭐
+        // =====================================================================
+        boolean isValidError = false;
+
+        if (value instanceof com.dic.xsuper.engine.poo.XplInstance inst) {
+            if (inst.klass != null) {
+                String modelName = inst.klass.model.name;
+                // É o próprio Error ou um filho/variante dele?
+                if (modelName.equals("Error") || inst.klass.model.isSubclassOf("Error")) {
+                    isValidError = true;
+                }
+            }
+        }
+
+        if (!isValidError) {
+            throw new ControlFlow.RuntimeError(stmt.keyword,
+                    "Erro Fatal: A instrução 'throw' só permite lançar instâncias de 'Error' (Ex: throw new Error(\"...\")). Valor recebido: " + getXplTypeName(value));
+        }
+
         // Dispara a exceção invisível no motor Java!
         throw new ControlFlow.ThrowException(value);
     }
@@ -1538,7 +1583,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
 
-
     // Detetor proativo de buracos negros (Ciclos infinitos):
     private boolean detectCircularAlias(String originName, TypeNode target) {
         if (target instanceof TypeNode.Simple) {
@@ -1775,6 +1819,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         // Guarda a função na memória (no escopo atual)
         environment.defineLet(stmt.name.lexeme, function);
+
+
         return null;
     }
 
@@ -2224,9 +2270,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (instance.klass != null) {
                 Stmt.Function method = instance.klass.model.findMethod(expr.name.lexeme);
                 if (method != null) {
+                    checkMethodAccess(expr.name, method, instance.klass.model); // ⭐ A POLÍCIA DE MÉTODOS AQUI
                     return instance.get(expr.name);
                 }
-                throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + expr.name.lexeme + "' não existe na instância de " + instance.klass.model.name + ".");
+                throw new ControlFlow.RuntimeError(expr.name, "A propriedade ou método '" + expr.name.lexeme + "' não existe na instância...");
             }
 
             // ⭐ Se o código chegar aqui, significa que o motor tentou aceder a uma propriedade
@@ -2255,6 +2302,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (method != null && method.isStatic) {
                 XPLModel owner = model.getOwnerOfMethod(expr.name.lexeme);
                 // Não tem bind(this) porque o método estático não tem dono instanciado!
+                checkMethodAccess(expr.name, method, model);
                 return new XplFunction(method, ((XplClass) object).closure, owner);
             }
 
@@ -2474,6 +2522,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // O modelo tem um método chamado 'init'?
         // Se não tiver, o utilizador NÃO PODE passar argumentos!
         Stmt.Function initMethod = model.findMethod("init");
+
+
+        // ⭐ A POLÍCIA DE ACESSO: Verifica se podemos aceder ao 'init'
+        if (initMethod != null) {
+            checkMethodAccess(expr.className, initMethod, model);
+        }
 
         if (initMethod == null && !expr.arguments.isEmpty()) {
             throw new ControlFlow.RuntimeError(expr.className,
@@ -3322,9 +3376,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.callStack.push(funcName + "() na linha " + expr.paren.line);
 
         try {
-            // Entregamos a fila já processada (expandida) directamente à função ou classe!
-            return function.call(this, processedArgs);
-
+            // Entregamos a fila já processada directamente à função ou classe!
+            Object result = function.call(this, processedArgs);
+            // =========================================================================
+            // ⭐ A POLÍCIA DE RETORNO EM TEMPO DE EXECUÇÃO ⭐
+            // =========================================================================
+            if (function instanceof XplFunction xplFunc) {
+                TypeNode expectedReturn = xplFunc.declaration.returnType;
+                if (expectedReturn == null) {
+                    if (result != null) {
+                        throw new ControlFlow.RuntimeError(expr.paren,
+                                "Erro de Contrato: A função '" + funcName + "' não declarou tipo de retorno (é void), mas retornou um valor do tipo '" + getXplTypeName(result) + "'.");
+                    }
+                } else {
+                    // Usa a tua máquina de Type Checking nativa para verificar se cumpriu a promessa!
+                    if (!checkTypeMatch(result, expectedReturn)) {
+                        throw new ControlFlow.RuntimeError(expr.paren,
+                                "Erro de Contrato no Retorno: A função '" + funcName + "' prometeu retornar '" + stringifyTypeNode(expectedReturn) + "', mas retornou '" + getXplTypeName(result) + "'.");
+                    }
+                }
+            }
+            return result;
         } catch (ControlFlow.RuntimeError erroNativo) {
             throw erroNativo;
         } catch (RuntimeException erroJava) {
@@ -3332,12 +3404,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 erroJava.printStackTrace();
             }
             throw new ControlFlow.RuntimeError(expr.paren, "Falha Nativa no Motor Java: " + erroJava);
-
         } finally {
             // =====================================================================
             // ⭐ RASTREADOR DA CALL STACK (POP)
             // =====================================================================
-            // Limpa a função da pilha mal a execução termine, MESMO QUE EXPLODA COM ERRO!
             if (!this.callStack.isEmpty()) {
                 this.callStack.pop();
             }
@@ -3347,7 +3417,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // ==========================================
     // MÉTODOS AUXILIARES
     // ==========================================
-
     private boolean isTruthy(Object object) {
         if (object == null) return false;
         if (object instanceof Boolean) return (boolean) object;
@@ -3429,14 +3498,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case null -> {
                 return "null";
             }
-
             // 1. Se for uma Instância XPL, tenta invocar o toString() automaticamente!
             case XplInstance instance -> {
                 // ⭐ VACINA: É um MetaBuilder (Fantasma)?
                 if (instance.klass == null) return "<MetaInstance JIT>";
-
                 Stmt.Function toStringMethod = instance.klass.model.findMethod("toString");
-
                 if (toStringMethod != null && toStringMethod.params.isEmpty()) {
                     try {
                         XPLModel owner = instance.klass.model.getOwnerOfMethod("toString");
@@ -3449,7 +3515,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 }
                 return "<Instância de " + instance.klass.model.name + ">";
             }
-
             // ⭐ 2. INJEÇÃO RECURSIVA EM LISTAS (Arrays) ⭐
             case List<?> list -> {
                 StringBuilder sb = new StringBuilder();
@@ -3461,7 +3526,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 sb.append("]");
                 return sb.toString();
             }
-
             // ⭐ 3. INJEÇÃO RECURSIVA EM MAPAS (Dicionários/toObject) ⭐
             case Map<?, ?> map -> {
                 StringBuilder sb = new StringBuilder();
@@ -3475,7 +3539,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 sb.append("}");
                 return sb.toString();
             }
-
             // 4. Comportamento numérico base
             case Double v -> {
                 String text = object.toString();
@@ -3486,10 +3549,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
             default -> {}
         }
-
         return object.toString();
     }
-
     // Converte "#RRGGBB" para Códigos ANSI True Color (24-bit)
     public String hexToAnsi(String hex) {
         if (hex != null && hex.startsWith("#") && hex.length() == 7) {
@@ -3504,5 +3565,4 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         return ConsoleTheme.TEXT;
     }
-    
 }

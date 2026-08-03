@@ -75,6 +75,7 @@ public class XplorerApp {
         registry.register(new WatchCmd(this.registry));
         registry.register(new CryptCmd());
 
+        registry.register(new JoinfCmd());
 
         registry.register(new PingCmd());
         registry.register(new DfCmd());

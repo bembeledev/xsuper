@@ -4,6 +4,7 @@ println(">>> A INICIAR TESTE DE CLASSES ANÓNIMAS E POLIMORFISMO <<<", "#00FFFF"
 interface CRUD {
     pub fun add(nome: string);
     pub fun delete(id: int);
+    pub fun getIda(): int;
     pub fun getId(): int;
 }
 
@@ -40,7 +41,7 @@ fun criarGestorCrud(alvo: Pessoa): CRUD {
         }
 
         @Override
-        pub fun getId(): int {
+        pub fun getIda(): int {
             return alvo.id;
         }
     };

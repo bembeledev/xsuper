@@ -16,9 +16,6 @@ public class Environment {
     // Registo de quem entrou por via de 'import'
     private final java.util.Set<String> importedSymbols = Collections.synchronizedSet(new java.util.HashSet<>());
 
-    // ⭐ MEMÓRIA BLINDADA CONTRA CONCORRÊNCIA ⭐
-    public final Map<String, Object> valuesConcurrency = new ConcurrentHashMap<>();
-    public final Map<String, String> typeRegistryConcurrency = new ConcurrentHashMap<>();
 
     // =========================================================================
     // ⭐ 1. A INTERFACE DO NOVO SISTEMA NERVOSO GERAL (Múltiplos Eventos)

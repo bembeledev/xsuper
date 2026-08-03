@@ -3,6 +3,7 @@ package com.dic.xsuper.engine.core;
 import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.ast.Stmt;
 import com.dic.xsuper.engine.ast.TypeNode;
+import com.dic.xsuper.engine.exceptions.ControlFlow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,12 @@ public class Parser {
     // ⭐ NOVO: Permite extrair a quantidade exacta de bugs encontrados!
     public int getErrorCount() {
         return this.errorCount;
+    }
+
+    private final List<ControlFlow.RuntimeError> errors = new ArrayList<>();
+
+    public List<ControlFlow.RuntimeError> getErrors() {
+        return errors;
     }
 
     public Parser(List<Token> tokens) {
@@ -614,7 +621,7 @@ public class Parser {
             }
 
             Token modifier = null;
-            if (match(TokenType.PUBLIC, TokenType.PRIVATE)) modifier = previous();
+            if (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED)) modifier = previous();
 
             boolean isStatic = match(TokenType.STATIC);
             boolean isAbstract = match(TokenType.ABSTRACT);
@@ -683,7 +690,7 @@ public class Parser {
     private Stmt functionDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         // 1. Modificadores de Acesso (Opcionais - Se a tua AST já suportar)
         Token modifier = null;
-        if (match(TokenType.PUBLIC, TokenType.PRIVATE)) {
+        if (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED)) {
             modifier = previous();
         }
 
@@ -760,10 +767,6 @@ public class Parser {
 
     private Stmt varDeclaration(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
         Token keyword = previous(); // Pode ser LET, VAR ou CONST
-
-        if (keyword.type == TokenType.VAR && scopeDepth > 0) {
-            throw error(keyword, "Erro de Escopo: A palavra-chave 'var' só pode ser usada ao nível do arquivo global.");
-        }
 
         Token name = consumeIdentifierSoft( "Esperado nome da variável.");
 
@@ -1288,7 +1291,7 @@ public class Parser {
                 advance(); // Consome o ';' limpo
             } else if (!check(TokenType.RBRACE)) {
                 // Só atira erro se faltar o ';' E não for a última respiração antes de fechar a chaveta '}'!
-                throw error(peek(), "Esperado ';' após a expressão.");
+                consumeSoft(TokenType.SEMICOLON, ";", "Esperado ';' após a expressão.");
             }
         }else {
             // PERDÃO SINTÁTICO: Consome o ';' silenciosamente se ele existir a seguir a um bloco!
@@ -1310,7 +1313,12 @@ public class Parser {
         this.errorCount++; // ⭐ Incrementa o contador de bugs!
         String path = (token.filePath != null) ? token.filePath : "Desconhecido";
         // O sufixo (Recuperado) mostra que o motor não entrou em pânico!
+
+        String msgFinal = "Erro Sintático (Recuperado): " + message;
+
         System.err.println(path + ":" + token.line + ":" + token.column + ":\n\tErro Sintático (Recuperado): " + message);
+
+        this.errors.add(new ControlFlow.RuntimeError(token, msgFinal));
     }
 
     /**
@@ -1320,16 +1328,11 @@ public class Parser {
     private Token consumeSoft(TokenType type, String syntheticLexeme, String message) {
         if (check(type)) return advance(); // Fluxo perfeito
 
-        // Avisa o programador do erro
+        // Avisa o Linter / Programador do erro
         reportSoftError(peek(), message);
 
-        // 💡 A EVOLUÇÃO: Se o token atual for um erro óbvio ou pontuação trocada,
-        // avançamos uma casa para não prender o Parser num loop infinito de falsos erros!
-        if (!isAtEnd() && (peek().type == TokenType.SEMICOLON || peek().type == TokenType.COMMA || peek().type == TokenType.RBRACE)) {
-            advance();
-        }
-
-        // Injeta o token fantasma para a AST fechar o nó feliz
+        // ⭐ A CURA 2: O token atual (seja ele qual for) continua intocado.
+        // Apenas injetamos a "peça" fantasma que faltava para a árvore AST não cair.
         return new Token(type, syntheticLexeme, null, peek().line, peek().column, peek().filePath);
     }
 
@@ -2012,7 +2015,7 @@ public class Parser {
                     }
 
                     Token modifier = null;
-                    if (match(TokenType.PUBLIC, TokenType.PRIVATE)) modifier = previous();
+                    if (match(TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED)) modifier = previous();
 
                     consumeSoft(TokenType.FUN, "fun", "Esperado 'fun' na classe anónima.");
                     Token methodName = consumeIdentifierSoft("Esperado nome do método.");
@@ -2084,6 +2087,7 @@ public class Parser {
     }
 
     private Token peekNext() {
+        if (current + 1 >= tokens.size()) return tokens.get(tokens.size() - 1);
         return tokens.get(current + 1);
     }
 
@@ -2105,15 +2109,20 @@ public class Parser {
         // =====================================================================
         // ⭐ UPGRADE: Contexto Cirúrgico (O que esperava vs O que encontrou)
         // =====================================================================
-        String msgFinal = message;
+        String msgDetalhada = message;
         if (token.type == TokenType.EOF) {
-            msgFinal += " (Fim do ficheiro inesperado).";
+            msgDetalhada += " (Fim do ficheiro inesperado).";
         } else {
-            msgFinal += " (Mas encontrou: '" + token.lexeme + "').";
+            msgDetalhada += " (Mas encontrou: '" + token.lexeme + "').";
         }
 
+        String msgFinal = "Erro Sintático: " + msgDetalhada;
+
         // Formato: C:\Caminho\arquivo.xpl:10:5
-        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t Erro Sintático: " + msgFinal);
+        System.err.println(path + ":" + token.line + ":" + token.column + ":\n\t " + msgFinal);
+
+        // ⭐ 3B. GUARDA O ERRO FATAL NA LISTA PARA O VSCODE!
+        this.errors.add(new ControlFlow.RuntimeError(token, msgFinal));
 
         return new ParseException();
     }
@@ -2127,8 +2136,6 @@ public class Parser {
         advance(); // Engole o token que causou o erro inicial
 
         while (!isAtEnd()) {
-            // Se encontrámos um ponto e vírgula, a próxima instrução deve ser segura!
-            if (previous().type == TokenType.SEMICOLON) return;
 
             // Se encontrámos o início de algo importante, paramos de descartar!
             switch (peek().type) {

@@ -65,6 +65,13 @@
             <version>1.6.2</version>
         </dependency>
 
+        <!-- Biblioteca oficial LSP (Language Server Protocol) -->
+        <dependency>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j</artifactId>
+            <version>0.23.1</version> <!-- Podes verificar a última versão depois, mas esta é super estável -->
+        </dependency>
+
         <dependency>
             <groupId>com.fazecast</groupId>
             <artifactId>jSerialComm</artifactId>

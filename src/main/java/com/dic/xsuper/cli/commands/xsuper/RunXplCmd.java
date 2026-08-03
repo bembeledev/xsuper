@@ -4,6 +4,8 @@ import com.dic.xsuper.app.XplBootstrapper;
 import com.dic.xsuper.cli.core.Command;
 import com.dic.xsuper.cli.core.CommandRegistry;
 
+import com.dic.xsuper.engine.analysis.SemanticAnalyzer;
+import com.dic.xsuper.engine.analysis.SemanticError;
 import com.dic.xsuper.engine.core.Lexer;
 import com.dic.xsuper.engine.core.Parser;
 import com.dic.xsuper.engine.core.Interpreter;
@@ -75,6 +77,8 @@ public class RunXplCmd implements Command {
                 return currentDirectory; // 🛑 CORTA AQUI! O interpretador nunca será chamado!
             }
 
+
+
             if (statements.isEmpty()) {
                 System.out.println(ConsoleTheme.WARNING + ">> AVISO: A AST está vazia. Não há nada para executar!" + ConsoleTheme.RESET);
             } else {
@@ -98,22 +102,14 @@ public class RunXplCmd implements Command {
                     }
                 }
 
-                /*// ⭐ 2. O NOVO PORTÃO DE SEGURANÇA (ANALISADOR SEMÂNTICO)
-                SemanticAnalyzer analyzer = new SemanticAnalyzer(this.registry, currentDirectory);
-                boolean isCodeSafe = analyzer.analyze(statements);
 
-                if (!isCodeSafe) {
-                    System.out.println("⚠️ Execução abortada devido a erros de tipagem/semântica.");
-                    return null; // PÁRA TUDO! O Interpretador nunca chega a correr!
-                }*/
 
                 //System.out.println(ConsoleTheme.TEXT + ">> 5. A iniciar Interpretador..." + ConsoleTheme.RESET);
                 Interpreter interpreter = new Interpreter(this.registry, currentDirectory);
                 interpreter.activeBreakpoints.addAll(breakpoints);
 
-
-
                 XplBootstrapper.bootstrap(interpreter);
+
 
                 // ─── ADICIONA ESTAS LINHAS ──────────────────────────────────────────────
                 // 2. Cria uma ponte silenciosa (Headless Bridge) para o terminal não crashar
@@ -137,8 +133,26 @@ public class RunXplCmd implements Command {
 
                 // 3. Instancia a Engine passando o interpretador que vai correr o ficheiro.
                 // Isto vai automaticamente injetar '__ui_engine', 'document' e 'ui' nas globais!
-                                //SuperUiEngine uiEngine = new SuperUiEngine(interpreter, headlessBridge);
+                SuperUiEngine uiEngine = new SuperUiEngine(interpreter, headlessBridge);
                 // ────────────────────────────────────────────────────────────────────────
+
+
+                // =========================================================================
+                // ⭐ A NOVA MURALHA DE SEGURANÇA 2: LIMPEZA SEMÂNTICA MINUCIOSA
+                // =========================================================================
+                SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(interpreter);
+                List<SemanticError> semanticErrors = semanticAnalyzer.analyze(statements);
+
+                if (!semanticErrors.isEmpty()) {
+                    System.err.println(ConsoleTheme.ERROR + "\n>> Execução abortada: Falha na Análise Semântica (" + semanticErrors.size() + " erro(s) encontrados)." + ConsoleTheme.RESET);
+
+                    for (SemanticError err : semanticErrors) {
+                        String path = err.token.filePath != null ? err.token.filePath : target.toString();
+                        System.err.println(path + ":" + err.token.line + ":" + err.token.column + ":\n\tErro Lógico: " + err.getMessage());
+                    }
+                    return currentDirectory; // Bloqueia a execução antes do Interpretador arrancar!
+                }
+                // =========================================================================
 
                 interpreter.interpret(statements);
                 //System.out.println(ConsoleTheme.SUCCESS + ">> 6. Execução concluída com sucesso!" + ConsoleTheme.RESET);

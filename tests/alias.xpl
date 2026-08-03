@@ -43,8 +43,9 @@ try {
 
     // O crime: tentar compilar um sinónimo paradoxal
     // (Descomenta no ficheiro real para testar a detonação do compilador!)
+     type Beta = string;
      type Alfa = Beta;
-     type Beta = Alfa;
+     //type Beta = Alfa;
 
     logCiclo = "Armadilha evitada (Código comentado).";
 } catch (e: Error) {

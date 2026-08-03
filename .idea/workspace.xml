@@ -4,15 +4,35 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): Implementação definitiva do Meta-Object Protocol (MOP) e Injeção Segura de Listeners&#10;&#10;Esta atualização finaliza a arquitetura de Metaprogramação e Reflexão do motor XPL, garantindo isolamento total de estado e prevenindo loops infinitos em operações reativas.&#10;&#10;Alterações principais:&#10;- 🏗️ Arquitetura: Separação limpa entre o Core (`MetaReflectionEngine`) e a Standard Library (`ReflectNativeModel`).&#10;- 🧠 MOP API (`ReflectNativeModel`): Criação da classe nativa `Reflect` com superpoderes de introspeção (`hasMethod`, `getFields`), mutação silenciosa (`setFieldValue`), metaprogramação ativa (`injectField`, `newInstance`) e auditoria (`getActiveListeners`).&#10;- 💉 Injeção de Dependência (`Interpreter.java` &amp; `XplClass.java`): O motor agora injeta automaticamente a API de Reflexão na variável `this.target` dos Listeners (junto com `event`, `property` e `value`), eliminando a necessidade de passar argumentos manuais e protegendo a memória do objeto original.&#10;- 🐛 Correção AST (`Interpreter.java`): Corrigida a leitura de metadados no `visitDeclareDeclStmt` para aceitar `stmt.listeners` e `stmt.decorators` em simultâneo, garantindo que as classes suportam anotações estáticas e reativas coexistentes.&#10;&#10;A partir de agora, os Listeners XPL atuam com segurança absoluta de memória, operando com reflexão profunda sem corromper o ciclo de execução (Bypass State).">
-      <change afterPath="$PROJECT_DIR$/files/listeners/WebFilter.xpl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/builder.xpl" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): Geração dinâmica de classes, Aspect-Oriented Listeners e refatoração de Erros&#10;&#10;Esta atualização eleva o motor XPL ao nível de frameworks Enterprise, adicionando suporte a manipulação de classes em tempo de execução (JIT), interceção de requisições web (AOP) e uma ergonomia muito melhor no tratamento de exceções.&#10;&#10;Alterações principais:&#10;- 🧬 Runtime Class Generation (`ReflectNativeModel.java`): Adicionado o `Reflect.defineClass(nome, pai)` para criar classes dinamicamente na RAM do zero (estilo CGLib/ByteBuddy).&#10;- 🛠️ Injeção Avançada (`ReflectNativeModel.java`): O `injectMethod` agora suporta a renomeação de Arrow Functions injetadas, viabilizando a criação de ORMs mágicos.&#10;- 🛡️ Aspect-Oriented Programming (`WebFilter.xpl`): Criado e acoplado um Listener HTTP aos controladores (`HomeController`, `UploadController`) para fazer log e auditoria de requisições de forma puramente silenciosa e desacoplada.&#10;- 🚨 Ergonomia de Exceções (`ErrorNativeModel.java`): Injetado nativamente o método construtor `init(msg)` na classe `Error`. Permite agora o uso limpo e direto de `throw new Error(&quot;Mensagem&quot;)`, incluindo valor por defeito caso instanciado vazio.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/JoinfCmd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/MetaProgramming.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/StringifyHelper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/TypeChecker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lsp/XplLanguageServer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lsp/XplLspLauncher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lsp/XplTextDocumentService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/logs.xpl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/files/controller/Controller.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/files/controller/Controller.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/files/controller/HomeController.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/files/controller/HomeController.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ErrorNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ErrorNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ReflectNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/ReflectNativeModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Environment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Environment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Token.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Token.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/LogNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/LogNativeModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/adv.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/adv.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/alias.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/alias.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/decorator.xpl" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/error.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/error.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/generic.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/generic.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/init.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/init.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/interfaces.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/interfaces.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/throws.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +75,7 @@
   </component>
   <component name="KotlinScriptingSettings" supportWarning="false" />
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -65,60 +85,60 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
-    "Application.AnimandoNodeEControl.executor": "Run",
-    "Application.AnimationDemo.executor": "Run",
-    "Application.FileExplorerCLI.executor": "Run",
-    "Application.Main.executor": "Run",
-    "Application.RunApp.executor": "Run",
-    "Application.SuperUIEditorTest.executor": "Run",
-    "Application.TestHeadlessEngine.executor": "Run",
-    "Application.TestSelect.executor": "Run",
-    "Application.TestSuperHTML.executor": "Run",
-    "Application.TestUIInputRender.executor": "Run",
-    "Application.TestUIRender.executor": "Run",
-    "Application.TestUIRender02.executor": "Run",
-    "Application.TestUIRenderMaster.executor": "Run",
-    "Application.TestUITableRender.executor": "Run",
-    "Application.TestUITextRender.executor": "Run",
-    "Application.TestXPL.executor": "Run",
-    "Application.TestXplCss.executor": "Run",
-    "Application.TestXplCssEvaluator.executor": "Run",
-    "Application.TestXplCssMatcher.executor": "Run",
-    "Application.TestXplCssResolver.executor": "Run",
-    "Application.UIFromHTML.executor": "Run",
-    "Application.XplRuntime.executor": "Run",
-    "Application.com.dic.xsuper.Main.executor": "Run",
-    "Batch.xpl.executor": "Run",
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Maven.xsuper-xplorer [clean].executor": "Run",
-    "Maven.xsuper-xplorer [deploy].executor": "Run",
-    "Maven.xsuper-xplorer [install].executor": "Run",
-    "Maven.xsuper-xplorer [package].executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "jdk.selected.JAVA_MODULE": "21",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/ferna/Documents/GitHub/FileManager/files/controller",
-    "node.js.detected.package.jshint": "true",
-    "node.js.selected.package.jshint": "",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.15712383",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "template.copyright.formatting"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
+    &quot;Application.AnimandoNodeEControl.executor&quot;: &quot;Run&quot;,
+    &quot;Application.AnimationDemo.executor&quot;: &quot;Run&quot;,
+    &quot;Application.FileExplorerCLI.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.RunApp.executor&quot;: &quot;Run&quot;,
+    &quot;Application.SuperUIEditorTest.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestHeadlessEngine.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestSelect.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestSuperHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIInputRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRender02.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUIRenderMaster.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUITableRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestUITextRender.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXPL.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXplCss.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXplCssEvaluator.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXplCssMatcher.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestXplCssResolver.executor&quot;: &quot;Run&quot;,
+    &quot;Application.UIFromHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.XplRuntime.executor&quot;: &quot;Run&quot;,
+    &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Batch.xpl.executor&quot;: &quot;Run&quot;,
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [deploy].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [package].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/files/controller&quot;,
+    &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.15712383&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;template.copyright.formatting&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
       <recent name="com.dic.xsuper.lang.ui.tags.game" />
@@ -698,7 +718,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/main" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
@@ -711,7 +731,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat: implement fine-grained reactivity and stabilize engine core&#10;&#10;- Implement XplEnvironmentWatcher decorator for non-intrusive reactivity hooks in Environment&#10;- Integrate XplReactiveState and XplReactivityRenderer for fine-grained DOM patching&#10;- Resolve scope capture issues in XplFunction and POO instantiation logic&#10;- Optimize JavaFxRenderer reconciliation to handle ghost text nodes and dynamic CSS updates&#10;- Fix arity validation errors in higher-order functions (callbacks)&#10;- Stabilize engine global scoping and type inference for generic templates" />
     <MESSAGE value="refactor!: migrate standard library to object-oriented native models &amp; parser core&#10;&#10;- Refactor global functions and variables into clean, namespaced OOP native models (Http, Console, Task, Log, Assert, HttpServer, Security, Database, Smtp, Scheduler, Stream, Serial, Crypto, Mongo, Regex, Buffer, Channel, etc.).&#10;- Clean up global scope pollution in NativeVariables and NativeRegistry, encapsulating constants within their respective model structures.&#10;- Update Parser and Interpreter (visitArrowFunctionExpr) to fully support multi-parameter arrow functions ((req, res) =&gt; {}) with robust type inference.&#10;- Consolidate all standard library injections and execution pipelines through ModelNativeRegistry." />
     <MESSAGE value="feat(runtime): implement EventLoop native model, refine reactive Observer and fix AST/interpreter bugs&#10;&#10;- Add EventLoopNativeModel supporting nextTick, defer, setTimeout, setInterval, and queue processing.&#10;- Refine Observer architecture with targeted `Observer.observable(name, type)` instances and streamlined (evento, velho, novo) callbacks.&#10;- Fix Parser dual-backpack system for independent `@` decorators and `&amp;` listeners.&#10;- Prevent memory leaks and zombie listeners by scoping environment listeners directly to interpreter instances.&#10;- Fix type-matching and null-safety for `any` types during dynamic function calls in XplFunction." />
     <MESSAGE value="feat(interpreter): implement native observer pattern and error stringification&#10;&#10;- Replace fragile proxy-based wrappers with native `__active_listeners__` injection for POO instances.&#10;- Inject `target` and `targetName` context into listener instances for deep state introspection and rules validation.&#10;- Clean up legacy auto-triggering hooks in `visitGetExpr` and `visitSetExpr` to prevent infinite recursion/loops.&#10;- Add native `toString()` method to `ErrorNativeModel` to properly format error outputs.&#10;- Update top-level exception handling in `Interpreter.interpret` to cleanly display uncaught error messages." />
@@ -736,7 +755,42 @@
     <MESSAGE value="feat: implementação de Step-Through Debugging e Call Stack nativa&#10;&#10;Esta atualização transforma o motor de breakpoints estáticos num &#10;verdadeiro Step-Through Debugger, permitindo o rastreio linha a linha &#10;e a visualização do histórico de chamadas em tempo real.&#10;&#10;Principais Alterações:&#10;* Interpreter (Runtime &amp; REPL):&#10;  - Adicionado o estado `isStepping` e `lastSteppedLine` ao `execute()` &#10;    para suportar a execução passo-a-passo sem repetição de nós da AST.&#10;  - Adicionado o comando `s` (step) no REPL para avançar linha a linha.&#10;  - Implementada uma Call Stack nativa (`Stack&lt;String&gt; callStack`).&#10;  - Atualizado o `visitCallExpr` com um bloco try/finally (Push/Pop) para &#10;    rastrear a entrada e saída de funções de forma segura, mesmo em caso de erro.&#10;  - Adicionado o comando `stack` (ou `bt`) no REPL para inspecionar o &#10;    caminho de execução (rasto de migalhas)." />
     <MESSAGE value="feat(modularity): injeção dinâmica de contexto global baseada no SDM&#10;&#10;Esta atualização elimina o hardcode do ficheiro genérico &quot;globals.xpl&quot;, &#10;passando o motor a deduzir inteligentemente o módulo de variáveis globais &#10;a partir do namespace (group e name) definido no manifesto package.spm do projeto.&#10;&#10;Principais Alterações:&#10;* XplModuleManager:&#10;  - Adicionado o método `getProjectGlobalsModule` para analisar o ecossistema &#10;    e resolver a assinatura oficial do projeto (ex: com.exemplo.projeto.globals).&#10;&#10;* Interpreter:&#10;  - Refatoração do `interpret()` e `resolveGlobalsChain()` para injetar o &#10;    módulo de globais dinâmico fornecido pelo Manager.&#10;  - Implementação de isolamento rigoroso: scripts avulsos correm limpos &#10;    na sua própria redoma, enquanto os ficheiros pertencentes a um projeto &#10;    SDM recebem a injeção global apropriada ao seu namespace." />
     <MESSAGE value="feat(core): Implementação definitiva do Meta-Object Protocol (MOP) e Injeção Segura de Listeners&#10;&#10;Esta atualização finaliza a arquitetura de Metaprogramação e Reflexão do motor XPL, garantindo isolamento total de estado e prevenindo loops infinitos em operações reativas.&#10;&#10;Alterações principais:&#10;- ️ Arquitetura: Separação limpa entre o Core (`MetaReflectionEngine`) e a Standard Library (`ReflectNativeModel`).&#10;-  MOP API (`ReflectNativeModel`): Criação da classe nativa `Reflect` com superpoderes de introspeção (`hasMethod`, `getFields`), mutação silenciosa (`setFieldValue`), metaprogramação ativa (`injectField`, `newInstance`) e auditoria (`getActiveListeners`).&#10;-  Injeção de Dependência (`Interpreter.java` &amp; `XplClass.java`): O motor agora injeta automaticamente a API de Reflexão na variável `this.target` dos Listeners (junto com `event`, `property` e `value`), eliminando a necessidade de passar argumentos manuais e protegendo a memória do objeto original.&#10;-  Correção AST (`Interpreter.java`): Corrigida a leitura de metadados no `visitDeclareDeclStmt` para aceitar `stmt.listeners` e `stmt.decorators` em simultâneo, garantindo que as classes suportam anotações estáticas e reativas coexistentes.&#10;&#10;A partir de agora, os Listeners XPL atuam com segurança absoluta de memória, operando com reflexão profunda sem corromper o ciclo de execução (Bypass State)." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(core): Implementação definitiva do Meta-Object Protocol (MOP) e Injeção Segura de Listeners&#10;&#10;Esta atualização finaliza a arquitetura de Metaprogramação e Reflexão do motor XPL, garantindo isolamento total de estado e prevenindo loops infinitos em operações reativas.&#10;&#10;Alterações principais:&#10;- ️ Arquitetura: Separação limpa entre o Core (`MetaReflectionEngine`) e a Standard Library (`ReflectNativeModel`).&#10;-  MOP API (`ReflectNativeModel`): Criação da classe nativa `Reflect` com superpoderes de introspeção (`hasMethod`, `getFields`), mutação silenciosa (`setFieldValue`), metaprogramação ativa (`injectField`, `newInstance`) e auditoria (`getActiveListeners`).&#10;-  Injeção de Dependência (`Interpreter.java` &amp; `XplClass.java`): O motor agora injeta automaticamente a API de Reflexão na variável `this.target` dos Listeners (junto com `event`, `property` e `value`), eliminando a necessidade de passar argumentos manuais e protegendo a memória do objeto original.&#10;-  Correção AST (`Interpreter.java`): Corrigida a leitura de metadados no `visitDeclareDeclStmt` para aceitar `stmt.listeners` e `stmt.decorators` em simultâneo, garantindo que as classes suportam anotações estáticas e reativas coexistentes.&#10;&#10;A partir de agora, os Listeners XPL atuam com segurança absoluta de memória, operando com reflexão profunda sem corromper o ciclo de execução (Bypass State)." />
+    <MESSAGE value="feat(core): Geração dinâmica de classes, Aspect-Oriented Listeners e refatoração de Erros&#10;&#10;Esta atualização eleva o motor XPL ao nível de frameworks Enterprise, adicionando suporte a manipulação de classes em tempo de execução (JIT), interceção de requisições web (AOP) e uma ergonomia muito melhor no tratamento de exceções.&#10;&#10;Alterações principais:&#10;-  Runtime Class Generation (`ReflectNativeModel.java`): Adicionado o `Reflect.defineClass(nome, pai)` para criar classes dinamicamente na RAM do zero (estilo CGLib/ByteBuddy).&#10;- ️ Injeção Avançada (`ReflectNativeModel.java`): O `injectMethod` agora suporta a renomeação de Arrow Functions injetadas, viabilizando a criação de ORMs mágicos.&#10;- ️ Aspect-Oriented Programming (`WebFilter.xpl`): Criado e acoplado um Listener HTTP aos controladores (`HomeController`, `UploadController`) para fazer log e auditoria de requisições de forma puramente silenciosa e desacoplada.&#10;-  Ergonomia de Exceções (`ErrorNativeModel.java`): Injetado nativamente o método construtor `init(msg)` na classe `Error`. Permite agora o uso limpo e direto de `throw new Error(&quot;Mensagem&quot;)`, incluindo valor por defeito caso instanciado vazio." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(core): Geração dinâmica de classes, Aspect-Oriented Listeners e refatoração de Erros&#10;&#10;Esta atualização eleva o motor XPL ao nível de frameworks Enterprise, adicionando suporte a manipulação de classes em tempo de execução (JIT), interceção de requisições web (AOP) e uma ergonomia muito melhor no tratamento de exceções.&#10;&#10;Alterações principais:&#10;-  Runtime Class Generation (`ReflectNativeModel.java`): Adicionado o `Reflect.defineClass(nome, pai)` para criar classes dinamicamente na RAM do zero (estilo CGLib/ByteBuddy).&#10;- ️ Injeção Avançada (`ReflectNativeModel.java`): O `injectMethod` agora suporta a renomeação de Arrow Functions injetadas, viabilizando a criação de ORMs mágicos.&#10;- ️ Aspect-Oriented Programming (`WebFilter.xpl`): Criado e acoplado um Listener HTTP aos controladores (`HomeController`, `UploadController`) para fazer log e auditoria de requisições de forma puramente silenciosa e desacoplada.&#10;-  Ergonomia de Exceções (`ErrorNativeModel.java`): Injetado nativamente o método construtor `init(msg)` na classe `Error`. Permite agora o uso limpo e direto de `throw new Error(&quot;Mensagem&quot;)`, incluindo valor por defeito caso instanciado vazio." />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java</url>
+          <line>567</line>
+          <log-expression expression="&quot;[XPL Monomorfizador] -&gt; Sintetizando nova classe física na RAM: &quot; + synthesizedName" language="JAVA" mode="CODE_FRAGMENT" />
+          <placement>INTER_LINE</placement>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java</url>
+          <line>685</line>
+          <log-expression expression="&quot;[XPL Genéricos] -&gt; Criando Blueprint Estrutural: &quot; + modelName + &quot;&lt;&quot; + stmt.typeParameters.size() + &quot; parâmetro(s)&gt;&quot;" language="JAVA" mode="CODE_FRAGMENT" />
+          <placement>INTER_LINE</placement>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java</url>
+          <line>706</line>
+          <log-expression expression="&quot;[XPL Engine] -&gt; Compilando Modelo de Dados (Declare): &quot; + modelName" language="JAVA" mode="CODE_FRAGMENT" />
+          <placement>INTER_LINE</placement>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java</url>
+          <line>748</line>
+          <log-expression expression="&quot;[XPL Engine] -&gt; Registando Interface: &quot; + interfaceName" language="JAVA" mode="CODE_FRAGMENT" />
+          <placement>INTER_LINE</placement>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/FileManager$Main.ic" NAME="Main Coverage Results" MODIFIED="1785092928775" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true">

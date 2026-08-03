@@ -52,7 +52,7 @@ implement Ecossistema<T, U, V> {
         this.metadados = metadadosIniciais;
     }
 
-    pub fun registrar(chave: string, entidade: U, pontuacao: T): bool {
+     pub fun registrar(chave: string, entidade: U, pontuacao: T): bool {
         this.registroNomes.put(chave, entidade);
         println(" -> [Registro OK] " + chave + " | Entidade em RAM: " + typeof(entidade), "#00FF00");
         return true;
@@ -78,7 +78,7 @@ ecoAlpha.registrar("Motor", "V22 Quântico", 82570);
 
 println("\n[Fase 2] Testando Isolamento de Molde e Promoção Numérica...", "#FFFF00");
 // Força a criação de um Ecossistema<string, bool, float> que por sua vez cria um MapaKV<string, bool>!
-var ecoBeta = new Ecossistema<string, bool, float>("Macia-Sede", 100);
+var ecoBeta = new Ecossistema<string, bool, float>("Macia-Sede", 100.0);
 
 ecoBeta.registrar("StatusServidor", true, "ID-9999");
 

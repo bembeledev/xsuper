@@ -1,6 +1,6 @@
 declare Pessoa{
-pub nome: string;
-pub idade: int;
+    pub nome: string;
+    pub idade: int;
 }
 
 implement Pessoa {
@@ -27,6 +27,3 @@ for i in (1,10){
     println(p);
     pessoas.push(p);
 }
-
-println(pessoas);
-
