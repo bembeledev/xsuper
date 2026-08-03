@@ -29,10 +29,46 @@ public class ReflectNativeModel {
 
         XplClass reflectClass = new XplClass(model, interpreter.globals);
 
-        // API Global: var ref = Reflect.on(alvo)
+        // API Global: var ref = Reflect.on(Pessoa)
         model.staticFields.put("on", buildCallable(1, (intp, args) -> {
             Object target = intp.evaluate(args.getFirst().expression);
             return createReflectionInstance(target, intp, reflectClass);
+        }));
+
+        // =====================================================================
+        // ⭐ NOVA API: GERAÇÃO DINÂMICA DE CLASSES (RUNTIME CLASS GENERATOR)
+        // Uso: var gerador = Reflect.defineClass("UserVirtual", "ModelPai");
+        // =====================================================================
+        model.staticFields.put("defineClass", buildCallable(-1, (intp, args) -> {
+            if (args.isEmpty()) throw new ControlFlow.RuntimeError(null, "Reflect.defineClass requer o nome da classe.");
+            String className = intp.stringify(intp.evaluate(args.get(0).expression));
+
+            // Permite Herdar de outra classe dinamicamente!
+            XPLModel superModel = null;
+            if (args.size() > 1) {
+                String superName = intp.stringify(intp.evaluate(args.get(1).expression));
+                superModel = intp.registry_model.get(superName);
+                if (superModel == null) throw new ControlFlow.RuntimeError(null, "A superclasse '" + superName + "' não existe.");
+            }
+
+            // 1. Criamos o ADN vazio na RAM
+            XPLModel newModel = new XPLModel(className, superModel);
+            newModel.hasBaseImplementation = true; // Nasce pronta a ser usada
+            newModel.canBeInstantiated = true;
+
+            // 2. Herda a Memória do Pai
+            if (superModel != null) {
+                newModel.fields.putAll(superModel.fields);
+                newModel.defaultInstanceFields.putAll(superModel.defaultInstanceFields);
+            }
+
+            // 3. Regista no Motor XPL em Tempo Real!
+            intp.registry_model.put(className, newModel);
+            XplClass newClass = new XplClass(newModel, intp.globals);
+            intp.environment.defineConst(className, newClass);
+
+            // 4. Retorna a instância Reflect para podermos injetar os métodos lá dentro!
+            return createReflectionInstance(newClass, intp, reflectClass);
         }));
 
         interpreter.registry_model.put("Reflect", model);
@@ -200,11 +236,22 @@ public class ReflectNativeModel {
             return true;
         }));
 
-        inst.fields.put("injectMethod", buildCallable(1, (i, a) -> {
+        // =========================================================================
+        // ⭐ INJEÇÃO DE MÉTODOS MELHORADA (Permite Renomear Funções Anónimas!)
+        // =========================================================================
+        inst.fields.put("injectMethod", buildCallable(-1, (i, a) -> {
             if (targetModel == null) throw new ControlFlow.RuntimeError(null, "Alvo não suporta injeção.");
-            Object astNode = i.evaluate(a.getFirst().expression);
+            if (a.isEmpty()) throw new ControlFlow.RuntimeError(null, "injectMethod requer a função a injetar.");
 
-            // A ponte mágica para objetos Builder customizados com toAST()
+            Object astNode = i.evaluate(a.get(0).expression);
+
+            // Opcional: O nome com que o método vai ficar registado na Classe!
+            String customName = null;
+            if (a.size() > 1) {
+                customName = i.stringify(i.evaluate(a.get(1).expression));
+            }
+
+            // A ponte mágica para objetos Builder
             if (astNode instanceof XplInstance builderInst && builderInst.klass != null) {
                 if (builderInst.klass.model.findMethod("toAST") != null) {
                     Token astToken = new Token(TokenType.IDENTIFIER, "toAST", null, 0, 0);
@@ -216,12 +263,25 @@ public class ReflectNativeModel {
             }
 
             if (!(astNode instanceof Stmt.Function) && !(astNode instanceof XplFunction)) {
-                throw new ControlFlow.RuntimeError(null, "Reflect.injectMethod espera uma função AST.");
+                throw new ControlFlow.RuntimeError(null, "Reflect.injectMethod espera uma função AST ou Arrow Function.");
             }
 
-            Stmt.Function novaFuncao = (astNode instanceof Stmt.Function f) ? f : ((XplFunction) astNode).declaration;
+            Stmt.Function baseFunc = (astNode instanceof Stmt.Function f) ? f : ((XplFunction) astNode).declaration;
 
-            if (target instanceof XplInstance instance) {
+            // ⭐ SOBRESCREVE O NOME SE O UTILIZADOR PEDIR ⭐
+            Token funcNameToken = baseFunc.name;
+            if (customName != null) {
+                funcNameToken = new Token(TokenType.IDENTIFIER, customName, null, baseFunc.name.line, baseFunc.name.column);
+            }
+
+            Stmt.Function novaFuncao = new Stmt.Function(
+                    baseFunc.accessModifier, baseFunc.isStatic, baseFunc.isAbstract,
+                    funcNameToken, baseFunc.params, baseFunc.returnType,
+                    baseFunc.thrownExceptions, baseFunc.body, baseFunc.decorators, baseFunc.listeners
+            );
+
+            // Injeta na Instância ou no Modelo
+            if (target instanceof XplInstance instance && targetModel.name.equals("MetaInstance")) {
                 if (instance.klass == null) throw new ControlFlow.RuntimeError(null, "Não é possível injetar método num MetaBuilder.");
                 instance.fields.put(novaFuncao.name.lexeme, new XplFunction(novaFuncao, i.environment, instance.klass.model));
             } else {
