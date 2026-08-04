@@ -51,7 +51,6 @@ while (true) {
 proc2.wait(3000);
 println("Processo terminado.");
 
-
 // 4. GESTÃO DE CICLO DE VIDA
 println("\n--- Ciclo de vida ---");
 // Usamos o timeout do Windows em vez de sleep para simular um processo duradouro

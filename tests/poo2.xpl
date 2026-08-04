@@ -74,22 +74,26 @@ implement Mamifero {
 implement Mamifero as Mam1 for CRUD {
 
     // ⭐ OBRIGATÓRIO 1: Cumpre a regra abstracta herdada do Animal
+    @Override
     pub fun acasalamento(): string {
         return "O mamífero reproduz-se de forma vivípara na " + this.localizacao;
     }
 
     // ⭐ OBRIGATÓRIO 2: Cumpre a interface CRUD à risca (Tipos e Parâmetros)
+    @Override
     pub fun add(nome: string): int {
         this.nome = nome;
         println("A guardar o animal [" + this.nome + "] na Base de Dados A...");
         return 200; // Retorna int!
     }
 
+    @Override
     pub fun delete(id: int): string {
         println("A eliminar " + this.nome + " com o id: " + id);
         return "Sucesso na eliminação"; // Retorna string!
     }
 
+    @Override
     pub fun getId() { // Não tem retorno (void), exactamente como a interface
         println("O ID actual é: " + this.id);
     }

@@ -1,8 +1,8 @@
 package com.dic.xsuper.engine.analysis;
 
 import com.dic.xsuper.engine.ast.*;
-import com.dic.xsuper.engine.core.Token;
-import com.dic.xsuper.engine.core.TokenType;
+import com.dic.xsuper.engine.core.*;
+import com.dic.xsuper.engine.modules.XplModuleManager;
 
 import java.util.*;
 
@@ -15,12 +15,15 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     private SemanticScope currentScope;
     private final List<SemanticError> errors = new ArrayList<>();
-
+    // ⭐ MEMÓRIA DO LINTER: Previne Loops Infinitos de Importação (Dependências Circulares)
+    private java.util.Set<String> visitedModules = new java.util.HashSet<>();
     // Estado para verificação de fluxo
     private String currentFunctionReturnType = "any";
     private boolean inLoop = false;
     private boolean inTryCatch = false;
+    private int functionDepth = 0; // ⭐ Regista se estamos dentro de uma função
 
+    private Interpreter interpreter;
     // =========================================================================
     // ⭐ RASTREADOR DE EXCEÇÕES (Checked Exceptions)
     // =========================================================================
@@ -33,6 +36,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     // 1. Atualiza o construtor para receber o Interpretador
     public SemanticAnalyzer(com.dic.xsuper.engine.core.Interpreter interpreter) {
+        this.interpreter = interpreter;
         this.currentScope = new SemanticScope(null);
         // ⭐ Injeta a biblioteca lendo dinamicamente a RAM do Interpretador!
         injectStandardLibrary(interpreter);
@@ -76,6 +80,36 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             else {
                 // Outras constantes (ex: os Dicionários TYPES, VISIBILITY)
                 currentScope.define(t, "any", false, true);
+            }
+        }
+    }
+
+    // =========================================================================
+    // ⭐ A POLÍCIA DE METADADOS (ESTÁTICA) ⭐
+    // =========================================================================
+    private void validateMetaBags(java.util.List<Stmt.DecoratorNode> decorators, java.util.List<Stmt.DecoratorNode> listeners) {
+        // 1. Vasculha a mochila dos Decoradores (@)
+        if (decorators != null) {
+            for (Stmt.DecoratorNode dec : decorators) {
+                // Ignora gatilhos de sistema como @(Listen.Set)
+                if (dec.name.lexeme.contains(".")) continue;
+
+                // Se o programador usou '@', mas o tipo na memória é 'listener', cai a guilhotina!
+                if (currentScope.isListener(dec.name.lexeme)) {
+                    errors.add(new SemanticError(dec.name,
+                            "Erro de Sintaxe: '" + dec.name.lexeme + "' é um Listener Reativo. Usa o símbolo '&' em vez de '@'."));
+                }
+            }
+        }
+
+        // 2. Vasculha a mochila dos Listeners (&)
+        if (listeners != null) {
+            for (Stmt.DecoratorNode lis : listeners) {
+                // Se o programador usou '&', mas o tipo na memória é 'decorator', cai a guilhotina!
+                if (currentScope.isDecorator(lis.name.lexeme)) {
+                    errors.add(new SemanticError(lis.name,
+                            "Erro de Sintaxe: '" + lis.name.lexeme + "' é um Decorador Passivo. Usa o símbolo '@' em vez de '&'."));
+                }
             }
         }
     }
@@ -145,6 +179,13 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
                     return; // 🛡️ Salvo pela delegação de responsabilidade!
                 }
             }
+        }
+
+        // =====================================================================
+        // ⭐ 3. VIA VERDE PARA SCRIPTS GLOBAIS
+        // =====================================================================
+        if (functionDepth == 0) {
+            return; // É perfeitamente legal o script raiz atirar erros para forçar uma paragem geral!
         }
 
         // 3. A Guilhotina Bateu!
@@ -238,6 +279,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public Void visitVarDeclStmt(Stmt.VarDecl stmt) {
+        validateMetaBags(stmt.decorators, stmt.listeners);
         String inferredType = "any";
         if (stmt.initializer != null) {
             inferredType = evaluate(stmt.initializer);
@@ -312,7 +354,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-
+        validateMetaBags(stmt.decorators, stmt.listeners);
         // ⭐ 1. MEMORIZA O QUE ESTA FUNÇÃO ATIRA
         List<String> prevThrows = currentFunctionThrows;
         currentFunctionThrows = new ArrayList<>();
@@ -357,6 +399,8 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         currentFunctionReturnType = returnType;
 
         beginScope();
+        functionDepth++;
+
         for (Stmt.Param param : stmt.params) {
             String pType = stringifyTypeNode(resolveAlias(param.typeNode));
             currentScope.define(param.name, pType, true, true);
@@ -371,6 +415,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             // (Opcional: verificar se todos os caminhos têm return)
         }
 
+        functionDepth--;
         endScope();
         currentFunctionReturnType = prevReturnType;
         currentFunctionThrows = prevThrows;
@@ -489,25 +534,49 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         boolean prevTry = inTryCatch;
         inTryCatch = true;
 
-// ⭐ 1. LEVANTA OS ESCUDOS! (Regista as exceções capturadas)
+        // =========================================================================
+        // ⭐ 1. LEVANTA OS ESCUDOS ANTES DE ENTRAR NO TRY!
+        // =========================================================================
         List<String> catchTypes = new ArrayList<>();
         for (Stmt.CatchClause clause : stmt.catchClauses) {
-            catchTypes.add(stringifyTypeNode(resolveAlias(clause.type)));
+            String cType = (clause.type != null) ? stringifyTypeNode(resolveAlias(clause.type)) : "any";
+            catchTypes.add(cType);
         }
         catchStack.push(catchTypes);
 
+        // =========================================================================
+        // ⭐ 2. ENTRA NO CAMPO MINADO (Executa o tryBlock)
+        // =========================================================================
         execute(stmt.tryBlock);
 
-        // ⭐ 2. BAIXA OS ESCUDOS! (O Try acabou)
+        // =========================================================================
+        // ⭐ 3. BAIXA OS ESCUDOS! (O Try acabou)
+        // =========================================================================
         catchStack.pop();
 
+        // =========================================================================
+        // ⭐ 4. A POLÍCIA DO CATCH (Valida as cláusulas e executa-as)
+        // =========================================================================
         for (Stmt.CatchClause clause : stmt.catchClauses) {
             beginScope();
-            // O tipo do catch pode ser qualquer tipo existente
-            String catchType = stringifyTypeNode(resolveAlias(clause.type));
+            String catchType = (clause.type != null) ? stringifyTypeNode(resolveAlias(clause.type)) : "any";
+
             if (!catchType.equals("any") && !currentScope.isTypeDefined(catchType)) {
                 errors.add(new SemanticError(clause.type.name, "Tipo de exceção desconhecido: '" + catchType + "'"));
             }
+            else if (!catchType.equals("any")) {
+                boolean isValidError = catchType.equals("Error");
+
+                if (!isValidError && currentScope.isClass(catchType)) {
+                    isValidError = currentScope.isSubclass(catchType, "Error");
+                }
+
+                if (!isValidError) {
+                    errors.add(new SemanticError(clause.type.name,
+                            "Erro de Tipagem: Um bloco 'catch' só pode capturar instâncias de 'Error' ou classes que herdem dele. Tentou-se capturar: '" + catchType + "'."));
+                }
+            }
+
             currentScope.define(clause.name, catchType, true, true);
             execute(clause.body);
             endScope();
@@ -556,6 +625,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public Void visitDeclareDeclStmt(Stmt.DeclareDecl stmt) {
+        validateMetaBags(stmt.decorators, stmt.listeners);
         String name = stmt.name.lexeme;
 
         // Verifica se já existe
@@ -635,10 +705,41 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     @Override
     public Void visitImplementDeclStmt(Stmt.ImplementDecl stmt) {
         String targetName = stmt.targetName.lexeme;
+
+        // =================================================================
+        // ⭐ O REGISTO DE VARIANTES (AS) NO LINTER ⭐
+        // Se isto for um 'implement Base as Variante', temos de avisar o
+        // Linter que a Variante é uma classe legítima que acaba de nascer!
+        // =================================================================
+        if (stmt.aliasName != null) { // ⚠️ NOTA: Ajusta 'aliasName' para o nome exato do teu campo na AST (pode ser 'alias', 'variantName', etc.)
+            String variantName = stmt.aliasName.lexeme;
+
+            if (!currentScope.isTypeDefined(variantName)) {
+                // 1. Regista a variante como um tipo válido
+                currentScope.defineType(stmt.aliasName, "class");
+
+                // 2. Herança Estática: Clona o esqueleto do Pai para a Variante
+                // (para que o Linter saiba que o Mam1 tem os campos do Mamifero!)
+                SemanticScope.XPLModelInfo parentInfo = currentScope.getClassInfo(targetName);
+                if (parentInfo != null) {
+                    currentScope.defineClassInfo(variantName, targetName, parentInfo.fields, new ArrayList<>(), false, 0, new ArrayList<>());
+                }
+            }
+        }
+
         if (!currentScope.isTypeDefined(targetName)) {
-            errors.add(new SemanticError(stmt.targetName, "Alvo '" + targetName + "' não declarado."));
-            // Se não existe, não podemos validar mais
-            return null;
+            errors.add(new SemanticError(stmt.targetName, "O alvo base '" + targetName + "' não foi declarado."));
+        } else {
+            // 1. Decoradores não podem ter implement de todo!
+            if (currentScope.isDecorator(targetName)) {
+                errors.add(new SemanticError(stmt.targetName,
+                        "Erro de Arquitetura: Decoradores passivos (@) não podem ser implementados com métodos."));
+            }
+            // 2. Listeners exigem estritamente 'abstract implement'
+            else if (currentScope.isListener(targetName) && !stmt.isAbstract) {
+                errors.add(new SemanticError(stmt.targetName,
+                        "Erro de Arquitetura: O Listener '" + targetName + "' tem de ser implementado obrigatoriamente como 'abstract implement'."));
+            }
         }
 
         // ⭐ 1. INÍCIO: Entra na Classe e guarda os métodos!
@@ -684,18 +785,54 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
                 }
             }
 
-            // Verifica override
+            // =====================================================================
+            // ⭐ A AUDITORIA DO @Override NO LINTER (Análise Estática) ⭐
+            // =====================================================================
             boolean hasOverride = method.decorators != null && method.decorators.stream()
                     .anyMatch(d -> d.name.lexeme.equals("Override"));
 
-            // Verifica se o método sobrepõe um método da superclasse (se houver)
-            // Para simplificar, não validamos agora a hierarquia completa, mas podemos fazer uma verificação básica.
-            // Se tiver @Override, deve existir na superclasse ou interface.
-            if (hasOverride) {
-                // Não podemos verificar facilmente sem a info da superclasse, mas podemos pelo menos verificar se existe na própria classe?
-                // Vamos apenas avisar se não houver superclasse.
-                // (O interpretador fará a verificação em runtime, mas podemos tentar)
+            // 1. Verifica se sobrepõe um método da superclasse
+            boolean overridesSuper = false;
+            if (info != null && info.superclass != null) {
+                SemanticScope.XPLModelInfo superInfo = currentScope.getClassInfo(info.superclass);
+                if (superInfo != null) {
+                    overridesSuper = superInfo.methods.stream()
+                            .anyMatch(m -> m.name.lexeme.equals(method.name.lexeme));
+                }
             }
+
+            // 2. Verifica se cumpre um contrato das interfaces implementadas
+            boolean fulfillsInterface = false;
+            if (stmt.interfaces != null) {
+                for (Token interfaceToken : stmt.interfaces) {
+                    Stmt.InterfaceDecl contract = currentScope.getInterfaceInfo(interfaceToken.lexeme);
+                    if (contract != null) {
+                        // Procura a assinatura do método dentro da Interface
+                        if (contract.methods.stream().anyMatch(sig -> sig.name.lexeme.equals(method.name.lexeme))) {
+                            fulfillsInterface = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            boolean isConstructor = method.name.lexeme.equals("init");
+
+            if (!isConstructor) {
+                // REGRA 1: Prometeu sobrepor, mas a base/interface não o tem?
+                if (hasOverride && !overridesSuper && !fulfillsInterface) {
+                    errors.add(new SemanticError(method.name,
+                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não sobrepõe nenhum método da superclasse nem cumpre nenhum contrato."));
+                }
+
+                // REGRA 2: Cumpriu o contrato mas esqueceu-se do @Override?
+                if (!hasOverride && (overridesSuper || fulfillsInterface)) {
+                    errors.add(new SemanticError(method.name,
+                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com @Override."));
+                }
+            }
+
+            // =====================================================================
 
             // Valida parâmetros
             for (Stmt.Param p : method.params) {
@@ -817,6 +954,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public Void visitTypeAliasDecl(Stmt.TypeAliasDecl stmt) {
+        validateMetaBags(stmt.decorators, stmt.listeners);
         String name = stmt.name.lexeme;
         if (currentScope.isTypeDefined(name)) {
             errors.add(new SemanticError(stmt.name, "Alias '" + name + "' já declarado."));
@@ -845,14 +983,80 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         return null;
     }
 
+    // =========================================================================
+    // ⭐ 1. A POLÍCIA DOS DECORADORES (Apenas regista o Nome e Tipo)
+    // =========================================================================
     @Override
     public Void visitDecoratorDeclStmt(Stmt.DecoratorDecl stmt) {
         String name = stmt.name.lexeme;
+
+        // 1. Evita nomes duplicados
         if (currentScope.isTypeDefined(name)) {
-            errors.add(new SemanticError(stmt.name, "Decorador '" + name + "' já declarado."));
+            errors.add(new SemanticError(stmt.name, "Conflito de Nomes: O Decorador '" + name + "' já se encontra declarado neste escopo."));
         }
+
+        // 2. Regista o tipo na memória do Linter como "decorator" para a validação do símbolo '@' funcionar!
         currentScope.defineType(stmt.name, "decorator");
-        // Não validamos os campos/métodos internos agora
+
+        // (Opcional: Se quiseres validar os tipos dos campos internos, podes iterar stmt.fields aqui)
+        return null;
+    }
+
+    // =========================================================================
+    // ⭐ 2. A POLÍCIA DOS LISTENERS (Registo de Estado)
+    // =========================================================================
+    @Override
+    public Void visitListenerDeclStmt(Stmt.ListenerDecl stmt) {
+        String name = stmt.name.lexeme;
+
+        // 1. Evita nomes duplicados
+        if (currentScope.isTypeDefined(name)) {
+            errors.add(new SemanticError(stmt.name, "Conflito de Nomes: O Listener '" + name + "' já se encontra declarado."));
+        }
+
+        // 2. Regista o tipo na memória do Linter como "listener" para a validação do símbolo '&' funcionar!
+        currentScope.defineType(stmt.name, "listener");
+
+        return null;
+    }
+
+    @Override
+    public Void visitImplementListenerStmt(Stmt.ImplementListener stmt) {
+        String targetName = stmt.targetName.lexeme;
+
+        // 1. O Listener base existe na memória?
+        if (!currentScope.isTypeDefined(targetName)) {
+            errors.add(new SemanticError(stmt.targetName, "O Listener alvo '" + targetName + "' não foi declarado."));
+        } else if (!currentScope.isListener(targetName)) {
+            errors.add(new SemanticError(stmt.targetName, "Erro de Arquitetura: '" + targetName + "' não é um Listener válido."));
+        }
+
+        // 2. Valida e analisa cada método reativo declarado no listener
+        for (Stmt.Function method : stmt.methods) {
+            beginScope();
+
+            // Injeta 'this' para que o programador possa aceder a this.property, this.value, etc.
+            Token thisToken = new Token(TokenType.THIS, "this", null, method.name.line, method.name.column);
+            currentScope.define(thisToken, targetName, false, true);
+
+            // Valida os parâmetros do método
+            for (Stmt.Param p : method.params) {
+                String pType = stringifyTypeNode(resolveAlias(p.typeNode));
+                if (!pType.equals("any") && !currentScope.isTypeDefined(pType)) {
+                    errors.add(new SemanticError(p.name, "Tipo de parâmetro desconhecido: '" + pType + "'"));
+                }
+                currentScope.define(p.name, pType, true, true);
+            }
+
+            // Executa a análise estática do corpo do método
+            if (method.body != null) {
+                for (Stmt bodyStmt : method.body) {
+                    execute(bodyStmt);
+                }
+            }
+            endScope();
+        }
+
         return null;
     }
 
@@ -868,8 +1072,63 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public Void visitImportDeclStmt(Stmt.ImportDecl stmt) {
-        // Não validamos agora, pois os módulos são carregados dinamicamente.
-        // Poderíamos verificar se o módulo existe, mas é feito pelo ModuleManager.
+        String moduleName = stmt.modulePath;
+
+        // 1. O teu manager usa barras e extensão (ex: "tests/listen.xpl")
+        String relativePath = moduleName.replace(".", "/") + ".xpl";
+
+        // =================================================================
+        // ⭐ A PONTE COM O TEU MANAGER (SDM) VIA INTERPRETADOR ⭐
+        // =================================================================
+        // Capturamos a instância do moduleManager que já vive no Interpretador!
+        java.io.File file = this.interpreter.moduleManager.resolvePhysicalFile(relativePath);
+
+        if (file == null || !file.exists()) {
+            errors.add(new SemanticError(stmt.prefix, "Erro SDM (Análise Estática): O módulo '" + moduleName + "' não foi encontrado nas pastas locais nem no cofre SDM."));
+            return null;
+        }
+
+        String absolutePath = file.getAbsolutePath();
+
+        // =================================================================
+        // ⭐ ESCUDO DE DEPENDÊNCIAS CIRCULARES ESTÁTICAS ⭐
+        // =================================================================
+        if (visitedModules.contains(absolutePath)) {
+            return null;
+        }
+        visitedModules.add(absolutePath);
+
+        try {
+            // =================================================================
+            // ⭐ A CONSTRUÇÃO DO GRAFO DE DEPENDÊNCIAS (RIGOR JAVA) ⭐
+            // =================================================================
+            String sourceCode;
+
+            // Se for um pacote selado (.xplx), o Linter ignora para não explodir a memória em Compile-Time
+            if (file.getName().endsWith(".xplx")) {
+                return null;
+            } else {
+                sourceCode = java.nio.file.Files.readString(file.toPath());
+            }
+
+            // Lexer & Parser (Tua lógica nativa)
+            Lexer lexer = new Lexer(sourceCode, absolutePath);
+            java.util.List<Token> tokens = lexer.tokenize();
+
+            Parser parser = new Parser(tokens);
+            java.util.List<Stmt> importedStatements = parser.parse();
+
+            // Injeta o código do ficheiro importado no ESCOPO ATUAL!
+            for (Stmt s : importedStatements) {
+                if (!(s instanceof Stmt.ModuleDecl)) {
+                    execute(s);
+                }
+            }
+
+        } catch (Exception e) {
+            errors.add(new SemanticError(stmt.prefix, "Falha estática ao processar a importação de '" + moduleName + "': " + e.getMessage()));
+        }
+
         return null;
     }
 
@@ -903,6 +1162,18 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public String visitVariableExpr(Expr.Variable expr) {
+        String name = expr.name.lexeme;
+        // =========================================================================
+        // ⭐ O ESCUDO DE TITÂNIO DO LINTER (Fallback para Modelos Globais) ⭐
+        // Se o identificador não for uma variável normal, mas for uma Classe,
+        // Interface, Alias ou Decorador, permitimos a passagem porque o utilizador
+        // está a tentar aceder-lhe de forma estática (Ex: Classe.estatico ou Classe::meta)
+        // =========================================================================
+        if (currentScope.isTypeDefined(name)) {
+            // Se for uma classe, informamos o Linter de que o tipo de retorno é a própria classe.
+            return currentScope.isClass(name) ? name : "any";
+        }
+
         try {
             SemanticScope.SymbolInfo info = currentScope.resolve(expr.name);
             if (info.paramTypes != null) {
@@ -1326,37 +1597,48 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             if (info != null) {
                 baseMethods.addAll(info.methods);
             } else if (currentScope.isInterfaceDefined(className)) {
-                // Se for uma interface, convertemos as assinaturas (FunctionSig) para Stmt.Function para unificar a validação
                 Stmt.InterfaceDecl ifaceDecl = currentScope.getInterfaceInfo(className);
                 if (ifaceDecl != null && ifaceDecl.methods != null) {
                     for (Stmt.FunctionSig sig : ifaceDecl.methods) {
-                        // Cria um mock de Stmt.Function preenchendo rigorosamente os 10 parâmetros
                         baseMethods.add(new Stmt.Function(
-                                null,            // 1. Token accessModifier
-                                false,           // 2. boolean isStatic
-                                true,            // 3. boolean isAbstract
-                                sig.name,        // 4. Token name
-                                sig.parameters,  // 5. List<Stmt.Param> params
-                                sig.returnType,  // 6. TypeNode returnType
-                                null,            // 7. List<Token> thrownExceptions
-                                null,            // 8. List<Stmt> body
-                                null,            // 9. List<Stmt.DecoratorNode> decorators
-                                null             // 10. List<Stmt.DecoratorNode> listeners
+                                null, false, true, sig.name, sig.parameters, sig.returnType, null, null, null, null
                         ));
                     }
                 }
             }
 
+            // =========================================================================
+            // ⭐ 3. A GUILHOTINA DOS MÉTODOS OBRIGATÓRIOS (Missing Implementation) ⭐
+            // =========================================================================
+            for (Stmt.Function baseMethod : baseMethods) {
+                // Se o método base for abstrato (Interfaces são 100% abstratas), é obrigatório!
+                if (baseMethod.isAbstract) {
+                    boolean isImplemented = false;
+                    for (Stmt.Function anonMethod : expr.anonymousMethods) {
+                        if (anonMethod.name.lexeme.equals(baseMethod.name.lexeme)) {
+                            isImplemented = true;
+                            break;
+                        }
+                    }
+
+                    if (!isImplemented) {
+                        errors.add(new SemanticError(expr.className,
+                                "Erro de Contrato: A classe anónima não implementou o método obrigatório '" + baseMethod.name.lexeme + "()' exigido por '" + className + "'."));
+                    }
+                }
+            }
+
+            // =========================================================================
+            // 4. Validação de Falsos Overrides (o que já tinhas)
+            // =========================================================================
             for (Stmt.Function method : expr.anonymousMethods) {
                 boolean hasOverride = method.decorators != null && method.decorators.stream()
                         .anyMatch(d -> d.name.lexeme.equals("Override"));
 
-                // 1. A Guilhotina da Ausência: Se não tem @Override, pinta de vermelho!
                 if (!hasOverride) {
                     errors.add(new SemanticError(method.name,
                             "Decorador Ausente: O método '" + method.name.lexeme + "()' na classe anónima exige @Override."));
                 }
-                // ⭐ 2. A GUILHOTINA DO OVERRIDE FANTASMA: Tem @Override, mas existe na base/interface?
                 else {
                     boolean existsInBase = false;
                     for (Stmt.Function baseMethod : baseMethods) {
@@ -1572,37 +1854,95 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
     @Override
     public String visitIndexAccessExpr(Expr.IndexAccess expr) {
-        String objectType = evaluate(expr.object);
+        String objType = evaluate(expr.object);
         String indexType = evaluate(expr.index);
-        if (!objectType.equals("array") && !objectType.equals("string") && !objectType.equals("object")) {
-            errors.add(new SemanticError(expr.bracket, "Apenas arrays, strings e objetos suportam acesso por índice."));
+
+        // 1. Valida o Alvo (Quem está a ser acedido?)
+        if (!objType.equals("any") && !objType.equals("array") && !objType.equals("string") && !objType.equals("object")) {
+            errors.add(new SemanticError(expr.bracket, "Apenas arrays, strings e objetos suportam acesso por índice. (Tipo recebido: " + objType + ")"));
         }
-        if (!indexType.equals("int") && !indexType.equals("float")) {
-            errors.add(new SemanticError(expr.bracket, "Índice deve ser numérico."));
+
+        // 2. Valida o Índice com base no tipo do alvo!
+        switch (objType) {
+            case "object" -> {
+                if (!indexType.equals("any") && !indexType.equals("string")) {
+                    errors.add(new SemanticError(expr.bracket, "O índice para aceder a um objeto/dicionário tem de ser uma string."));
+                }
+            }
+            case "array", "string" -> {
+                if (!indexType.equals("any") && !indexType.equals("int")) {
+                    errors.add(new SemanticError(expr.bracket, "O índice para arrays ou strings tem de ser numérico."));
+                }
+            }
+            case "any" -> {
+                // Se o alvo for dinâmico ("any"), somos tolerantes: aceitamos números OU strings
+                if (!indexType.equals("any") && !indexType.equals("int") && !indexType.equals("string")) {
+                    errors.add(new SemanticError(expr.bracket, "Índice inválido. Usa um número (para arrays) ou uma string (para objetos)."));
+                }
+            }
         }
+
+        // O resultado de extrair algo de uma lista ou dicionário é dinâmico (não sabemos o que está lá dentro estatisticamente)
         return "any";
     }
 
     @Override
     public String visitIndexAssignExpr(Expr.IndexAssign expr) {
-        String objectType = evaluate(expr.object);
+        String objType = evaluate(expr.object);
         String indexType = evaluate(expr.index);
         String valueType = evaluate(expr.value);
-        if (!objectType.equals("array") && !objectType.equals("object")) {
+
+        if (!objType.equals("any") && !objType.equals("array") && !objType.equals("object")) {
             errors.add(new SemanticError(expr.bracket, "Apenas arrays e objetos suportam atribuição por índice."));
         }
-        if (!indexType.equals("int") && !indexType.equals("float")) {
-            errors.add(new SemanticError(expr.bracket, "Índice deve ser numérico."));
+
+        switch (objType) {
+            case "object" -> {
+                if (!indexType.equals("any") && !indexType.equals("string")) {
+                    errors.add(new SemanticError(expr.bracket, "O índice para atribuição num objeto tem de ser uma string."));
+                }
+            }
+            case "array" -> {
+                if (!indexType.equals("any") && !indexType.equals("int")) {
+                    errors.add(new SemanticError(expr.bracket, "O índice para atribuição num array tem de ser numérico."));
+                }
+            }
+            case "any" -> {
+                if (!indexType.equals("any") && !indexType.equals("int") && !indexType.equals("string")) {
+                    errors.add(new SemanticError(expr.bracket, "Índice inválido para atribuição."));
+                }
+            }
         }
+
         return valueType;
     }
 
     @Override
     public String visitNullCoalesceExpr(Expr.NullCoalesce expr) {
-        String left = evaluate(expr.left);
-        String right = evaluate(expr.right);
-        // O resultado é o tipo da esquerda ou da direita
-        return left.equals("null") ? right : left;
+        String leftType = evaluate(expr.left);
+        String rightType = evaluate(expr.right);
+
+        // =====================================================================
+        // ⭐ O DESEMPACOTADOR ESTÁTICO (O Segredo do '??') ⭐
+        // Se a esquerda for "?int", o tipo base garantido é "int"
+        // =====================================================================
+        String baseLeft = leftType.startsWith("?") ? leftType.substring(1) : leftType;
+
+        // A Polícia do Fallback: Garante que não fazes (?int ?? "texto")
+        if (!baseLeft.equals("any") && !rightType.equals("any") && !baseLeft.equals("null") && !rightType.equals("null")) {
+            // Chama o teu método de verificação de tipos!
+            if (!isTypeCompatible(baseLeft, rightType)) {
+                errors.add(new SemanticError(expr.operator,
+                        "Conflito no Operador '??': A variável (esquerda) é do tipo base '" + baseLeft + "', mas o valor de fallback (direita) fornecido é '" + rightType + "'."));
+            }
+        }
+
+        // A Magia: O resultado de um '??' é sempre o tipo base sólido!
+        if (baseLeft.equals("null") || baseLeft.equals("any")) {
+            return rightType;
+        }
+
+        return baseLeft; // Devolve "int" puro, permitindo que a matemática continue!
     }
 
     @Override
@@ -1626,10 +1966,24 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     public String visitCastExpr(Expr.Cast expr) {
         String valueType = evaluate(expr.value);
         String targetType = stringifyTypeNode(resolveAlias(expr.type));
+
         if (!targetType.equals("any") && !currentScope.isTypeDefined(targetType)) {
             errors.add(new SemanticError(expr.type.name, "Tipo de cast desconhecido: '" + targetType + "'"));
         }
+
+        // =================================================================
+        // ⭐ A ESCOTILHA DE EMERGÊNCIA DO CAST FORÇADO (as!) ⭐
+        // =================================================================
+        // Se o programador forçou o cast (as!), devolvemos "any" para cegar o Linter.
+        // Isto obriga o erro a rebentar apenas no Run-Time (dentro do try/catch).
+        // (Nota: Ajusta 'expr.operator.lexeme' caso o teu token de operador tenha outro nome na AST)
+        // ⭐ Se tens uma flag booleana na AST:
+        if (expr.isForced) {
+            return "any"; // Cega o Linter!
+        }
+
         // Verifica se o cast é possível? Não fazemos, pois pode ser upcast ou downcast.
+        // Se for um "as" normal, devolve o tipo estrito!
         return targetType;
     }
 

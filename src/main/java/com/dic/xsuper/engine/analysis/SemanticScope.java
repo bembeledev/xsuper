@@ -168,6 +168,8 @@ public class SemanticScope {
 
     // --- Decorators ---
 
+    // --- Decorators e Listeners ---
+
     public void defineDecorator(String name) {
         knownTypes.put(name, "decorator");
     }
@@ -175,6 +177,17 @@ public class SemanticScope {
     public boolean isDecorator(String name) {
         if (knownTypes.getOrDefault(name, "").equals("decorator")) return true;
         if (enclosing != null) return enclosing.isDecorator(name);
+        return false;
+    }
+
+    // ⭐ A PEÇA EM FALTA: Para o Linter conseguir detetar as matrizes ativas! ⭐
+    public void defineListener(String name) {
+        knownTypes.put(name, "listener");
+    }
+
+    public boolean isListener(String name) {
+        if (knownTypes.getOrDefault(name, "").equals("listener")) return true;
+        if (enclosing != null) return enclosing.isListener(name);
         return false;
     }
 

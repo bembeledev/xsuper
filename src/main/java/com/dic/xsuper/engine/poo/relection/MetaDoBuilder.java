@@ -29,7 +29,7 @@ public class MetaDoBuilder extends XplInstance {
 
     private Expr extractExpression(Object val) {
         if (val instanceof XplFunction xplFunc && !xplFunc.declaration.body.isEmpty()) {
-            Stmt first = xplFunc.declaration.body.get(0);
+            Stmt first = xplFunc.declaration.body.getFirst();
             if (first instanceof Stmt.Return ret) return ret.value;
             if (first instanceof Stmt.ExpressionStmt exprStmt) return exprStmt.expression;
         }
@@ -40,7 +40,7 @@ public class MetaDoBuilder extends XplInstance {
         this.fields.put("While", new XplCallable() {
             @Override public int arity() { return 1; }
             @Override public Object call(Interpreter intp, java.util.List<Expr.CallArg> args) {
-                Object val = intp.evaluate(args.get(0).expression);
+                Object val = intp.evaluate(args.getFirst().expression);
                 MetaDoBuilder.this.condition = extractExpression(val);
                 return MetaDoBuilder.this;
             }

@@ -6,14 +6,14 @@ println("==================================================");
 println("\n[1/6] Instanciando Declares e testando Implement...");
 
 declare Entidade {
-    pub nome: String;
+    pub nome: string;
     pub nivel: int;
     pub vivo: bool;
 }
 
 implement Entidade {
     // ⭐ O CONSTRUTOR EXPLÍCITO ⭐
-    pub fun init(nome: String, nivel: int, vivo: bool) {
+    pub fun init(nome: string, nivel: int, vivo: bool) {
         this.nome = nome;
         this.nivel = nivel;
         this.vivo = vivo;
@@ -50,7 +50,7 @@ println("  -> Ping[2] mutado:   " + pingsArray[2]);
 println("\n[3/6] Testando Pattern Matching acoplado a Declares...");
 
 let acaoDefensiva = match (boss) {
-    type String: "Alvo invalido (Texto)";
+    type string: "Alvo invalido (Texto)";
 
     type Entidade if (!boss.vivo): "O alvo ja esta abatido.";
 

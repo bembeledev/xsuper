@@ -35,7 +35,6 @@ implement Animal as Fish {
 
 implement Mamifero as Mam1 for CRUD {
 
-
     @Override
     pub fun add(nome: string) {
         // Agora o objeto sabe o seu próprio nome!

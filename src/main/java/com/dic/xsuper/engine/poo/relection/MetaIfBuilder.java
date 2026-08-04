@@ -41,12 +41,13 @@ public class MetaIfBuilder extends XplInstance {
     }
 
     private void bindMethods() {
-        // ⭐ .ElseIf()
         this.fields.put("ElseIf", new XplCallable() {
             @Override public int arity() { return 2; }
             @Override public Object call(Interpreter intp, java.util.List<Expr.CallArg> args) {
-                Expr cond = extractExpression(intp.evaluate(args.get(0).expression));
-                Stmt.Block block = extractToBlock(intp.evaluate(args.get(1).expression));
+                // ⭐ Usar o extrator oficial do Interpretador!
+                Expr cond = Interpreter.extractExpression(intp.evaluate(args.get(0).expression));
+                Stmt.Block block = Interpreter.extractToBlock(intp.evaluate(args.get(1).expression));
+
                 Expr.If newIf = new Expr.If(cond, block, null);
                 currentTail.elseBranch = new Stmt.ExpressionStmt(newIf);
                 currentTail = newIf;

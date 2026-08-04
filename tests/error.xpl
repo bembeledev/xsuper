@@ -12,8 +12,6 @@ try {
     println("Valor que falhou: " + e.valorTentado);
 } catch(e: Error) {
     println("Capturado erro genérico!");
-} catch(e: string) {
-    println("Capturado erro de texto puro!");
 }
 
 var utilizador = null;

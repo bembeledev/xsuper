@@ -121,7 +121,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     public static Stmt.Block extractToBlock(Object val) {
         if (val instanceof XplFunction xplFunc) {
-            return new Stmt.Block(xplFunc.declaration.body);
+            java.util.List<Stmt> limpo = new java.util.ArrayList<>(xplFunc.declaration.body);
+
+            // ⭐ O ASPIRADOR DA AST: Remove o "return null;" sintético injetado nas Arrow Functions!
+            // Sem isto, o JIT tenta executá-lo globalmente no If/For e atira a ReturnException.
+            if (!limpo.isEmpty()) {
+                Stmt last = limpo.getLast();
+                if (last instanceof Stmt.Return ret && ret.value instanceof Expr.Literal lit && lit.value == null) {
+                    limpo.removeLast();
+                }
+            }
+
+            return new Stmt.Block(limpo);
         }
         throw new ControlFlow.RuntimeError(null, "Falha de Metaprogramação: Esperado um bloco encapsulado (ex: () => { ... }).");
     }
@@ -381,6 +392,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // =====================================================================
+        // ⭐ NOVA ERA: INJEÇÃO NATIVA DE DECORADORES PASSIVOS (Variáveis) ⭐
+        // Guarda os metadados estáticos directamente na instância oculta!
+        // =====================================================================
+        if (stmt.decorators != null && !stmt.decorators.isEmpty() && value instanceof XplInstance inst) {
+            List<String> appliedDecs = new ArrayList<>();
+            for (Stmt.DecoratorNode dec : stmt.decorators) {
+                String argsStr = dec.arguments.isEmpty() ? "" : "(" + dec.arguments + ")";
+                appliedDecs.add("@" + dec.name.lexeme + argsStr);
+            }
+            inst.fields.put("__applied_decorators__", appliedDecs);
+        }
+
+        // =====================================================================
         // ⭐ NOVA ERA: INJEÇÃO NATIVA DE LISTENERS (Sem Proxies!) ⭐
         // =====================================================================
         if (stmt.listeners != null && !stmt.listeners.isEmpty()) {
@@ -392,6 +416,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
                 if (listenerModel == null) {
                     throw new ControlFlow.RuntimeError(adorno.name, "O identificador '" + listenerName + "' não designa um Listener válido.");
+                }
+
+                // ⭐ A GUILHOTINA DAS VARIÁVEIS ⭐
+                if (!listenerModel.isListener) {
+                    throw new ControlFlow.RuntimeError(adorno.name, "Erro de Sintaxe: '" + listenerName + "' é um Decorador. Deve ser invocado com '@' em Classes/Métodos, e não com '&' (Listener Reativo).");
                 }
 
                 XplClass listenerClass;
@@ -725,13 +754,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             model.addField(field);
         }
 
-        // 1. Injeta os Decoradores estáticos (Ex: @Serializable)
+        // 1. Injeta e Valida os Decoradores estáticos (Ex: @Serializable)
         if (stmt.decorators != null && !stmt.decorators.isEmpty()) {
+            for (Stmt.DecoratorNode dec : stmt.decorators) {
+                XPLModel decModel = registry_model.get(dec.name.lexeme);
+                // Se tentaram usar @ com um Listener, a Guilhotina cai!
+                if (decModel != null && decModel.isListener) {
+                    throw new ControlFlow.RuntimeError(dec.name, "Erro de Sintaxe: '" + dec.name.lexeme + "' é um Listener Reativo. Usa o símbolo '&' em vez de '@'.");
+                }
+            }
             model.decoratorNodes.addAll(stmt.decorators);
         }
 
-        // 2. Injeta os Listeners reativos (Ex: &Validate)
+        // 2. Injeta e Valida os Listeners reativos (Ex: &Validate)
         if (stmt.listeners != null && !stmt.listeners.isEmpty()) {
+            for (Stmt.DecoratorNode lis : stmt.listeners) {
+                XPLModel lisModel = registry_model.get(lis.name.lexeme);
+                // Se tentaram usar & com um Decorador, a Guilhotina cai!
+                if (lisModel != null && !lisModel.isListener) {
+                    throw new ControlFlow.RuntimeError(lis.name, "Erro de Sintaxe: '" + lis.name.lexeme + "' é um Decorador Passivo. Usa o símbolo '@' em vez de '&'.");
+                }
+            }
             model.decoratorNodes.addAll(stmt.listeners);
         }
 
@@ -807,6 +850,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
 
         // =====================================================================
+        // ⭐ A GUILHOTINA DOS DECORADORES E LISTENERS NO 'IMPLEMENT' ⭐
+        // =====================================================================
+        if (baseModel.isDecorator) {
+            throw new ControlFlow.RuntimeError(stmt.targetName,
+                    "Erro de Arquitetura: Decoradores passivos (@) não suportam blocos 'implement'. Eles servem apenas para armazenar metadados estáticos.");
+        }
+
+        // Se for um Listener, OBRIGATORIAMENTE tem de ser 'abstract implement'!
+        if (baseModel.isListener && !stmt.isAbstract) {
+            throw new ControlFlow.RuntimeError(stmt.targetName,
+                    "Erro de Arquitetura: Os Listeners ativos são comportamentos abstratos e devem ser implementados usando 'abstract implement " + baseModel.name + "'.");
+        }
+
+        // =====================================================================
         // ⭐ ROTA A: É A IMPLEMENTAÇÃO DE UM MOLDE GENÉRICO? (Ex: implement Caixa<T>)
         // =====================================================================
         if (baseModel.isGenericBlueprint) {
@@ -874,6 +931,27 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 // 4. Se sobreviveu à auditoria, adiciona finalmente o método à classe!
                 baseModel.addMethod(method);
             }
+
+            // ⭐ INJETAR ISTO AQUI: VALIDAÇÃO E REGISTO DE INTERFACES NO BLUEPRINT!
+            for (Token interfaceToken : stmt.interfaces) {
+                String interfaceName = interfaceToken.lexeme;
+                XplInterface contract = registry_Interfaces.get(interfaceName);
+
+                if (contract == null) {
+                    throw new ControlFlow.RuntimeError(interfaceToken, "Erro de Linkage: A interface '" + interfaceName + "' não foi encontrada no Registry.");
+                }
+
+                // O motor cruza a lista do contrato com os métodos do blueprint
+                for (String requiredMethod : contract.requiredMethods.keySet()) {
+                    if (baseModel.findMethod(requiredMethod) == null) {
+                        throw new ControlFlow.RuntimeError(stmt.targetName,
+                                "Quebra de Contrato Fatal: O modelo genérico '" + baseModel.name + "' não implementou o método obrigatório '" + requiredMethod + "()' exigido pela interface '" + interfaceName + "'.");
+                    }
+                }
+                // Guarda o nome da interface na "mochila" do blueprint para a Reflexão ler!
+                baseModel.implementedInterfaces.add(interfaceName);
+            }
+
             System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
             return null; // <-- Corta aqui! O blueprint fica completo na câmara criogénica.
         }
@@ -1097,7 +1175,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 String listenerName = listenerNode.name.lexeme;
                 XPLModel listenerModel = registry_model.get(listenerName);
 
-                if (listenerModel == null) throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' não foi encontrado.");
+                if (listenerModel == null) {
+                    throw new ControlFlow.RuntimeError(listenerNode.name, "O listener '" + listenerName + "' não foi encontrado.");
+                }
+
+                // ⭐ A GUILHOTINA DOS ALIASES DE TIPO ⭐
+                if (!listenerModel.isListener) {
+                    throw new ControlFlow.RuntimeError(listenerNode.name, "Erro de Sintaxe: '" + listenerName + "' é um Decorador. Deve ser invocado com '@' em Classes/Métodos, e não com '&' (Listener Reativo).");
+                }
 
                 XplClass listenerClass;
                 try { listenerClass = (XplClass) environment.get(listenerName); }
@@ -1133,72 +1218,96 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
     // =========================================================================
-    // ⭐ VISITAÇÃO DA DECLARAÇÃO DO DECORADOR / LISTENER (A alocação de RAM) ⭐
+    // ⭐ 1. O DECORADOR PASSIVO (ZERO MÉTODOS)
     // =========================================================================
     @Override
     public Void visitDecoratorDeclStmt(Stmt.DecoratorDecl stmt) {
         String decName = stmt.name.lexeme;
+        XPLModel superPai = this.registry_model.computeIfAbsent("DecoratorRoot", k -> {
+            XPLModel root = new XPLModel("DecoratorRoot", null);
+            root.isDecorator = true;
+            return root;
+        });
 
-        XPLModel superPai = this.registry_model.get("DecoratorRoot");
-        if (superPai == null) {
-            superPai = new XPLModel("DecoratorRoot", null);
-            superPai.isDecorator = true;
-            this.registry_model.put("DecoratorRoot", superPai);
+        XPLModel modelo = new XPLModel(decName, superPai);
+        modelo.isDecorator = true;
+        modelo.isListener = false;
+        modelo.hasBaseImplementation = true; // Decoradores não precisam de 'implement'. Ficam prontos a usar!
+
+        for (Stmt.FieldDecl campo : stmt.fields) {
+            modelo.fields.put(campo.name.lexeme, campo);
         }
 
-        XPLModel modelo = this.registry_model.get(decName);
-        if (modelo == null) {
-            modelo = new XPLModel(decName, superPai);
-            modelo.isDecorator = true;
-            this.registry_model.put(decName, modelo);
-        }
+        this.registry_model.put(decName, modelo);
+        this.environment.defineConst(decName, new XplClass(modelo, this.environment));
+        return null;
+    }
 
+    // ⭐ 2. O BLUEPRINT DO LISTENER (ESTADO E VARIÁVEIS INJETADAS)
+    // =========================================================================
+    @Override
+    public Void visitListenerDeclStmt(Stmt.ListenerDecl stmt) {
+        String lisName = stmt.name.lexeme;
+        XPLModel superPai = this.registry_model.computeIfAbsent("ListenerRoot", k -> {
+            XPLModel root = new XPLModel("ListenerRoot", null);
+            root.isListener = true;
+            return root;
+        });
 
-        // =====================================================================
-        // ⭐ MAGIA DO COMPILADOR: INJEÇÃO SINTÁTICA IMPLÍCITA ⭐
-        // O motor adiciona 'target', 'property' e 'value' aos campos do Listener!
-        // =====================================================================
+        XPLModel modelo = new XPLModel(lisName, superPai);
+        modelo.isDecorator = false;
+        modelo.isListener = true;
+        modelo.hasBaseImplementation = false; // Bloqueado! Exige 'implement listener'
+
+        // Injeção Sintática Implícita para a reatividade!
         Token pubToken = new Token(TokenType.PUBLIC, "pub", null, 0, 0);
         TypeNode anyType = new TypeNode.Simple(new Token(TokenType.IDENTIFIER, "any", null, 0, 0));
-        TypeNode stringType = new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0));
+        TypeNode strType = new TypeNode.Simple(new Token(TokenType.T_STRING, "string", null, 0, 0));
 
-        if (!modelo.fields.containsKey("target")) {
-            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "target", null, 0, 0), anyType));
-            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "property", null, 0, 0), stringType));
-            modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "value", null, 0, 0), anyType));
+        modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "target", null, 0, 0), anyType));
+        modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "property", null, 0, 0), strType));
+        modelo.addField(new Stmt.FieldDecl(pubToken, false, false, false, new Token(TokenType.IDENTIFIER, "value", null, 0, 0), anyType));
+
+        for (Stmt.FieldDecl campo : stmt.fields) {
+            modelo.fields.put(campo.name.lexeme, campo);
         }
 
+        this.registry_model.put(lisName, modelo);
+        this.environment.defineConst(lisName, modelo); // Guarda o modelo 'nu', ainda inutilizável
+        return null;
+    }
 
-        // ⭐ LÊ OS DADOS (FIELDS) ⭐
-        if (stmt.fields != null) {
-            for (Stmt.FieldDecl campo : stmt.fields) {
-                modelo.fields.put(campo.name.lexeme, campo);
-            }
+    // =========================================================================
+    // ⭐ 3. A IMPLEMENTAÇÃO DO LISTENER (MÉTODOS E HOOKS REATIVOS)
+    // =========================================================================
+    @Override
+    public Void visitImplementListenerStmt(Stmt.ImplementListener stmt) {
+        String targetName = stmt.targetName.lexeme;
+
+        // Puxamos a "Alma" da memória
+        Object alvo = this.environment.get(targetName);
+        if (!(alvo instanceof XPLModel baseModel) || !baseModel.isListener) {
+            throw new ControlFlow.RuntimeError(stmt.targetName, "O alvo '" + targetName + "' não é um Listener válido para receber uma implementação.");
         }
 
-        // ⭐ LÊ OS MÉTODOS E MAPEIA OS HOOKS LIVRES (A MAGIA!) ⭐
-        if (stmt.methods != null) {
-            for (Stmt.Function method : stmt.methods) {
-                // Procura os metadados @(Listen.Set), @(Listen.Init)...
-                if (method.decorators != null) {
-                    for (Stmt.DecoratorNode dec : method.decorators) {
-                        String hookName = dec.name.lexeme;
-                        switch (hookName) {
-                            case "Listen.Init" ->
-                                    modelo.metaInitHook = method.name.lexeme; // Grava o nome que o Dev escolheu!
-                            case "Listen.Set" -> modelo.metaSetHook = method.name.lexeme;
-                            case "Listen.Get" -> modelo.metaGetHook = method.name.lexeme;
-                            case "Listen.End" -> modelo.metaEndHook = method.name.lexeme;
-                        }
+        baseModel.hasBaseImplementation = true;
+
+        for (Stmt.Function method : stmt.methods) {
+            if (method.decorators != null) {
+                for (Stmt.DecoratorNode dec : method.decorators) {
+                    switch (dec.name.lexeme) {
+                        case "Listen.Init" -> baseModel.metaInitHook = method.name.lexeme;
+                        case "Listen.Set" -> baseModel.metaSetHook = method.name.lexeme;
+                        case "Listen.Get" -> baseModel.metaGetHook = method.name.lexeme;
+                        case "Listen.End" -> baseModel.metaEndHook = method.name.lexeme;
                     }
                 }
-                modelo.addMethod(method); // Regista a função no modelo
             }
+            baseModel.addMethod(method);
         }
 
-        com.dic.xsuper.engine.poo.XplClass classeDecoradora = new com.dic.xsuper.engine.poo.XplClass(modelo, this.environment);
-        this.environment.defineConst(decName, classeDecoradora);
-
+        // UPGRADE QUÂNTICO: Transforma o modelo nu numa Classe pronta a espionar o sistema!
+        this.environment.values.put(targetName, new XplClass(baseModel, this.environment));
         return null;
     }
 
@@ -1252,8 +1361,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitExportDeclStmt(Stmt.ExportDecl stmt) {
         Token exportTokenBase = new Token(TokenType.IDENTIFIER, "export", null, 0, 0);
 
+        // =========================================================================
+        // ⭐ A VIA VERDE PARA SCRIPTS ISOLADOS ⭐
+        // =========================================================================
         if (this.moduleManager.currentCompilingModule == null) {
-            throw new ControlFlow.RuntimeError(exportTokenBase, "Comando 'export' usado fora de um módulo!");
+            // Se estamos a rodar o script diretamente no terminal, não há nenhum módulo
+            // a carregar os exports. Logo, ignoramos o export graciosamente sem crashar!
+            return null;
         }
 
         if (stmt.isExportAll) {
@@ -1665,6 +1779,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         for (Stmt.CatchClause clause : stmt.catchClauses) {
 
+            // =========================================================================
+            // ⭐ A POLÍCIA DO CATCH (RUN-TIME): Exige herança de Error!
+            // =========================================================================
+            String catchTypeName = (clause.type != null) ? clause.type.name.lexeme : "any";
+
+            if (!catchTypeName.equals("any")) {
+                boolean isValidError = catchTypeName.equals("Error");
+
+                // Se não for o 'Error' nativo, verifica na memória global
+                if (!isValidError) {
+                    // Adapta o 'globals.get' para o local onde guardas as tuas instâncias XplClass
+                    Object typeObj = this.globals.get(catchTypeName);
+
+                    if (typeObj instanceof com.dic.xsuper.engine.poo.XplClass klass) {
+                        isValidError = klass.model.isSubclassOf("Error");
+                    }
+                }
+
+                if (!isValidError) {
+                    throw new ControlFlow.RuntimeError(clause.type.name,
+                            "Erro de Tipagem Dinâmica: O bloco 'catch' exige 'Error' ou um herdeiro, mas encontrou '" + catchTypeName + "'.");
+                }
+            }
+
+            // =========================================================================
+            // ⭐ O TEU ROTEADOR ORIGINAL ⭐
+            // =========================================================================
             if (isTypeMatch(errorValue, clause.type)) {
 
                 Environment catchEnv = new Environment(this.environment);
@@ -1685,7 +1826,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // Se o loop rodou até ao fim sem disparar o 'return', nenhum catch serviu. Explode!
         throw originalException;
     }
-
     // =========================================================================
     // ⭐ MOTOR DE TRANSMUTAÇÃO DE AST (O Bisturi Quântico de C++/Rust) ⭐
     // =========================================================================

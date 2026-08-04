@@ -40,7 +40,7 @@ public class XplClass implements XplCallable {
                 String listenerName = adorno.name.lexeme;
                 XPLModel listenerModel = interpreter.registry_model.get(listenerName);
 
-                if (listenerModel != null) {
+                if (listenerModel != null && listenerModel.isListener) {
                     XplClass listenerClass;
                     try { listenerClass = (XplClass) interpreter.environment.get(listenerName); }
                     catch (Exception e) { listenerClass = new XplClass(listenerModel, interpreter.globals); }

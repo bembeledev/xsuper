@@ -27,6 +27,8 @@ public abstract class Stmt {
         R visitThrowStmt(Throw stmt);
         R visitTypeAliasDecl(TypeAliasDecl typeAliasDecl);
         R visitDecoratorDeclStmt(DecoratorDecl decoratorDecl);
+        R visitListenerDeclStmt(ListenerDecl stmt);
+        R visitImplementListenerStmt(ImplementListener stmt);
         R visitModuleDeclStmt(ModuleDecl moduleDecl);
         R visitImportDeclStmt(ImportDecl importDecl);
         R visitExportDeclStmt(ExportDecl exportDecl);
@@ -39,6 +41,51 @@ public abstract class Stmt {
     public abstract <R> R accept(Visitor<R> visitor);
 
     // --- Tipos de Declarações ---
+
+
+    // =====================================================================
+    // 1. DECORADOR PURO (Estilo @Annotation do Java - ZERO MÉTODOS)
+    // =====================================================================
+    public static class DecoratorDecl extends Stmt {
+        public final Token name;
+        public final List<FieldDecl> fields;
+
+        public DecoratorDecl(Token name, List<FieldDecl> fields) {
+            this.name = name;
+            this.fields = fields;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitDecoratorDeclStmt(this); }
+    }
+
+    // =====================================================================
+    // 2. O BLUEPRINT DO LISTENER (Dados do Parasita)
+    // =====================================================================
+    public static class ListenerDecl extends Stmt {
+        public final Token name;
+        public final List<FieldDecl> fields;
+
+        public ListenerDecl(Token name, List<FieldDecl> fields) {
+            this.name = name;
+            this.fields = fields;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitListenerDeclStmt(this); }
+    }
+
+    // =====================================================================
+    // 3. A IMPLEMENTAÇÃO EXCLUSIVA DE LISTENERS
+    // =====================================================================
+    public static class ImplementListener extends Stmt {
+        public final Token targetName;
+        public final List<Function> methods; // Apenas métodos! Sem blocos default, aliases ou extends!
+
+        public ImplementListener(Token targetName, List<Function> methods) {
+            this.targetName = targetName;
+            this.methods = methods;
+        }
+        @Override public <R> R accept(Visitor<R> visitor) { return visitor.visitImplementListenerStmt(this); }
+    }
+
+
 
     public static class ExpressionStmt extends Stmt {
         public final Expr expression;
@@ -649,32 +696,6 @@ public abstract class Stmt {
     }
 
     // ⭐ 1. A DECLARAÇÃO DO DECORADOR NA AST (O layout de memória)
-    public static class DecoratorDecl extends Stmt {
-        public final Token name;
-        public final java.util.List<Stmt.FieldDecl> fields;
-        public final java.util.List<Stmt.Function> methods;
-
-        public DecoratorDecl(Token name, java.util.List<Stmt.FieldDecl> fields, List<Function> methods) {
-            this.name = name;
-            this.fields = fields;
-            this.methods = methods;
-        }
-
-        @Override
-        public <R> R accept(Visitor<R> visitor) {
-            return visitor.visitDecoratorDeclStmt(this);
-        }
-
-        @Override
-        public String toString() {
-            return "DecoratorDecl{" +
-                    "name=" + name +
-                    ", fields=" + fields +
-                    ", methods=" + methods +
-                    '}';
-        }
-    }
-
     // ⭐ 2. O AUTOCOLANTE DE METADADOS (A aplicação do Decorador)
     public static class DecoratorNode {
         public final Token name; // O Token "Logging"

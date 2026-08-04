@@ -33,7 +33,7 @@ public class XPLModel {
     // ⭐ COORDENADAS DE METAPROGRAMAÇÃO (Decoradores) ⭐
     // =========================================================================
     public boolean isDecorator = false;
-
+    public boolean isListener = false;
     // Guardam o nome real dos métodos que o programador marcou com @(Context.X)
     public String metaInitHook = null;
     public String metaGetHook  = null;

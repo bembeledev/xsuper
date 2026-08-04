@@ -18,17 +18,6 @@ decorator Audit {
     pub nivel: string;
 }
 
-abstract implement Audit {
-    pub fun init(id: int, nivel: string = "INFO") {
-        this.id = id;
-        this.nivel = nivel;
-    }
-    // Gatilhos para testar reflexão
-    @(Context.Init) pub fun aoNascer() {
-        // apenas para metadados
-    }
-}
-
 // ============================================================
 // 2. MODELO GENÉRICO COM DECORADORES E INTERFACES
 // ============================================================
@@ -59,11 +48,13 @@ implement Repositorio<K, V> for Loggable, Serializable {
     }
 
     // Implementação da interface Loggable
+    @Override
     pub fun log(mensagem: string): string {
         return "[LOG] Repositorio: " + mensagem;
     }
 
     // Implementação da interface Serializable
+    @Override
     pub fun toJSON(): object {
         return { "chaves": this.chaves, "valores": this.valores };
     }

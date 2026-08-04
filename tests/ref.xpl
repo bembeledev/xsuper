@@ -18,15 +18,15 @@ implement Motor {
 
 
 MotorAPI::getDeclareName();
-MotorAPI::getMethods(/*tudo a ser feito aqui*/);
-MotorAPI::getFields(/*tudo a ser feito aqui*/);
-MotorAPI::CallMethod(/*tudo a ser feito aqui*/);
-MotorAPI::getImplements(/*tudo a ser feito aqui*/);
-MotorAPI::getInterfaces(/*tudo a ser feito aqui*/);
-MotorAPI::getDecorators(/*tudo a ser feito aqui*/);
-MotorAPI::getDecorators(/*tudo a ser feito aqui*/);
+MotorAPI::getMethods();
+MotorAPI::getFields();
+MotorAPI::CallMethod();
+MotorAPI::getImplements();
+MotorAPI::getInterfaces();
+MotorAPI::getDecorators();
+MotorAPI::getDecorators();
 MotorAPI::getDeclareToObject(); // rotornar esse objecto:
-MotorAPI::getImplementsAliasNames(/*tudo a ser feito aqui*/);
+MotorAPI::getImplementsAliasNames();
 //mais propriedades...
 
 var meuMotor = new MotorAPI();

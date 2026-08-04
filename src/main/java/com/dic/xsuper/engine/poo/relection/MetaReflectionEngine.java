@@ -198,19 +198,17 @@ public class MetaReflectionEngine {
             public Object call(Interpreter interpreter, List<Expr.CallArg> arguments) {
 
                 // =========================================================
-                // ⭐ O DESEMPACOTADOR QUÂNTICO (Bypass do Decorador) ⭐
-                // O alvo pode ser um proxy @ContextDecorator. Precisamos descer
-                // até ao núcleo real e guardar os decoradores encontrados pelo caminho!
+                // ⭐ O DESEMPACOTADOR QUÂNTICO (Sem Proxies) ⭐
+                // A nossa arquitectura nova aboliu Proxies, logo lemos os metadados
+                // passivos directamente da memória oculta da instância!
                 // =========================================================
                 Object target = initialTarget;
                 List<String> variableDecorators = new ArrayList<>();
 
-                while (target instanceof XplInstance proxy && Boolean.TRUE.equals(proxy.fields.get("_isDecoratorProxy"))) {
-                    Object decInst = proxy.fields.get("_decoratorInstance");
-                    if (decInst instanceof XplInstance dec) {
-                        variableDecorators.add("@" + dec.klass.model.name); // Guarda o nome (Ex: @Audit)
-                    }
-                    target = proxy.fields.get("_val"); // Desce para a próxima camada!
+                if (target instanceof XplInstance inst && inst.fields.containsKey("__applied_decorators__")) {
+                    @SuppressWarnings("unchecked")
+                    List<String> decs = (List<String>) inst.fields.get("__applied_decorators__");
+                    variableDecorators.addAll(decs);
                 }
 
                 // Agora o 'target' é o Repositorio REAL!
@@ -235,8 +233,8 @@ public class MetaReflectionEngine {
                         List<String> decs = new ArrayList<>(variableDecorators);
                         if (model.decoratorNodes != null) {
                             for (Stmt.DecoratorNode dec : model.decoratorNodes) {
-                                String args = dec.arguments.isEmpty() ? "" : dec.arguments.toString();
-                                decs.add(dec.name.lexeme + args);
+                                String args = dec.arguments.isEmpty() ? "" : "(" + dec.arguments.toString() + ")";
+                                decs.add("@" + dec.name.lexeme + args);
                             }
                         }
                         yield decs;

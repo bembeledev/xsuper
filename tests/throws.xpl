@@ -5,7 +5,7 @@ implement IOError { default { message: "Erro Desconhecido" } }
 
 
 // Uma função altamente perigosa
-fun lerFicheiro(): string throws IOError {
+fun lerFicheiro():string throws IOError {
     return "Dados do disco...";
 }
 

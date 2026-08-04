@@ -1,5 +1,5 @@
 // O Motor vai consultar o `sdm.lock`, encontrar a biblioteca e usar a VFS!
-import com.dic.validators.Validators.*;
+import tests.listen.*;
 
 println("--- INICIANDO TESTES DE SEGURANÇA ESTRITA ---");
 

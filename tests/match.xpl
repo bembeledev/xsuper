@@ -1,4 +1,4 @@
-var dado = "Código: 404";
+var dado:any = "04";
 var perigo = true;
 
 let analise = match (dado) {
@@ -9,7 +9,7 @@ let analise = match (dado) {
     "OK": "Sistema Estável";
 
     // 3. Testa se é do tipo String E a variável externa 'perigo' está ativa!
-    type String if (perigo): "Alerta de Texto Crítico: " + dado;
+    type string if (perigo): "Alerta de Texto Crítico: " + dado;
 
     // 4. Guarda lógica sem valor à esquerda
     if (dado == null): "Ausência total de sinal";

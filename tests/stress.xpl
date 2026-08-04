@@ -87,9 +87,9 @@ var kernelLivre = true;
 let inspecao = match (payload) {
     type int: "Rejeitado: Esperava texto, veio numero";
 
-    type String if (!kernelLivre): "Bloqueado pelo Kernel";
+    type string if (!kernelLivre): "Bloqueado pelo Kernel";
 
-    type String if (kernelLivre): "Inspecao Aprovada: " + payload;
+    type string if (kernelLivre): "Inspecao Aprovada: " + payload;
 
     if (payload == null): "Sinal morto";
 
