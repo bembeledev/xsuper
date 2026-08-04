@@ -57,5 +57,5 @@ implement Circle as Circe02 { // Tenta adivinhar o nome do declare!
     }
 }
 
-var v2 = Circe02(12);
+var v2 = new Circe02(12);
 println("Bom dia: "+ v2.getArea());

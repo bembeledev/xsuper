@@ -8,6 +8,9 @@ import com.dic.xsuper.render.javafx.core.XplUiBridge;
 import com.dic.xsuper.dom.node.XplDocument;
 import com.dic.xsuper.dom.node.XplElement;
 
+import java.io.File;
+import java.nio.file.Path;
+
 /**
  * Teste Headless da SuperUiEngine, sem JavaFX.
  * Verifica a hidratação, o índice de IDs e a reactividade.
@@ -54,7 +57,7 @@ public class TestHeadlessEngine {
         // =====================================================================
         // Como não temos um Interpreter real neste teste, criamos um stub
         // que apenas permite a injecção do documento.
-        Interpreter mockInterpreter = new Interpreter(null, null) {
+        Interpreter mockInterpreter = new Interpreter(null, Path.of("text.xpl")) {
             // Sobrescrevemos o construtor para não precisar de CommandRegistry
             // e injectamos o documento manualmente.
         };

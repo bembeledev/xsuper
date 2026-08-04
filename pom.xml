@@ -272,6 +272,19 @@
             <version>0.11.7</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>compile</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -286,7 +299,7 @@
                     <source>26</source>
                     <target>26</target>
                     <fork>true</fork>
-                    <executable>C:\Program Files\Java\jdk-21\bin\javac</executable>
+                    <executable>C:\Program Files\Java\jdk-26.0.2\bin\javac</executable>
                 </configuration>
             </plugin>
 

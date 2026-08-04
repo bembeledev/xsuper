@@ -2,7 +2,7 @@ module files.listeners;
 
 listener WebFilter {}
 
-implement WebFilter {
+abstract  implement WebFilter {
 
     @(Listen.Set)
     pub fun interceptarRequisicao() {

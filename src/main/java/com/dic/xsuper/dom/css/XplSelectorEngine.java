@@ -46,45 +46,47 @@ public class XplSelectorEngine {
         while (currentIndex >= 0) {
             String part = parts[currentIndex].trim();
 
-            if (part.equals(">")) {
-                // Filho direto: O pai exato tem de corresponder à próxima regra
-                currentIndex--;
-                currentContext = currentContext.parent;
-                if (currentContext == null || !matchCompound(currentContext, parts[currentIndex])) return false;
-            }
-            else if (part.equals("+")) {
-                // Irmão adjacente: O irmão imediatamente anterior
-                currentIndex--;
-                currentContext = getPreviousSibling(currentContext);
-                if (currentContext == null || !matchCompound(currentContext, parts[currentIndex])) return false;
-            }
-            else if (part.equals("~")) {
-                // Irmão geral: Procura para trás nos irmãos até encontrar
-                currentIndex--;
-                String targetSiblingSelector = parts[currentIndex];
-                boolean foundSibling = false;
-                currentContext = getPreviousSibling(currentContext);
-                while (currentContext != null) {
-                    if (matchCompound(currentContext, targetSiblingSelector)) {
-                        foundSibling = true;
-                        break;
-                    }
-                    currentContext = getPreviousSibling(currentContext);
-                }
-                if (!foundSibling) return false;
-            }
-            else {
-                // Espaço (Descendente): Procura na árvore de pais até ao topo
-                boolean foundAncestor = false;
-                currentContext = currentContext.parent;
-                while (currentContext != null) {
-                    if (matchCompound(currentContext, part)) {
-                        foundAncestor = true;
-                        break;
-                    }
+            switch (part) {
+                case ">" -> {
+                    // Filho direto: O pai exato tem de corresponder à próxima regra
+                    currentIndex--;
                     currentContext = currentContext.parent;
+                    if (currentContext == null || !matchCompound(currentContext, parts[currentIndex])) return false;
                 }
-                if (!foundAncestor) return false;
+                case "+" -> {
+                    // Irmão adjacente: O irmão imediatamente anterior
+                    currentIndex--;
+                    currentContext = getPreviousSibling(currentContext);
+                    if (currentContext == null || !matchCompound(currentContext, parts[currentIndex])) return false;
+                }
+                case "~" -> {
+                    // Irmão geral: Procura para trás nos irmãos até encontrar
+                    currentIndex--;
+                    String targetSiblingSelector = parts[currentIndex];
+                    boolean foundSibling = false;
+                    currentContext = getPreviousSibling(currentContext);
+                    while (currentContext != null) {
+                        if (matchCompound(currentContext, targetSiblingSelector)) {
+                            foundSibling = true;
+                            break;
+                        }
+                        currentContext = getPreviousSibling(currentContext);
+                    }
+                    if (!foundSibling) return false;
+                }
+                default -> {
+                    // Espaço (Descendente): Procura na árvore de pais até ao topo
+                    boolean foundAncestor = false;
+                    currentContext = currentContext.parent;
+                    while (currentContext != null) {
+                        if (matchCompound(currentContext, part)) {
+                            foundAncestor = true;
+                            break;
+                        }
+                        currentContext = currentContext.parent;
+                    }
+                    if (!foundAncestor) return false;
+                }
             }
             currentIndex--;
         }
@@ -199,7 +201,7 @@ public class XplSelectorEngine {
     private static boolean isNthChildEven(XplNode node, boolean even) {
         if (node.parent == null || node.parent.children == null) return false;
         int index = node.parent.children.indexOf(node) + 1;
-        return even ? (index % 2 == 0) : (index % 2 != 0);
+        return even == (index % 2 == 0);
     }
 
     private static XplNode getPreviousSibling(XplNode node) {

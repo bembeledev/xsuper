@@ -4,32 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(compiler): blindagem completa do analisador semântico, POO e exceções&#10;&#10;- Adiciona dupla identidade aos Enums (registo simultâneo como Tipo e Variável).&#10;- Implementa validação estática e dinâmica para o comando 'throw' (restrito a instâncias de Error ou herdeiros).&#10;- Adiciona suporte completo a Checked Exceptions (validação de blocos 'try-catch' e propagação via 'throws').&#10;- Melhora a alfândega de funções com suporte a argumentos nomeados, posicionais e defaults.&#10;- Introduz validação de classes abstratas e suporte lexical/sintático ao modificador 'prot' (protected).&#10;- Implementa o &quot;elevador de herança&quot; no linter para verificação estática de acesso a membros privados e protegidos.&#10;- Adiciona validação de contratos (@Override) em classes anônimas e interfaces, com isolamento de escopo (Ghost Scope).">
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(compiler): integrar SDM no Analisador Semântico e expandir operadores do motor XPL&#10;&#10;- Adicionada a construção do grafo de dependências estáticas no `SemanticAnalyzer` utilizando o `XplModuleManager.resolvePhysicalFile` para validar imports em compile-time.&#10;- Implementado o novo operador de divisão inteira (`#`) no Scanner, Parser, SemanticAnalyzer e Interpreter.&#10;- Ajustado o tratamento do cast forçado (`as!`) com a flag `isForced` para delegar erros de conversão estrita para o Run-Time dentro de blocos try/catch.&#10;- Corrigida a avaliação estática do operador de coalescência nula (`??`) e o registo dinâmico de classes variantes criadas via `implement ... as ...`.">
+      <change afterPath="$PROJECT_DIR$/layout.xpl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TesteXplBackend.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/files/listeners/WebFilter.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/files/listeners/WebFilter.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplSelectorEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplSelectorEngine.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/ast/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/ast/Stmt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Parser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XPLModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XplClass.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaDoBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaDoBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaIfBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaIfBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaReflectionEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/relection/MetaReflectionEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/error.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/error.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/interfaces.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/interfaces.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/interop.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/interop.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/match.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/match.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/meta_adv.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/meta_adv.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/meta_test.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/meta_test.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/omni.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/omni.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/poo.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ref.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ref.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/stress.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/stress.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/throws.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/throws.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tipos.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tipos.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/valid.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/valid.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestHeadlessEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestHeadlessEngine.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -111,7 +96,9 @@
     &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
     &quot;Batch.xpl.executor&quot;: &quot;Run&quot;,
     &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;JUnit.TesteXplBackend.executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.xsuper-xplorer [compile].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [deploy].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [install].executor&quot;: &quot;Run&quot;,
     &quot;Maven.xsuper-xplorer [package].executor&quot;: &quot;Run&quot;,
@@ -129,11 +116,11 @@
     &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;SDKs&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.15712383&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;template.copyright.formatting&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.repository.indices&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -162,20 +149,6 @@
     </key>
   </component>
   <component name="RunManager" selected="Application.Main">
-    <configuration name="AnimandoNodeEControl" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.AnimandoNodeEControl" />
-      <module name="FileManager" />
-      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.app.Main" />
       <module name="xsuper-xplorer" />
@@ -216,13 +189,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="SuperUIEditorTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lang.ui.tags.editor.SuperUIEditorTest" />
-      <module name="FileManager" />
-      <option name="VM_PARAMETERS" value="--module-path &quot;C:\Program Files\Java\javafx-sdk-21.0.8\lib&quot; --add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.web,javafx.media" />
+    <configuration name="RunApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.ui.RunApp" />
+      <module name="xsuper-xplorer" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.render.javafx.tags.editor.*" />
+          <option name="PATTERN" value="com.dic.xsuper.tests.ui.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -230,12 +202,12 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="XplRuntime" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.app.XplRuntime" />
-      <module name="FileManager" />
+    <configuration name="TestHeadlessEngine" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.TestHeadlessEngine" />
+      <module name="xsuper-xplorer" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.dic.xsuper.app.*" />
+          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -254,20 +226,35 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TesteXplBackend" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="xsuper-xplorer" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.dic.xsuper.tests" />
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.tests.TesteXplBackend" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
-      <item itemvalue="Application.SuperUIEditorTest" />
-      <item itemvalue="Application.XplRuntime" />
-      <item itemvalue="Application.AnimandoNodeEControl" />
+      <item itemvalue="Application.RunApp" />
+      <item itemvalue="Application.TestHeadlessEngine" />
       <item itemvalue="Application.Main" />
       <item itemvalue="Batch.xpl" />
+      <item itemvalue="JUnit.TesteXplBackend" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Main" />
+        <item itemvalue="Application.RunApp" />
+        <item itemvalue="Application.TestHeadlessEngine" />
+        <item itemvalue="JUnit.TesteXplBackend" />
         <item itemvalue="Batch.xpl" />
-        <item itemvalue="Application.SuperUIEditorTest" />
-        <item itemvalue="Application.XplRuntime" />
-        <item itemvalue="Application.AnimandoNodeEControl" />
       </list>
     </recent_temporary>
   </component>
@@ -728,8 +715,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(runtime): implement EventLoop native model, refine reactive Observer and fix AST/interpreter bugs&#10;&#10;- Add EventLoopNativeModel supporting nextTick, defer, setTimeout, setInterval, and queue processing.&#10;- Refine Observer architecture with targeted `Observer.observable(name, type)` instances and streamlined (evento, velho, novo) callbacks.&#10;- Fix Parser dual-backpack system for independent `@` decorators and `&amp;` listeners.&#10;- Prevent memory leaks and zombie listeners by scoping environment listeners directly to interpreter instances.&#10;- Fix type-matching and null-safety for `any` types during dynamic function calls in XplFunction." />
-    <MESSAGE value="feat(interpreter): implement native observer pattern and error stringification&#10;&#10;- Replace fragile proxy-based wrappers with native `__active_listeners__` injection for POO instances.&#10;- Inject `target` and `targetName` context into listener instances for deep state introspection and rules validation.&#10;- Clean up legacy auto-triggering hooks in `visitGetExpr` and `visitSetExpr` to prevent infinite recursion/loops.&#10;- Add native `toString()` method to `ErrorNativeModel` to properly format error outputs.&#10;- Update top-level exception handling in `Interpreter.interpret` to cleanly display uncaught error messages." />
     <MESSAGE value="refactor(ui): extract native component registration into UINativeRegistry&#10;&#10;- Create `UINativeRegistry` to handle native model definition, compilation registry mapping, and global environment injection for UI elements (`XplElement`, `XplDocument`, `SuperUiEngine`, `XplEvent`).&#10;- Clean up `SuperUiEngine` initialization by delegating native setup to `UINativeRegistry.inject()`.&#10;- Improve separation of concerns for the UI subsystem startup lifecycle." />
     <MESSAGE value="feat(ui): add native &lt;canvas&gt; tag and 2D rendering context support&#10;&#10;- Implement CanvasTag and register it in TagFactory.&#10;- Create XplCanvasContext2D bridging JavaFX GraphicsContext with XPL.&#10;- Add getContext(&quot;2d&quot;) support to DOM elements via XplElementUtils.&#10;- Fix mouse coordinate mapping (local x, y) and XplEvent type binding (klass) in AttachJavaFxListener.&#10;- Enable full interactive mouse drawing (Paint) capabilities at 60 FPS." />
     <MESSAGE value="feat(ui): add complete SVG shape component suite and container support&#10;&#10;- Implement SvgTag using JavaFX Pane for absolute coordinate positioning.&#10;- Add and register W3C shape tags: ArcTag, CircleTag, CubicCurveTag, EllipseTag, LineTag, PathTag, PolygonTag, PolylineTag, QuadCurveTag, and RectangleTag.&#10;- Update HtmlTagUtils with SVG shape definitions, specific attributes, and structural validation (&quot;SVG Police&quot;) to prevent loose shapes in the DOM.&#10;- Fix shape point parsing and color handling for properties like 'none'." />
@@ -753,7 +738,9 @@
     <MESSAGE value="feat(core): Implementação definitiva do Meta-Object Protocol (MOP) e Injeção Segura de Listeners&#10;&#10;Esta atualização finaliza a arquitetura de Metaprogramação e Reflexão do motor XPL, garantindo isolamento total de estado e prevenindo loops infinitos em operações reativas.&#10;&#10;Alterações principais:&#10;- ️ Arquitetura: Separação limpa entre o Core (`MetaReflectionEngine`) e a Standard Library (`ReflectNativeModel`).&#10;-  MOP API (`ReflectNativeModel`): Criação da classe nativa `Reflect` com superpoderes de introspeção (`hasMethod`, `getFields`), mutação silenciosa (`setFieldValue`), metaprogramação ativa (`injectField`, `newInstance`) e auditoria (`getActiveListeners`).&#10;-  Injeção de Dependência (`Interpreter.java` &amp; `XplClass.java`): O motor agora injeta automaticamente a API de Reflexão na variável `this.target` dos Listeners (junto com `event`, `property` e `value`), eliminando a necessidade de passar argumentos manuais e protegendo a memória do objeto original.&#10;-  Correção AST (`Interpreter.java`): Corrigida a leitura de metadados no `visitDeclareDeclStmt` para aceitar `stmt.listeners` e `stmt.decorators` em simultâneo, garantindo que as classes suportam anotações estáticas e reativas coexistentes.&#10;&#10;A partir de agora, os Listeners XPL atuam com segurança absoluta de memória, operando com reflexão profunda sem corromper o ciclo de execução (Bypass State)." />
     <MESSAGE value="feat(core): Geração dinâmica de classes, Aspect-Oriented Listeners e refatoração de Erros&#10;&#10;Esta atualização eleva o motor XPL ao nível de frameworks Enterprise, adicionando suporte a manipulação de classes em tempo de execução (JIT), interceção de requisições web (AOP) e uma ergonomia muito melhor no tratamento de exceções.&#10;&#10;Alterações principais:&#10;-  Runtime Class Generation (`ReflectNativeModel.java`): Adicionado o `Reflect.defineClass(nome, pai)` para criar classes dinamicamente na RAM do zero (estilo CGLib/ByteBuddy).&#10;- ️ Injeção Avançada (`ReflectNativeModel.java`): O `injectMethod` agora suporta a renomeação de Arrow Functions injetadas, viabilizando a criação de ORMs mágicos.&#10;- ️ Aspect-Oriented Programming (`WebFilter.xpl`): Criado e acoplado um Listener HTTP aos controladores (`HomeController`, `UploadController`) para fazer log e auditoria de requisições de forma puramente silenciosa e desacoplada.&#10;-  Ergonomia de Exceções (`ErrorNativeModel.java`): Injetado nativamente o método construtor `init(msg)` na classe `Error`. Permite agora o uso limpo e direto de `throw new Error(&quot;Mensagem&quot;)`, incluindo valor por defeito caso instanciado vazio." />
     <MESSAGE value="feat(compiler): blindagem completa do analisador semântico, POO e exceções&#10;&#10;- Adiciona dupla identidade aos Enums (registo simultâneo como Tipo e Variável).&#10;- Implementa validação estática e dinâmica para o comando 'throw' (restrito a instâncias de Error ou herdeiros).&#10;- Adiciona suporte completo a Checked Exceptions (validação de blocos 'try-catch' e propagação via 'throws').&#10;- Melhora a alfândega de funções com suporte a argumentos nomeados, posicionais e defaults.&#10;- Introduz validação de classes abstratas e suporte lexical/sintático ao modificador 'prot' (protected).&#10;- Implementa o &quot;elevador de herança&quot; no linter para verificação estática de acesso a membros privados e protegidos.&#10;- Adiciona validação de contratos (@Override) em classes anônimas e interfaces, com isolamento de escopo (Ghost Scope)." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(compiler): blindagem completa do analisador semântico, POO e exceções&#10;&#10;- Adiciona dupla identidade aos Enums (registo simultâneo como Tipo e Variável).&#10;- Implementa validação estática e dinâmica para o comando 'throw' (restrito a instâncias de Error ou herdeiros).&#10;- Adiciona suporte completo a Checked Exceptions (validação de blocos 'try-catch' e propagação via 'throws').&#10;- Melhora a alfândega de funções com suporte a argumentos nomeados, posicionais e defaults.&#10;- Introduz validação de classes abstratas e suporte lexical/sintático ao modificador 'prot' (protected).&#10;- Implementa o &quot;elevador de herança&quot; no linter para verificação estática de acesso a membros privados e protegidos.&#10;- Adiciona validação de contratos (@Override) em classes anônimas e interfaces, com isolamento de escopo (Ghost Scope)." />
+    <MESSAGE value="feat(compiler): integrar SDM no Analisador Semântico e expandir operadores do motor XPL&#10;&#10;- Adicionada a construção do grafo de dependências estáticas no `SemanticAnalyzer` utilizando o `XplModuleManager.resolvePhysicalFile` para validar imports em compile-time.&#10;- Implementado o novo operador de divisão inteira (`#`) no Scanner, Parser, SemanticAnalyzer e Interpreter.&#10;- Ajustado o tratamento do cast forçado (`as!`) com a flag `isForced` para delegar erros de conversão estrita para o Run-Time dentro de blocos try/catch.&#10;- Corrigida a avaliação estática do operador de coalescência nula (`??`) e o registo dinâmico de classes variantes criadas via `implement ... as ...`." />
+    <MESSAGE value="feat(compiler): evolução abrangente do motor XPL, Linter, operadores e SDM&#10;&#10;- **Novo Operador (#)**: Implementada a divisão inteira (ex: 1.5 # 0.6 = 2) a nível de Scanner, Parser, SemanticAnalyzer e Interpreter.&#10;- **Desempacotamento de Opcionais (??)**: Ajustada a análise estática do operador de coalescência nula para extrair o tipo base correto e permitir operações encadeadas.&#10;- **Registo de Classes Variantes**: Ensino ao Linter para reconhecer e registar estaticamente as classes variantes criadas via sintaxe `implement Base as Variante`.&#10;- **Escotilha de Emergência do Cast Forçado (as!)**: Implementado o bypass estático utilizando a flag `isForced` para devolver `&quot;any&quot;`, delegando falhas de conversão para o Run-Time em blocos try/catch.&#10;- **Grafo de Dependências Estáticas (SDM)**: Integrado o `XplModuleManager` (`resolvePhysicalFile`) no `SemanticAnalyzer` para processar imports em *compile-time*, garantindo validação rigorosa de módulos locais/externos e proteção contra dependências circulares estáticas." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(compiler): evolução abrangente do motor XPL, Linter, operadores e SDM&#10;&#10;- **Novo Operador (#)**: Implementada a divisão inteira (ex: 1.5 # 0.6 = 2) a nível de Scanner, Parser, SemanticAnalyzer e Interpreter.&#10;- **Desempacotamento de Opcionais (??)**: Ajustada a análise estática do operador de coalescência nula para extrair o tipo base correto e permitir operações encadeadas.&#10;- **Registo de Classes Variantes**: Ensino ao Linter para reconhecer e registar estaticamente as classes variantes criadas via sintaxe `implement Base as Variante`.&#10;- **Escotilha de Emergência do Cast Forçado (as!)**: Implementado o bypass estático utilizando a flag `isForced` para devolver `&quot;any&quot;`, delegando falhas de conversão para o Run-Time em blocos try/catch.&#10;- **Grafo de Dependências Estáticas (SDM)**: Integrado o `XplModuleManager` (`resolvePhysicalFile`) no `SemanticAnalyzer` para processar imports em *compile-time*, garantindo validação rigorosa de módulos locais/externos e proteção contra dependências circulares estáticas." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

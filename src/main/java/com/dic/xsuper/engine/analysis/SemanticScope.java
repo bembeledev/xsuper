@@ -8,7 +8,7 @@ import java.util.*;
 
 public class SemanticScope {
     public final SemanticScope enclosing;
-    private final Map<String, SymbolInfo> symbols = new HashMap<>();
+    public final Map<String, SymbolInfo> symbols = new HashMap<>();
     private final Map<String, String> knownTypes = new HashMap<>(); // tipo -> "primitive", "class", "interface", "enum", "decorator", "alias"
     private final Map<String, XPLModelInfo> classInfo = new HashMap<>(); // nome da classe -> info
     private final Map<String, Stmt.InterfaceDecl> interfaceInfo = new HashMap<>(); // ⭐ NOVO: nome da interface -> info da interface
@@ -191,6 +191,65 @@ public class SemanticScope {
         return false;
     }
 
+    // =========================================================================
+    // ⭐ PONTE DE IMPORTAÇÃO DE MÓDULOS (LINTER)
+    // =========================================================================
+    public void importFrom(SemanticScope sourceScope, String prefix, List<Stmt.ImportSymbol> importSymbols, boolean isWildcard) {
+        if (isWildcard) {
+            for (Map.Entry<String, String> entry : sourceScope.knownTypes.entrySet()) {
+                String targetName = prefix + entry.getKey();
+                this.knownTypes.put(targetName, entry.getValue());
+
+                switch (entry.getValue()) {
+                    case "class" ->
+                            this.classInfo.put(targetName, deepCopyModel(sourceScope.classInfo.get(entry.getKey()), targetName));
+                    case "interface" ->
+                            this.interfaceInfo.put(targetName, sourceScope.interfaceInfo.get(entry.getKey()));
+                    case "alias" -> this.typeAliases.put(targetName, sourceScope.typeAliases.get(entry.getKey()));
+                }
+            }
+
+            for (Map.Entry<String, SymbolInfo> entry : sourceScope.symbols.entrySet()) {
+                String targetName = prefix + entry.getKey();
+                SymbolInfo info = entry.getValue();
+                this.symbols.put(targetName, new SymbolInfo(info.type, info.isMutable, info.isInitialized, info.declarationToken, info.paramTypes));
+            }
+        } else if (importSymbols != null) {
+            for (Stmt.ImportSymbol sym : importSymbols) {
+                String original = sym.originalName.lexeme;
+                String target = prefix + ((sym.aliasName != null) ? sym.aliasName.lexeme : original);
+
+                if (sourceScope.knownTypes.containsKey(original)) {
+                    String kind = sourceScope.knownTypes.get(original);
+                    this.knownTypes.put(target, kind);
+
+                    switch (kind) {
+                        case "class" ->
+                                this.classInfo.put(target, deepCopyModel(sourceScope.classInfo.get(original), target));
+                        case "interface" -> this.interfaceInfo.put(target, sourceScope.interfaceInfo.get(original));
+                        case "alias" -> this.typeAliases.put(target, sourceScope.typeAliases.get(original));
+                    }
+                }
+
+                if (sourceScope.symbols.containsKey(original)) {
+                    SymbolInfo info = sourceScope.symbols.get(original);
+                    this.symbols.put(target, new SymbolInfo(info.type, info.isMutable, info.isInitialized, info.declarationToken, info.paramTypes));
+                }
+            }
+        }
+    }
+
+    // =========================================================================
+    // ⭐ UTILITÁRIO: DEEP COPY PARA MODELOS (Evita corrupção por variantes)
+    // =========================================================================
+    private XPLModelInfo deepCopyModel(XPLModelInfo original, String newName) {
+        if (original == null) return null;
+        XPLModelInfo clone = new XPLModelInfo(newName, original.superclass, original.fields, original.interfaces, original.isSealed, original.typeParamCount, original.typeParameters);
+        clone.initParamTypes = new java.util.ArrayList<>(original.initParamTypes);
+        clone.methods.addAll(original.methods);
+        clone.isAbstract = original.isAbstract;
+        return clone;
+    }
     // --- Informações sobre símbolos ---
 
     public static class SymbolInfo {

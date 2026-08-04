@@ -114,7 +114,14 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         }
     }
 
+
     public List<SemanticError> analyze(List<Stmt> statements) {
+        // =====================================================================
+        // ⭐ 1. A MÁGICA DA RAIZ: Carrega os globais do projeto/pacote primeiro!
+        // =====================================================================
+        loadProjectGlobals();
+
+        // 2. Só depois analisa o ficheiro atual, já com a memória global preenchida!
         for (Stmt stmt : statements) {
             if (stmt != null) {
                 try {
@@ -125,6 +132,51 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             }
         }
         return errors;
+    }
+
+    // =========================================================================
+    // ⭐ PONTE DE INJEÇÃO DO PROJETO (Mimica o teu Interpreter.java) ⭐
+    // =========================================================================
+    private void loadProjectGlobals() {
+        // Usa o Manager Supremo para descobrir se há um arquivo global configurado no SDM!
+        String projectGlobals = this.interpreter.moduleManager.getProjectGlobalsModule();
+
+        // Imita a hierarquia do Run-Time: SDM primeiro, script avulso depois.
+        String globalsPath = (projectGlobals != null) ? projectGlobals.replace(".", "/") + ".xpl" : "globals.xpl";
+
+        // Pergunta à alfândega (SDM) se o ficheiro físico existe mesmo na pasta
+        java.io.File file = this.interpreter.moduleManager.resolvePhysicalFile(globalsPath);
+
+        // ⭐ A TUA REGRA: Se o ficheiro não existe, sai de fininho! Não inventa nada.
+        // O Linter continuará com o escopo global vazio. Se o código usar variáveis
+        // não declaradas, o Linter vai quebrar e mostrar o Erro Lógico corretamente.
+        if (file == null || !file.exists()) {
+            return;
+        }
+
+        String absolutePath = file.getAbsolutePath();
+
+        // Previne dependências circulares caso estejamos a analisar o próprio ficheiro globals
+        if (visitedModules.contains(absolutePath)) return;
+        visitedModules.add(absolutePath);
+
+        try {
+            String sourceCode = java.nio.file.Files.readString(file.toPath());
+            com.dic.xsuper.engine.core.Lexer lexer = new com.dic.xsuper.engine.core.Lexer(sourceCode, absolutePath);
+            com.dic.xsuper.engine.core.Parser parser = new com.dic.xsuper.engine.core.Parser(lexer.tokenize());
+            java.util.List<Stmt> globalsAst = parser.parse();
+
+            // Injeta o que foi lido do ficheiro real para o Escopo Global do Linter (Nível 0)
+            for (Stmt s : globalsAst) {
+                if (!(s instanceof Stmt.ModuleDecl)) {
+                    execute(s);
+                }
+            }
+        } catch (Exception ignored) {
+            // Falhas de sintaxe dentro do globals falham silenciosamente nesta fase,
+            // deixando a responsabilidade de reportar o erro para quando o ficheiro
+            // globals.xpl for analisado isoladamente como alvo principal do Linter.
+        }
     }
 
     private void execute(Stmt stmt) {
@@ -742,8 +794,15 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             }
         }
 
-        // ⭐ 1. INÍCIO: Entra na Classe e guarda os métodos!
-        SemanticScope.XPLModelInfo info = currentScope.getClassInfo(targetName);
+        // =========================================================================
+        // ⭐ 1. INÍCIO: Entra na Classe (BASE OU VARIANTE) e guarda os métodos!
+        // =========================================================================
+        // Se tiver alias (Circe02), usamos o alias. Se não, usamos a base (Circle).
+        String activeModelName = (stmt.aliasName != null) ? stmt.aliasName.lexeme : targetName;
+
+        // Agora sim, pedimos a caixa correta à memória!
+        SemanticScope.XPLModelInfo info = currentScope.getClassInfo(activeModelName);
+
         if (info != null) {
             currentClassStack.push(info);
             info.methods.addAll(stmt.methods);
@@ -776,11 +835,17 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         // Valida métodos
         for (Stmt.Function method : stmt.methods) {
 
-            // ⭐ NOVO: SE FOR O CONSTRUTOR, GUARDA A ASSINATURA NA MEMÓRIA!
+            // ⭐ NOVO: SE FOR O CONSTRUTOR, GUARDA A ASSINATURA E A OBRIGATORIEDADE!
             if (method.name.lexeme.equals("init")) {
                 if (info != null) {
+                    info.initParamTypes.clear(); // Limpa lixo de heranças anteriores
                     for (Stmt.Param p : method.params) {
-                        info.initParamTypes.add(stringifyTypeNode(resolveAlias(p.typeNode)));
+                        String pType = stringifyTypeNode(resolveAlias(p.typeNode));
+                        // Descobre se tem valor por defeito (ex: pi=3.14) ou é opcional (?int)
+                        boolean isOptional = pType.startsWith("?") || p.defaultValue != null;
+
+                        // Guarda o tipo e a tag booleana (Ex: "float:true" ou "int:false")
+                        info.initParamTypes.add(pType + ":" + isOptional);
                     }
                 }
             }
@@ -882,7 +947,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
                 // Adiciona 'this' ao escopo (para métodos de instância)
                 if (!method.isStatic) {
                     Token thisToken = new Token(TokenType.THIS, "this", null, method.name.line, method.name.column);
-                    currentScope.define(thisToken, targetName, false, true);
+                    currentScope.define(thisToken, activeModelName, false, true);
                 }
                 for (Stmt bodyStmt : method.body) {
                     execute(bodyStmt);
@@ -1073,60 +1138,75 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     @Override
     public Void visitImportDeclStmt(Stmt.ImportDecl stmt) {
         String moduleName = stmt.modulePath;
-
-        // 1. O teu manager usa barras e extensão (ex: "tests/listen.xpl")
         String relativePath = moduleName.replace(".", "/") + ".xpl";
 
-        // =================================================================
-        // ⭐ A PONTE COM O TEU MANAGER (SDM) VIA INTERPRETADOR ⭐
-        // =================================================================
-        // Capturamos a instância do moduleManager que já vive no Interpretador!
         java.io.File file = this.interpreter.moduleManager.resolvePhysicalFile(relativePath);
 
         if (file == null || !file.exists()) {
-            errors.add(new SemanticError(stmt.prefix, "Erro SDM (Análise Estática): O módulo '" + moduleName + "' não foi encontrado nas pastas locais nem no cofre SDM."));
+            errors.add(new SemanticError(stmt.prefix != null ? stmt.prefix : new Token(com.dic.xsuper.engine.core.TokenType.IDENTIFIER, moduleName, null, 0, 0), "Erro SDM (Análise Estática): Módulo '" + moduleName + "' não encontrado."));
             return null;
         }
 
         String absolutePath = file.getAbsolutePath();
-
-        // =================================================================
-        // ⭐ ESCUDO DE DEPENDÊNCIAS CIRCULARES ESTÁTICAS ⭐
-        // =================================================================
         if (visitedModules.contains(absolutePath)) {
-            return null;
+            return null; // Escudo contra loops circulares
         }
         visitedModules.add(absolutePath);
 
         try {
-            // =================================================================
-            // ⭐ A CONSTRUÇÃO DO GRAFO DE DEPENDÊNCIAS (RIGOR JAVA) ⭐
-            // =================================================================
-            String sourceCode;
+            if (file.getName().endsWith(".xplx")) return null;
 
-            // Se for um pacote selado (.xplx), o Linter ignora para não explodir a memória em Compile-Time
-            if (file.getName().endsWith(".xplx")) {
-                return null;
-            } else {
-                sourceCode = java.nio.file.Files.readString(file.toPath());
-            }
+            String sourceCode = java.nio.file.Files.readString(file.toPath());
+            com.dic.xsuper.engine.core.Lexer lexer = new com.dic.xsuper.engine.core.Lexer(sourceCode, absolutePath);
+            java.util.List<com.dic.xsuper.engine.core.Token> tokens = lexer.tokenize();
 
-            // Lexer & Parser (Tua lógica nativa)
-            Lexer lexer = new Lexer(sourceCode, absolutePath);
-            java.util.List<Token> tokens = lexer.tokenize();
-
-            Parser parser = new Parser(tokens);
+            com.dic.xsuper.engine.core.Parser parser = new com.dic.xsuper.engine.core.Parser(tokens);
             java.util.List<Stmt> importedStatements = parser.parse();
 
-            // Injeta o código do ficheiro importado no ESCOPO ATUAL!
+            // 1. Analisa o módulo num contexto estático isolado
+            SemanticAnalyzer moduleAnalyzer = new SemanticAnalyzer(this.interpreter);
             for (Stmt s : importedStatements) {
                 if (!(s instanceof Stmt.ModuleDecl)) {
-                    execute(s);
+                    moduleAnalyzer.execute(s);
                 }
             }
 
+            // 2. Extrai e limpa o prefixo (Ex: "PDFCONV" -> PDFCONV_)
+            String prefixStr = "";
+            if (stmt.prefix != null) {
+                prefixStr = stmt.prefix.lexeme.replace("\"", "") + "_";
+            }
+
+            // 3. Delega o carregamento para o SemanticScope através da nossa nova ponte limpa!
+            // =================================================================
+            // ⭐ INJEÇÃO BRUTAL DO WILDCARD (Bypass de Hierarquia de Escopos)
+            // Extrai TODOS os dados, ignorando encapsulamentos se for importação global!
+            // =================================================================
+            if (stmt.isWildcard) {
+                // Força a cópia das classes, interfaces e aliases
+                this.currentScope.importFrom(moduleAnalyzer.currentScope, prefixStr, stmt.symbols, true);
+
+                // Força a cópia de TODAS as variáveis e constantes soltas!
+                for (String varName : moduleAnalyzer.currentScope.symbols.keySet()) {
+                    SemanticScope.SymbolInfo varInfo = moduleAnalyzer.currentScope.symbols.get(varName);
+                    String targetName = prefixStr + varName;
+
+                    if (!this.currentScope.symbols.containsKey(targetName)) {
+                        this.currentScope.define(
+                                new Token(TokenType.IDENTIFIER, targetName, null, 0, 0),
+                                varInfo.type,
+                                varInfo.isMutable,
+                                varInfo.isInitialized
+                        );
+                    }
+                }
+            } else {
+                // Importação Seletiva Normal
+                this.currentScope.importFrom(moduleAnalyzer.currentScope, prefixStr, stmt.symbols, false);
+            }
+
         } catch (Exception e) {
-            errors.add(new SemanticError(stmt.prefix, "Falha estática ao processar a importação de '" + moduleName + "': " + e.getMessage()));
+            errors.add(new SemanticError(stmt.prefix != null ? stmt.prefix : new Token(com.dic.xsuper.engine.core.TokenType.IDENTIFIER, moduleName, null, 0, 0), "Falha estática ao processar importação de '" + moduleName + "': " + e.getMessage()));
         }
 
         return null;
@@ -1342,11 +1422,24 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         String calleeType = evaluate(expr.callee);
 
         // =====================================================================
-        // ⭐ A POLÍCIA DE INVOCADORES (Chamar funções perigosas) ⭐
+        // ⭐ A POLÍCIA DE INVOCADORES (Chamar funções perigosas & Classes) ⭐
         // =====================================================================
         if (expr.callee instanceof Expr.Variable varExpr) {
-            if (functionThrowsRegistry.containsKey(varExpr.name.lexeme)) {
-                for (String errType : functionThrowsRegistry.get(varExpr.name.lexeme)) {
+            Token name = varExpr.name;
+
+            // =========================================================================
+            // ⭐ PROTEÇÃO PARA CLASSES ESQUECIDAS DO 'new' ⭐
+            // Se tentarem chamar uma classe como se fosse uma função (ex: Circe02(12)),
+            // nós avisamos e abortamos a análise deste nó graciosamente!
+            // =========================================================================
+            if (currentScope.isClass(name.lexeme)) {
+                errors.add(new SemanticError(expr.paren, "O identificador '" + name.lexeme + "' é um modelo de classe. Utilize a palavra-chave 'new' para instanciar (Ex: new " + name.lexeme + "(...))."));
+                return name.lexeme; // Modo de Recuperação elegante! Corta a execução aqui.
+            }
+
+            // Validação de Exceções (Throws) para Funções normais
+            if (functionThrowsRegistry.containsKey(name.lexeme)) {
+                for (String errType : functionThrowsRegistry.get(name.lexeme)) {
                     checkExceptionCaught(errType, expr.paren);
                 }
             }
@@ -1540,16 +1633,26 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             actualArgTypes.add(evaluate(arg.expression));
         }
 
-        // ⭐ 3. A NOVA MURALHA: VALIDAÇÃO DO CONSTRUTOR COM TRANSMUTAÇÃO ⭐
+        // ⭐ 3. A NOVA MURALHA: VALIDAÇÃO DO CONSTRUTOR COM PARÂMETROS OPCIONAIS ⭐
         if (info != null && !info.initParamTypes.isEmpty()) {
-            int expectedArgs = info.initParamTypes.size();
+            int maxArgs = info.initParamTypes.size();
+            int minArgs = 0;
+
+            // Conta quantos argumentos são estritamente obrigatórios
+            for (String paramMeta : info.initParamTypes) {
+                if (paramMeta.endsWith(":false")) minArgs++;
+            }
+
             int actualArgs = actualArgTypes.size();
 
-            if (expectedArgs != actualArgs) {
-                errors.add(new SemanticError(expr.className, "O construtor de '" + className + "' exige " + expectedArgs + " argumento(s), mas forneceste " + actualArgs + "."));
+            // A Guilhotina Flexível!
+            if (actualArgs < minArgs || actualArgs > maxArgs) {
+                String range = (minArgs == maxArgs) ? String.valueOf(minArgs) : minArgs + " a " + maxArgs;
+                errors.add(new SemanticError(expr.className, "O construtor de '" + className + "' exige " + range + " argumento(s), mas forneceste " + actualArgs + "."));
             } else {
-                for (int i = 0; i < expectedArgs; i++) {
-                    String expectedType = info.initParamTypes.get(i);
+                for (int i = 0; i < actualArgs; i++) {
+                    String paramMeta = info.initParamTypes.get(i);
+                    String expectedType = paramMeta.split(":")[0]; // Remove a tag booleana para comparar
 
                     // Transmuta T, U, V para os tipos reais da instanciação!
                     if (expectedType.startsWith("?")) {
@@ -1563,9 +1666,8 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
 
                     String actualType = actualArgTypes.get(i);
 
-                    // A Guilhotina Bateu!
+                    // A Guilhotina de Tipo!
                     if (!isTypeCompatible(expectedType, actualType)) {
-                        // Encontra o token apropriado para a linha vermelha no VSCode
                         Token errorToken = expr.className;
                         if (expr.arguments.get(i).expression instanceof Expr.Variable) {
                             errorToken = ((Expr.Variable) expr.arguments.get(i).expression).name;
