@@ -88,6 +88,7 @@ public class XplorerApp {
         registry.register(new CallCmd(registry));
         registry.register(new EchoCmd());
         registry.register(new InfoCmd(registry));
+        registry.register(new HttpCmd());
 
     }
 

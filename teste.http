@@ -1,0 +1,9 @@
+PATCH https://jsonplaceholder.typicode.com/posts/1
+Authorization: Bearer meutoken_super_secreto_xat
+Content-Type: application/json
+User-Agent: XatMotor/1.0
+Accept-Language: pt-PT
+
+{
+  "title": "Atualizando apenas o titulo via PATCH!"
+}
