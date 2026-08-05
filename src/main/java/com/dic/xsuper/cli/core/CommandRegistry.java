@@ -116,6 +116,11 @@ public class CommandRegistry {
         System.out.println();
     }
 
+    // Adiciona este método se ainda não existir
+    public Command getCommand(String name) {
+        return commands.get(name.toLowerCase()); // Assumindo que 'commands' é o teu Map<String, Command>
+    }
+
     // =================================================================================
     // SUPERPODER FORENSE: Filtro de Máquina de Estados para limpar Códigos de Cor ANSI
     // =================================================================================

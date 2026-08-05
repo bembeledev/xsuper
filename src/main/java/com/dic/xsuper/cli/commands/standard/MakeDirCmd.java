@@ -18,6 +18,23 @@ public class MakeDirCmd implements Command {
     }
 
     @Override
+    public String getDetailedInfo() {
+        return """
+                 Cria novos diretórios no sistema de ficheiros atual.
+                 Possui capacidade de criar diretórios em lote (vários ao mesmo tempo)
+                 e suporta a criação automática de caminhos aninhados.
+
+                 Exemplos de uso prático:
+                   > mkdir pasta_simples
+                   > mkdir pasta1 pasta2 pasta3
+                   > mkdir src/main/java
+
+                 No motor .XAT:
+                   run "mkdir build/dist"
+               """;
+    }
+
+    @Override
     public Path execute(String[] args, Path currentDirectory) throws Exception {
         if (args.length < 2) {
             System.out.println(ConsoleTheme.WARNING + "  Uso: mkdir <pasta1> [pasta2] [pasta3...]" + ConsoleTheme.RESET);

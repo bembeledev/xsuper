@@ -87,6 +87,8 @@ public class XplorerApp {
         registry.register(new RunXplCmd(registry));
         registry.register(new CallCmd(registry));
         registry.register(new EchoCmd());
+        registry.register(new InfoCmd(registry));
+
     }
 
     public void boot() {
