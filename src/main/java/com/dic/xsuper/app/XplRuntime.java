@@ -21,7 +21,7 @@ import java.util.List;
 
 public class XplRuntime {
 
-    public static void main(String[] args) {
+     static void main(String[] args) {
         // O Explorer vai passar o caminho do ficheiro como o primeiro argumento (args[0])
         if (args.length == 0) {
             System.err.println(ConsoleTheme.ERROR + "Erro: Nenhum ficheiro XPL especificado." + ConsoleTheme.RESET);
@@ -60,7 +60,6 @@ public class XplRuntime {
                 return;
             }
 
-
             // 3. Preparar o Ambiente de Execução
             CommandRegistry registry = new CommandRegistry();
 
@@ -73,7 +72,7 @@ public class XplRuntime {
             Path projectRoot = scriptDir;
             while (projectRoot != null) {
                 if (Files.exists(projectRoot.resolve("sdm.lock")) || Files.exists(projectRoot.resolve("package.spm"))) {
-                    break; // Encontrou a raiz do projeto (onde está o cofre)!
+                    break; // Encontrou a raiz do projecto (onde está o cofre)!
                 }
                 projectRoot = projectRoot.getParent();
             }
@@ -106,8 +105,7 @@ public class XplRuntime {
             interpreter.activeBreakpoints.addAll(breakpoints);
             XplBootstrapper.bootstrap(interpreter);
 
-
-            // 4. Injetar a Headless Bridge
+            // 4. Injectar a Headless Bridge
             XplUiBridge headlessBridge = new XplUiBridge() {
                 @Override public void renderView(XplNode root) {}
                 @Override public void updateProperty(String id, String prop, Object val) {}
@@ -118,7 +116,6 @@ public class XplRuntime {
             };
 
             new SuperUiEngine(interpreter, headlessBridge);
-
 
             // =========================================================================
             // ⭐ A NOVA MURALHA DE SEGURANÇA 2: LIMPEZA SEMÂNTICA MINUCIOSA
@@ -136,8 +133,6 @@ public class XplRuntime {
                 return; // Bloqueia a execução antes do Interpretador arrancar!
             }
             // =========================================================================
-
-
 
             // 5. Correr o código!
             interpreter.interpret(statements);

@@ -1,0 +1,8 @@
+dec sistema = read "Qual o sistema operativo (linux/windows)? "
+
+if sistema not "linux" {
+    run "echo -red '❌ Sistema invalido. A abortar...'"
+    abort
+}
+
+run "echo -green 'Sistema validado!'"

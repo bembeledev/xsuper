@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
@@ -84,7 +83,7 @@ public class HttpCmd implements Command {
             }
             body = bodyBuilder.toString().trim();
         }
-        // ⭐ MODO CLI DIRETO
+        // ⭐ MODO CLI DIRECTO
         else {
             url = args[2];
             if (args.length > 3) {
@@ -108,11 +107,11 @@ public class HttpCmd implements Command {
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
 
-        // ⭐ 1. REMOVE O .header() DAQUI:
+        // ⭐ 1. REMOVE O.header() DAQUI:
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url));
 
-        // ⭐ 2. INJETA OS CABEÇALHOS DINÂMICOS AQUI:
+        // ⭐ 2. INJECTA OS CABEÇALHOS DINÂMICOS AQUI:
         for (java.util.Map.Entry<String, String> entry : headers.entrySet()) {
             requestBuilder.header(entry.getKey(), entry.getValue());
         }

@@ -19,6 +19,8 @@ public class XatEngine {
         this.currentDir = startDir;
     }
 
+    static class AbortScriptException extends RuntimeException {}
+
     public Path run(String sourceCode) {
         try {
             List<Token> tokens = new Lexer(sourceCode).tokenize();
@@ -34,6 +36,9 @@ public class XatEngine {
 
             System.out.println(ConsoleTheme.SUCCESS + "\n-> Automação concluída com sucesso!" + ConsoleTheme.RESET);
 
+        } catch (AbortScriptException e) {
+            // Sai silenciosamente, pois o utilizador já tratou a mensagem com o Echo!
+            System.out.println(ConsoleTheme.WARNING + "\n-> Execução abortada." + ConsoleTheme.RESET);
         } catch (XatException e) {
             // ⭐ TRATAMENTO DE ERROS COM LOCALIZAÇÃO EXATA!
             String loc = e.token != null ? "Linha " + e.token.line + ", Col " + e.token.col + " -> " : "";
@@ -184,6 +189,9 @@ public class XatEngine {
                 }
             }
         }
+        else if (stmt instanceof Stmt.Abort) {
+            throw new AbortScriptException(); // Corta a execução imediatamente
+        }
     }
 
     private Object evaluate(Expr expr) {
@@ -309,6 +317,7 @@ public class XatEngine {
             Expr duration;
             SleepStmt(Token k, Expr d) { keyword = k; duration = d; }
         }
+        static class Abort extends Stmt { Token keyword; Abort(Token k) { keyword = k; } }
     }
 
     abstract static class Expr {
@@ -323,7 +332,7 @@ public class XatEngine {
     // =========================================================================
     // ⭐ 3. O LEXER & PARSER (Agora com coordenadas X,Y)
     // =========================================================================
-    enum TokenType { DEC, LOOP, IF, ELSE, IS, RUN, IDENT, STR, NUM, PLUS, MINUS, STAR, SLASH, EQ, LT, GT, LBRACE, RBRACE, EOF, TASK, CALL, SYNC, CANCEL, SLEEP, AND, READ, READL, NOT, OR }
+    enum TokenType { DEC, LOOP, IF, ELSE, IS, RUN, IDENT, STR, NUM, PLUS, MINUS, STAR, SLASH, EQ, LT, GT, LBRACE, RBRACE, EOF, TASK, CALL, SYNC, CANCEL, SLEEP, AND, READ, READL, NOT, ABORT, OR }
 
     // ⭐ NOVO: O Token agora sabe onde nasceu (linha e coluna)
     record Token(TokenType type, String lexeme, Object literal, int line, int col) {}
@@ -384,6 +393,7 @@ public class XatEngine {
                         case "read" -> TokenType.READ;
                         case "readl" -> TokenType.READL;
                         case "not" -> TokenType.NOT;
+                        case "abort" -> TokenType.ABORT;
                         default -> TokenType.IDENT;
                     };
                     tokens.add(new Token(type, word, null, startLine, startCol));
@@ -441,6 +451,9 @@ public class XatEngine {
                 Token keyword = previous();
                 Token name = consume(TokenType.IDENT);
                 return new Stmt.CancelStmt(keyword, name);
+            }
+            if (match(TokenType.ABORT)) {
+                return new Stmt.Abort(previous());
             }
             if (match(TokenType.SLEEP)) {
                 Token keyword = previous();
