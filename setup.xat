@@ -1,0 +1,27 @@
+task simular_rede {
+    run "echo [Download] A ligar ao servidor..."
+    delay 1500  # Espera 1.5 segundos
+
+    dec i = 1
+    loop i < 6 {
+        run "echo [Download] A descarregar pacote " + i + " de 5..."
+        wait 1000  # Pausa 1 segundo entre cada pacote!
+        i = i + 1
+    }
+
+    run "echo [Download] Concluido!"
+}
+
+# 1. Corre de forma bloqueante (o terminal espera)
+call simular_rede
+
+run "echo ---- AGORA EM MODO ASSINCRONO ----"
+
+# 2. Corre em background
+call sync simular_rede
+
+# O script principal espera 2 segundos e meio e depois corta a tarefa a meio!
+sleep 2500
+cancel simular_rede
+
+run "echo O script principal continuou a sua vida!"

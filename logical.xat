@@ -1,0 +1,32 @@
+dec sistema = "linux"
+dec espaco_livre = 500
+
+run "echo A verificar requisitos de sistema..."
+
+# Uso do AND
+if sistema is "linux" and espaco_livre > 100 {
+    run "echo Requisitos ideais. Pronto para instalar."
+} else {
+    run "echo Sistema nao suportado ou espaco insuficiente."
+}
+
+dec erro_critico = 0
+dec forcar_limpeza = 1
+
+# Uso do OR
+if erro_critico > 0 or forcar_limpeza is 1 {
+    run "echo Iniciando protocolo de limpeza..."
+    run "rm -f temp_files"
+}
+
+dec sistema = read "Qual o sistema? (ex: windows/linux): "
+dec pastas = readl "Quantas pastas queres criar? "
+
+if sistema not "windows" {
+    run "echo -red 'Nao e possivel instalar em sistemas fora do ecossistema Microsoft!'"
+} else {
+    run "echo -green 'Sistema verificado com sucesso!'"
+    run "echo -blue 'A iniciar construcao...'"
+    run "echo -hex #FF00FF 'Mensagem em cor-de-rosa intenso!'"
+    run "echo -hex #00FF00 'Sucesso!'"
+}

@@ -1,0 +1,20 @@
+run "clear"
+dec nome_pasta = read "Qual o nome do projeto que queres iniciar? "
+
+if nome_pasta is "" {
+    run "echo Nome invalido. Abortando..."
+} else {
+    run "echo A gerar ficheiros para o projeto: " + nome_pasta
+    run "mkdir " + nome_pasta
+
+    dec num_modulos = read "Quantos modulos queres criar (ex: 3)? "
+    dec i = 1
+
+    loop i < num_modulos + 1 {
+        run "mkdir " + nome_pasta + "/modulo_" + i
+        i = i + 1
+    }
+
+    run "echo Sucesso!"
+    run "tree " + nome_pasta
+}
