@@ -8,9 +8,6 @@ import com.dic.xsuper.engine.core.Parser;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.core.Token;
 import com.dic.xsuper.engine.ast.Stmt;
-import com.dic.xsuper.render.javafx.core.XplUiBridge;
-import com.dic.xsuper.dom.node.XplNode;
-import com.dic.xsuper.render.javafx.core.SuperUiEngine;
 import com.dic.xsuper.utils.ConsoleTheme;
 
 import java.nio.file.Files;
@@ -104,18 +101,6 @@ public class XplRuntime {
             Interpreter interpreter = new Interpreter(registry, projectRoot);
             interpreter.activeBreakpoints.addAll(breakpoints);
             XplBootstrapper.bootstrap(interpreter);
-
-            // 4. Injectar a Headless Bridge
-            XplUiBridge headlessBridge = new XplUiBridge() {
-                @Override public void renderView(XplNode root) {}
-                @Override public void updateProperty(String id, String prop, Object val) {}
-                @Override public void setEngineCallback(EngineCallback callback) {}
-                @Override public void rebuildFullView(String targetId, XplNode virtualNode) {}
-                @Override public void invokeMethodOnNode(String targetId, String methodName, Object[] args) {}
-                @Override public void reportError(String message) {}
-            };
-
-            new SuperUiEngine(interpreter, headlessBridge);
 
             // =========================================================================
             // ⭐ A NOVA MURALHA DE SEGURANÇA 2: LIMPEZA SEMÂNTICA MINUCIOSA

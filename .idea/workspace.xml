@@ -4,16 +4,267 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(cli): adiciona suporte completo a requisições HTTP e ficheiros .http&#10;&#10;- Implementa o comando nativo `HttpCmd` com suporte a qualquer método HTTP (GET, POST, PUT, PATCH, DELETE, OPTIONS, etc.).&#10;- Adiciona processamento de cabeçalhos dinâmicos via linha de comandos com a flag `-H`.&#10;- Implementa parser de ficheiros `.http` seguindo o padrão da indústria (separação de headers e body por linha em branco).&#10;- Conclui o ciclo de desenvolvimento das ferramentas de rede e automação do ecossistema .XAT.">
-      <change afterPath="$PROJECT_DIR$/abort.xat" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="feat(core): adiciona comando 'abort' para terminação silenciosa de scripts&#10;&#10;- Introduz a instrução 'abort' na linguagem XAT para permitir cláusulas de guarda (early returns).&#10;- Cria a exceção de controlo 'AbortScriptException' para interromper a execução instantaneamente em qualquer nível de aninhamento.&#10;- Atualiza o Lexer, Parser e a AST para reconhecer a nova palavra reservada isolada (sem argumentos).&#10;- Mantém a instrução 100% silenciosa, delegando a responsabilidade de feedback visual e formatação de erros ao comando nativo 'echo'.">
+      <change afterPath="$PROJECT_DIR$/xplui.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/dependency-reduced-pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplBootstrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplBootstrapper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplorerApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/HttpCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/HttpCmd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/core/XatEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/core/XatEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssEvaluator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssLexer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssMatcher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssResolver.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssToken.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplCssTokenType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplSelectorEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/css/XplStyleEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/debug/MediaQueryDebugger.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/debug/XplNodeDebugger.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/EventBus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/IEventBus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/IInputManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/XplEvent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/XplEventListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/XplEventType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/XplInputManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/eventbus/InlineScriptExecutor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/eventbus/UiEventBus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/eventbus/UiEventBusSubscriber.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/event/eventbus/UiEventHandlers.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/html/HtmlLexer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/html/HtmlParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/html/HtmlTagUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/html/HtmlToken.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/html/HtmlTokenType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/XplDocument.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/XplElement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/XplNativeObject.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/XplNode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/helpers/XplDocumentUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/node/helpers/XplElementUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/Border.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/BoxShadow.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/Margin.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/Padding.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/ResolvedStyles.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/StyleResolver.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/StyleTransformUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/borderunit/BorderColor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/borderunit/BorderRadius.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/borderunit/BorderSide.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/borderunit/BorderWidth.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/cssunit/BoxSideSet.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/cssunit/CssContext.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/cssunit/CssParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/cssunit/CssUnit.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/cssunit/CssValue.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/gradient/Gradient.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/gradient/GradientParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/gradient/GradientStop.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/gradient/GradientType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/size/BoxSize.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/size/Dimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/style/ComputedStyles.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/style/UserAgentStyles.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/style/XplBorderStyle.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/properties/style/XplColor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/DomEvaluator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/XplEnvironmentWatcher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/XplExpressionEvaluator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/XplReactiveState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/XplReactivityManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/dom/reactivity/XplReactivityRenderer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lsp/XplLspLauncher.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/lsp/XplLspLauncher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/StyleAnimationUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplAnimationEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplAnimationManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplEasing.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplKeyframe.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplKeyframeAnimation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/animation/XplTransition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/core/JavaFxRenderer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/core/SuperUiEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/core/XplUiBridge.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/css/W3cCssAdapter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/css/media/JavaFxMediaListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/css/media/XplMediaNode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/cursor/StyleCursorUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/document/XplCanvasContext2D.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/document/XplScroll.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/event/AttachJavaFxListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/event/UiEventPublisher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/event/XplInputProcessor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/event/XplKeyCode.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/helpers/StyleTransformUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/helpers/SuperUiEngineUtils.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/BlockLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/BorderLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/ContentsLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/FlexLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/FlowLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/GridLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/InlineBlockLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/InlineGridLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/InlineLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/LayerLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/LayoutEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/LayoutManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/NoneLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/StackLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/TableLayout.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/AutoDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/FitContentDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/FixedDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/FrDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/GridDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/GridTemplateParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/MinMaxDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/PercentDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/grid/RepeatDimension.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/BorderContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/ContentsContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/CustomLayoutPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/FlexColumnPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/FlexRowPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/FlowContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/GridContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/InlineBlockContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/InlineContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/InlineGridContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/LayerContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/StackContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/panes/TableContainerPane.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/DefaultScrollBarRenderer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollBar.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollBarRenderer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollConstants.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollContext.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollEvent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollEventListener.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollIntegration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollPolicy.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/layout/scroll/ScrollTheme.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/AnchorTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/ButtonTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/CanvasTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/ContainerTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/DialogTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/FigcaptionTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/FigureTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/FormTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/HrTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/ImageTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/NativeTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/PopupTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/TagFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/TextareaTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/WebTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/AreaChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/BarChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/BubbleChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/ChartBase.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/CircularChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/LineChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/MathChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/PieChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/ScatterChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/StackedAreaChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/StackedBarChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/chart/XYChartTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/ButtonInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/CheckboxInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/ColorInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/EmailInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/FileInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/FormControlTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/HiddenInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/ImageInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/NumberInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/PasswordInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/RadioInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/RangeInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/ResetInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/SearchInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/SubmitInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/TelInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/TextInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/UrlInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/date/DateInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/date/DateTimeLocalInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/date/MonthInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/date/TimeInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/date/WeekInputTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/select/OptgroupTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/select/OptionTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/controls/select/SelectTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/customs/W3CTextBlock.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/ColorPreviewProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/EditorEventBus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/EditorTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/GutterFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/GutterProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/MetadataCache.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/MetadataScanner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/editor/SyntaxHighlighter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/AnimationTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/CameraTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/EmbeddedGameApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/EnemyTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/EntityTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/EntityType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/GameTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/GameTagBase.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/LevelTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/PhysicsTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/PlayerControl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/PlayerTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/PowerupTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/ProjectileTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/SpawnerTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/game/TriggerTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/interactive/DetailsTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/interactive/SummaryTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/interactive/TabTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/interactive/TabsTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/list/LiTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/list/ListTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/list/OlTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/list/UlTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/media/AudioTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/media/MediaControlBase.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/media/VideoTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/ContextMenuTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/MenuHelper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/MenuItemTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/MenuTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/MenubarTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/navigation/NavTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/ArcTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/CircleTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/CubicCurveTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/EllipseTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/LineTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/PathTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/PolygonTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/PolylineTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/QuadCurveTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/RectangleTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/SvgTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/shapes/TextTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/table/TableCellTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/table/TableGroupTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/table/TableRowTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/table/TableTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/FormattingTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/HeadingTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/ParagraphTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/SpanTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/TextBaseTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/tags/texts/TextNodeTag.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/render/javafx/window/MainWindow.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -110,7 +361,7 @@
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;jdk.selected.JAVA_MODULE&quot;: &quot;21&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/files/controller&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ferna/Documents/GitHub/FileManager/src/main/java/com/dic/xsuper/dom/event&quot;,
     &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
@@ -130,11 +381,11 @@
       <recent name="com.dic.xsuper.lang.ui" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\dom\event" />
+      <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\controller" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\tests" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager" />
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\web\tags" />
-      <recent name="C:\Users\ferna\Documents\GitHub\FileManager\src\main\java\com\dic\xsuper\lang\ui" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\ferna\Documents\GitHub\FileManager\files\views" />
@@ -241,9 +492,9 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.Main" />
       <item itemvalue="Application.RunApp" />
       <item itemvalue="Application.TestHeadlessEngine" />
-      <item itemvalue="Application.Main" />
       <item itemvalue="Batch.xpl" />
       <item itemvalue="JUnit.TesteXplBackend" />
     </list>
@@ -714,7 +965,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(css): add W3C adapter support for Adobe Illustrator-like custom mesh gradients&#10;&#10;- Preserves solid base background-color alongside background-image layers.&#10;- Dynamically normalizes raw pixel radii into responsive JavaFX percentages.&#10;- Translates custom-gradient tuples into smoothly blended multi-layer radial gradients." />
     <MESSAGE value="fix(build): align javafx-base and javafx-graphics versions to resolve flatMap NoSuchMethodError&#10;&#10;- Explicitly declares javafx-base and javafx-graphics version 21 in pom.xml.&#10;- Resolves transitive dependency conflicts caused by older JavaFX modules from third-party UI libraries." />
     <MESSAGE value="feat(core): revolução na arquitetura CSS Grid, Scroll moderno e Math Charts nativos&#10;&#10;Esta atualização refatora profundamente a forma como a SuperUI lida com o layout W3C, dimensões físicas e renderização gráfica, aproximando a engine do comportamento real de um browser.&#10;&#10;️ Correções (Fixes):&#10;- fix(lexer): Remove falso positivo de &quot;comentário não fechado&quot; no exato final do ficheiro.&#10;- fix(layout): Elimina a duplicação de texto (&quot;ghost text&quot;) na `NativeTag`.&#10;- fix(grid): Corrige o &quot;estouro&quot; de largura das colunas. Substitui hacks de 2000px por `setFillWidth(true)` e `setMinWidth(0)` no `GridContainerPane`.&#10;- fix(chart): Força a submissão dos gráficos nativos do JavaFX ao CSS Grid usando `setMinSize(0,0)` e `setPrefSize(10,10)`.&#10;&#10;✨ Novas Funcionalidades (Features):&#10;- feat(scroll): Cria o módulo `ModernScrollContainer` (inspirado em Skia) com track transparente, auto-hide e polegar arrastável, substituindo o ScrollPane padrão do JavaFX.&#10;- feat(window): Adiciona limitador inteligente na `MainWindow` via `Screen.getPrimary().getVisualBounds()`.&#10;- feat(grid): Adiciona suporte nativo para `grid-column: span X` no algoritmo de distribuição de células.&#10;- feat(debugger): Evolui o `XplNodeDebugger` para o &quot;Modo Raio-X&quot;, extraindo dimensões absolutas `prefWidth(-1)` e coordenadas XY através da compilação de nós na memória.&#10;- feat(chart): Implementa `MathChartTag` com um Recursive Descent Parser minúsculo e nativo. Suporta plotagem de múltiplas funções matemáticas no mesmo S.C.O separadas por vírgula (ex: `expressions=&quot;x, x^2&quot;`)." />
     <MESSAGE value="feat(animation): universal keyframes support for colors/transforms &amp; AnimateFX integration&#10;&#10;- Integrada a biblioteca AnimateFX com mais de 70 animações geridas pelo XplAnimationEngine (Maestro).&#10;- Corrigido NullPointerException em animações complexas/3D através de escuta segura da Scene no ciclo de vida do nó.&#10;- Implementada interpolação matemática de cores quadro a quadro para keyframes (background-color, color, border-color).&#10;- Expandido o motor de transformações numéricas para suporte universal a propriedades diretas e compostas (scale, rotate, translate, e sintaxe transform)." />
@@ -739,7 +989,8 @@
     <MESSAGE value="feat(core): motor XAT com concorrência, operadores lógicos e I/O interativo&#10;&#10;- Adiciona comandos nativos 'echo' (com cores de tema e True Color via -hex) e 'mkdir' (criação aninhada e em lote).&#10;- Implementa execução assíncrona de tarefas ('call sync') isolando processos em background.&#10;- Introduz interrupção e cancelamento seguro de threads via 'cancel' com gestão de tarefas ativas.&#10;- Adiciona suporte a pausas no fluxo de execução ('sleep', 'wait', 'delay').&#10;- Expande Lexer e Parser com operadores lógicos ('and', 'or') baseados em avaliação de curto-circuito.&#10;- Refatora a árvore de precedência (AST) para garantir hierarquia matemática rigorosa.&#10;- Implementa prompts interativos no terminal com 'read' e 'readl', com tipagem dinâmica.&#10;- Flexibiliza o operador 'not' para atuar tanto como unário de negação quanto como comparador binário de diferença." />
     <MESSAGE value="feat(cli): adiciona comando 'info' e sistema de manuais interativos&#10;&#10;- Atualiza a interface `Command` com o método default `getDetailedInfo()`, permitindo documentação progressiva sem quebrar contratos existentes.&#10;- Adiciona o método `getCommand` no `CommandRegistry` para expor os comandos registados ao sistema.&#10;- Cria o comando nativo `InfoCmd` para exibir descrições, detalhes e exemplos práticos de uso formatados com o ConsoleTheme.&#10;- Conclui a fundação da v1 da CLI e do motor de automação .XAT." />
     <MESSAGE value="feat(cli): adiciona suporte completo a requisições HTTP e ficheiros .http&#10;&#10;- Implementa o comando nativo `HttpCmd` com suporte a qualquer método HTTP (GET, POST, PUT, PATCH, DELETE, OPTIONS, etc.).&#10;- Adiciona processamento de cabeçalhos dinâmicos via linha de comandos com a flag `-H`.&#10;- Implementa parser de ficheiros `.http` seguindo o padrão da indústria (separação de headers e body por linha em branco).&#10;- Conclui o ciclo de desenvolvimento das ferramentas de rede e automação do ecossistema .XAT." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(cli): adiciona suporte completo a requisições HTTP e ficheiros .http&#10;&#10;- Implementa o comando nativo `HttpCmd` com suporte a qualquer método HTTP (GET, POST, PUT, PATCH, DELETE, OPTIONS, etc.).&#10;- Adiciona processamento de cabeçalhos dinâmicos via linha de comandos com a flag `-H`.&#10;- Implementa parser de ficheiros `.http` seguindo o padrão da indústria (separação de headers e body por linha em branco).&#10;- Conclui o ciclo de desenvolvimento das ferramentas de rede e automação do ecossistema .XAT." />
+    <MESSAGE value="feat(core): adiciona comando 'abort' para terminação silenciosa de scripts&#10;&#10;- Introduz a instrução 'abort' na linguagem XAT para permitir cláusulas de guarda (early returns).&#10;- Cria a exceção de controlo 'AbortScriptException' para interromper a execução instantaneamente em qualquer nível de aninhamento.&#10;- Atualiza o Lexer, Parser e a AST para reconhecer a nova palavra reservada isolada (sem argumentos).&#10;- Mantém a instrução 100% silenciosa, delegando a responsabilidade de feedback visual e formatação de erros ao comando nativo 'echo'." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(core): adiciona comando 'abort' para terminação silenciosa de scripts&#10;&#10;- Introduz a instrução 'abort' na linguagem XAT para permitir cláusulas de guarda (early returns).&#10;- Cria a exceção de controlo 'AbortScriptException' para interromper a execução instantaneamente em qualquer nível de aninhamento.&#10;- Atualiza o Lexer, Parser e a AST para reconhecer a nova palavra reservada isolada (sem argumentos).&#10;- Mantém a instrução 100% silenciosa, delegando a responsabilidade de feedback visual e formatação de erros ao comando nativo 'echo'." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

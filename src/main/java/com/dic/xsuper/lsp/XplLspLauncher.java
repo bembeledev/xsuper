@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 
 public class XplLspLauncher {
 
-    public static void main(String[] args) {
+    static void main() {
         // Quando o VSCode chamar este Main, o servidor acorda e escuta o System.in
         startServer(System.in, System.out);
     }

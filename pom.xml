@@ -310,7 +310,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dic.xsuper.app.XplRuntime</mainClass>
+                            <mainClass>com.dic.xsuper.app.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -379,7 +379,7 @@
                     <type>MSI</type>
                     <input>target</input>
                     <mainJar>${project.artifactId}.jar</mainJar>
-                    <mainClass>com.dic.xsuper.app.XplRuntime</mainClass>
+                    <mainClass>com.dic.xsuper.app.Main</mainClass>
                     <winConsole>true</winConsole>
                     <winShortcut>true</winShortcut>
                     <winMenu>true</winMenu>
@@ -391,7 +391,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.dic.xsuper.app.XplRuntime</mainClass>
+                    <mainClass>com.dic.xsuper.app.Main</mainClass>
                 </configuration>
             </plugin>
 

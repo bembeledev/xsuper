@@ -1,0 +1,1 @@
+java -jar C:\Users\ferna\Documents\GitHub\FileManager\target\xsuper-xplorer-2.0.0-shaded.jar
