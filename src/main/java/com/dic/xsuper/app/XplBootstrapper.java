@@ -3,8 +3,6 @@ package com.dic.xsuper.app;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.natives.models.ModelNativeRegistry;
 import com.dic.xsuper.engine.natives.variables.NativeVariables;
-import com.dic.xsuper.engine.natives.UINativeRegistry;
-import com.dic.xsuper.engine.natives.ContextNativeRegistry;
 
 public class XplBootstrapper {
 
@@ -19,9 +17,6 @@ public class XplBootstrapper {
         // 2. Injecta os Modelos de Dados (Math, Json, File, Http, Crypto, etc.)
         ModelNativeRegistry.InjectRegistry(interpreter);
 
-        // 3. Injecta a Ponte Abstracta de UI e Canvas (O interpretador passa a conhecer o XplDocument, etc.)
-        UINativeRegistry.inject(interpreter);
-        ContextNativeRegistry.inject(interpreter);
     }
 
 }

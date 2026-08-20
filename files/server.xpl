@@ -37,7 +37,6 @@ var server = HttpServer.serve(3000, (req, res) => {
             // Rota não encontrada
             res.status = 404;
             res.body = View.load("notfound");
-
         }
     }
 });

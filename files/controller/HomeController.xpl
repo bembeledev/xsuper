@@ -1,11 +1,12 @@
 module files.controller;
 
 import files.http.Http.Http;
-import files.controller.Controller.Controller;
 import files.views.view.View;
+import files.listeners.WebFilter.WebFilter;
+import files.controller.Controller.Controller;
 
+&WebFilter()
 declare HomeController extends Controller {}
-
 
 implement HomeController {
 

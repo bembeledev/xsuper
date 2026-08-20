@@ -4,9 +4,10 @@ import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
+import com.dic.xsuper.engine.natives.XplNativeObject;
 import com.dic.xsuper.engine.poo.XPLModel;
 import com.dic.xsuper.engine.poo.XplClass;
-import com.dic.xsuper.dom.node.XplNativeObject;
+
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -109,7 +110,8 @@ public class MongoNativeModel {
 
         public MongoDatabaseWrapper(MongoDatabase db) { this.db = db; }
 
-        @Override public void invokeMethod() {}
+        @Override
+        public void invokeMethod() {}
 
         @Override
         public Object invokeMethod(String methodName, List<Object> args, Interpreter interpreter) {
@@ -172,7 +174,7 @@ public class MongoNativeModel {
                                 .collect(Collectors.toMap(e -> (long) e.getKey(), e -> e.getValue()));
                     }
                     case "find": {
-                        Map<String, Object> filterMap = args.size() > 0 ? (Map<String, Object>) args.get(0) : new HashMap<>();
+                        Map<String, Object> filterMap = !args.isEmpty() ? (Map<String, Object>) args.get(0) : new HashMap<>();
                         Map<String, Object> optionsMap = args.size() > 1 ? (Map<String, Object>) args.get(1) : new HashMap<>();
                         Bson filter = mapToBson(filterMap);
                         FindIterable<Document> iterable = coll.find(filter);

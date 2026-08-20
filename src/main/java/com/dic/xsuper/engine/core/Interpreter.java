@@ -1,6 +1,5 @@
 package com.dic.xsuper.engine.core;
 import com.dic.xsuper.cli.core.CommandRegistry;
-import com.dic.xsuper.dom.node.XplNativeObject;
 import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.ast.Stmt;
 import com.dic.xsuper.engine.ast.TypeNode;
@@ -10,6 +9,7 @@ import com.dic.xsuper.engine.execution.XplFunction;
 import com.dic.xsuper.engine.helpers.ArrayMethods;
 import com.dic.xsuper.engine.helpers.ObjectMethods;
 import com.dic.xsuper.engine.helpers.StringMethods;
+import com.dic.xsuper.engine.natives.XplNativeObject;
 import com.dic.xsuper.engine.poo.*;
 import com.dic.xsuper.engine.poo.enums.XplEnum;
 import com.dic.xsuper.engine.poo.enums.XplEnumVariant;

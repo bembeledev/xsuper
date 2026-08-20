@@ -4,9 +4,9 @@ import com.dic.xsuper.engine.ast.Expr;
 import com.dic.xsuper.engine.core.Interpreter;
 import com.dic.xsuper.engine.exceptions.ControlFlow;
 import com.dic.xsuper.engine.execution.XplCallable;
+import com.dic.xsuper.engine.natives.XplNativeObject;
 import com.dic.xsuper.engine.poo.XPLModel;
 import com.dic.xsuper.engine.poo.XplClass;
-import com.dic.xsuper.dom.node.XplNativeObject;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
