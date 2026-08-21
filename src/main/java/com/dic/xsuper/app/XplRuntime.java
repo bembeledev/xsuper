@@ -26,8 +26,15 @@ public class XplRuntime {
             return;
         }
 
+        XplRuntime.run(args);
+    }
+
+
+    public static void  run(String[] args){
+
         // 1. Captura e normaliza o caminho absoluto enviado pelo Windows
         Path target = Paths.get(args[0]).normalize().toAbsolutePath();
+
 
         if (!Files.exists(target)) {
             System.err.println(ConsoleTheme.ERROR + "Ficheiro não encontrado: " + target + ConsoleTheme.RESET);

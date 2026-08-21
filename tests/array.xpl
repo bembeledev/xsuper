@@ -3,7 +3,7 @@ println("      SUPER XPL - TEST SUITE: ARRAYS      ", "#00FFFF");
 println("==========================================\n", "#00FFFF");
 
 // ------------------------------------------
-println("1. PROPRIEDADES DIRETAS");
+println("1. PROPRIEDADES DIRECTAS");
 // ------------------------------------------
 let p = [10, 20, 30];
 println("Array base: " + p.join(", "));
@@ -97,8 +97,8 @@ println(" -> some (==5):   " + num.some(x => x == 5));
 println(" -> every (>0):   " + num.every(x => x > 0));
 
 // Funções nomeadas para métodos que enviam mais de 1 parâmetro:
-fun Redutor(acc:int, atual:int, indice:int):int {
-    return acc + atual;
+fun Redutor(acc:int, actual:int, indice:int):int {
+    return acc + actual;
 }
 println(" -> reduce(soma): " + num.reduce(Redutor, 0)); // 15
 

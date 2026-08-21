@@ -2,8 +2,6 @@ package com.dic.xsuper.engine.analysis;
 
 import com.dic.xsuper.engine.ast.*;
 import com.dic.xsuper.engine.core.*;
-import com.dic.xsuper.engine.modules.XplModuleManager;
-
 import java.util.*;
 
 /**
@@ -114,7 +112,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         }
     }
 
-
     public List<SemanticError> analyze(List<Stmt> statements) {
         // =====================================================================
         // ⭐ 1. A MÁGICA DA RAIZ: Carrega os globais do projeto/pacote primeiro!
@@ -211,7 +208,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // AUXILIARES DE TIPO
     // =========================================================================
-
     private void checkExceptionCaught(String errType, Token errorToken) {
         // 1. Verifica se estamos protegidos por um bloco try-catch ativo
         for (int i = catchStack.size() - 1; i >= 0; i--) {
@@ -318,7 +314,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // STATEMENTS
     // =========================================================================
-
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         beginScope();
@@ -674,7 +669,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // DECLARAÇÕES DE POO
     // =========================================================================
-
     @Override
     public Void visitDeclareDeclStmt(Stmt.DeclareDecl stmt) {
         validateMetaBags(stmt.decorators, stmt.listeners);
@@ -763,7 +757,7 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         // Se isto for um 'implement Base as Variante', temos de avisar o
         // Linter que a Variante é uma classe legítima que acaba de nascer!
         // =================================================================
-        if (stmt.aliasName != null) { // ⚠️ NOTA: Ajusta 'aliasName' para o nome exato do teu campo na AST (pode ser 'alias', 'variantName', etc.)
+        if (stmt.aliasName != null) {
             String variantName = stmt.aliasName.lexeme;
 
             if (!currentScope.isTypeDefined(variantName)) {
@@ -771,10 +765,14 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
                 currentScope.defineType(stmt.aliasName, "class");
 
                 // 2. Herança Estática: Clona o esqueleto do Pai para a Variante
-                // (para que o Linter saiba que o Mam1 tem os campos do Mamifero!)
                 SemanticScope.XPLModelInfo parentInfo = currentScope.getClassInfo(targetName);
                 if (parentInfo != null) {
-                    currentScope.defineClassInfo(variantName, targetName, parentInfo.fields, new ArrayList<>(), false, 0, new ArrayList<>());
+
+                    // ─── A CORREÇÃO DE OURO: Usar parentInfo.superclass em vez de targetName! ───
+                    currentScope.defineClassInfo(variantName, parentInfo.superclass, parentInfo.fields, new ArrayList<>(), false, 0, new ArrayList<>());
+
+                    // ─── LIGAÇÃO DO BASE MODEL ───
+                    currentScope.getClassInfo(variantName).baseModelName = targetName;
                 }
             }
         }
@@ -856,44 +854,73 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
             boolean hasOverride = method.decorators != null && method.decorators.stream()
                     .anyMatch(d -> d.name.lexeme.equals("Override"));
 
-            // 1. Verifica se sobrepõe um método da superclasse
+            // 1. Verifica se a estrutura XPL obriga a que este método seja sobreposto
             boolean overridesSuper = false;
-            if (info != null && info.superclass != null) {
-                SemanticScope.XPLModelInfo superInfo = currentScope.getClassInfo(info.superclass);
-                if (superInfo != null) {
-                    overridesSuper = superInfo.methods.stream()
-                            .anyMatch(m -> m.name.lexeme.equals(method.name.lexeme));
-                }
+            if (info != null) {
+                overridesSuper = info.requiresOverride(method.name.lexeme, currentScope);
             }
 
             // 2. Verifica se cumpre um contrato das interfaces implementadas
             boolean fulfillsInterface = false;
-            if (stmt.interfaces != null) {
-                for (Token interfaceToken : stmt.interfaces) {
-                    Stmt.InterfaceDecl contract = currentScope.getInterfaceInfo(interfaceToken.lexeme);
-                    if (contract != null) {
-                        // Procura a assinatura do método dentro da Interface
-                        if (contract.methods.stream().anyMatch(sig -> sig.name.lexeme.equals(method.name.lexeme))) {
-                            fulfillsInterface = true;
-                            break;
+            for (Token interfaceToken : stmt.interfaces) {
+                Stmt.InterfaceDecl contract = currentScope.getInterfaceInfo(interfaceToken.lexeme);
+                if (contract != null) {
+                    // Procura a assinatura do método dentro da Interface
+                    if (contract.methods.stream().anyMatch(sig -> sig.name.lexeme.equals(method.name.lexeme))) {
+                        fulfillsInterface = true;
+                        break;
+                    }
+                }
+            }
+
+            // =====================================================================
+            // ⭐ 3.5 A GUILHOTINA DA HERANÇA ABSTRATA ⭐
+            // =====================================================================
+            // Se a implementação não assumiu ser abstrata, TEM de cumprir as regras do pai!
+            if (!stmt.isAbstract) {
+                SemanticScope.XPLModelInfo currentParent = info != null ? currentScope.getClassInfo(info.superclass) : null;
+
+                while (currentParent != null) {
+                    for (Stmt.Function parentMethod : currentParent.methods) {
+                        if (parentMethod.isAbstract) {
+                            // Pergunta à árvore se a classe atual (ou algum pai no meio) implementou isto de forma concreta
+                            boolean isImplemented = false;
+
+                            SemanticScope.XPLModelInfo searchNode = info;
+                            while (searchNode != null && !isImplemented) {
+                                for (Stmt.Function m : searchNode.methods) {
+                                    if (m.name.lexeme.equals(parentMethod.name.lexeme) && !m.isAbstract) {
+                                        isImplemented = true;
+                                        break;
+                                    }
+                                }
+                                if (searchNode.name.equals(currentParent.name)) break; // Chegámos ao dono original
+                                searchNode = currentScope.getClassInfo(searchNode.superclass);
+                            }
+
+                            if (!isImplemented) {
+                                errors.add(new SemanticError(stmt.targetName,
+                                        "Quebra de Contrato Genético: O modelo '" + activeModelName + "' herda o método abstrato '" + parentMethod.name.lexeme + "()' de '" + currentParent.name + "', mas não o implementou. Declare a implementação como 'abstract implement' ou forneça o método com @Override."));
+                            }
                         }
                     }
+                    currentParent = currentScope.getClassInfo(currentParent.superclass);
                 }
             }
 
             boolean isConstructor = method.name.lexeme.equals("init");
 
             if (!isConstructor) {
-                // REGRA 1: Prometeu sobrepor, mas a base/interface não o tem?
+                // REGRA 1: Prometeu sobrepor, mas a base/interface não o exige?
                 if (hasOverride && !overridesSuper && !fulfillsInterface) {
                     errors.add(new SemanticError(method.name,
-                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não sobrepõe nenhum método da superclasse nem cumpre nenhum contrato."));
+                            "Erro de Sobreposição: O método '" + method.name.lexeme + "()' está marcado com @Override, mas não sobrepõe nenhum método genético do pai nem cumpre nenhum contrato obrigatório."));
                 }
 
-                // REGRA 2: Cumpriu o contrato mas esqueceu-se do @Override?
+                // REGRA 2: A Linguagem exigia a sobreposição, mas não tem o decorador?
                 if (!hasOverride && (overridesSuper || fulfillsInterface)) {
                     errors.add(new SemanticError(method.name,
-                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou a sobrepor um método pai. É obrigatório marcá-lo com @Override."));
+                            "Decorador Ausente: O método '" + method.name.lexeme + "()' está a cumprir um contrato (Interface) ou uma regra abstrata. É obrigatório marcá-lo com @Override."));
                 }
             }
 
@@ -1128,7 +1155,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // MÓDULOS E IMPORTS/EXPORTS
     // =========================================================================
-
     @Override
     public Void visitModuleDeclStmt(Stmt.ModuleDecl stmt) {
         // Apenas verifica se o caminho é válido (não fazemos validação profunda)
@@ -1225,7 +1251,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // OUTROS STATEMENTS
     // =========================================================================
-
     @Override
     public Void visitDebuggerStmt(Stmt.Debugger stmt) {
         return null; // Sem validação
@@ -1234,7 +1259,6 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
     // =========================================================================
     // EXPRESSÕES
     // =========================================================================
-
     @Override
     public String visitLiteralExpr(Expr.Literal expr) {
         return inferTypeFromLiteral(expr);
@@ -2144,4 +2168,5 @@ public class SemanticAnalyzer implements Expr.Visitor<String>, Stmt.Visitor<Void
         endScope();
         return "any";
     }
+
 }

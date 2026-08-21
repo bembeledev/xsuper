@@ -1,6 +1,7 @@
 package com.dic.xsuper.cli.commands.xsuper;
 
 import com.dic.xsuper.app.XplBootstrapper;
+import com.dic.xsuper.app.XplRuntime;
 import com.dic.xsuper.cli.core.Command;
 import com.dic.xsuper.cli.core.CommandRegistry;
 
@@ -16,6 +17,7 @@ import com.dic.xsuper.utils.ConsoleTheme;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RunXplCmd implements Command {
@@ -53,16 +55,16 @@ public class RunXplCmd implements Command {
         try {
             Lexer lexer = new Lexer(sourceCode, target.toAbsolutePath().toString());
             List<Token> tokens = lexer.tokenize();
-            /*for (Token a: tokens){
-                System.out.println(ConsoleTheme.TEXT + a + ConsoleTheme.RESET);
-            }*/
+            //for (Token a: tokens){
+            //    System.out.println(ConsoleTheme.TEXT + a + ConsoleTheme.RESET);
+            //}
             //System.out.println(ConsoleTheme.SUCCESS + ">> 3. Lexer: " + tokens.size() + " tokens extraídos." + ConsoleTheme.RESET);
             Parser parser = new Parser(tokens);
 
             List<Stmt> statements = parser.parse();
-            /*for (Stmt stms : statements) {
-                System.out.println(ConsoleTheme.TEXT + stms.toString() + ConsoleTheme.RESET);
-            }*/
+            //for (Stmt stms : statements) {
+                //System.out.println(ConsoleTheme.TEXT + stms.toString() + ConsoleTheme.RESET);
+            //}
             //System.out.println(ConsoleTheme.SUCCESS + ">> 4. Parser: " + statements.size() + " declarações geradas na AST." + ConsoleTheme.RESET);
 
             // ⭐ A TUA NOVA MURALHA DE SEGURANÇA!
@@ -73,8 +75,6 @@ public class RunXplCmd implements Command {
                         ConsoleTheme.RESET);
                 return currentDirectory; // 🛑 CORTA AQUI! O interpretador nunca será chamado!
             }
-
-
 
             if (statements.isEmpty()) {
                 System.out.println(ConsoleTheme.WARNING + ">> AVISO: A AST está vazia. Não há nada para executar!" + ConsoleTheme.RESET);

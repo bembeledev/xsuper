@@ -248,6 +248,7 @@ public class SemanticScope {
         clone.initParamTypes = new java.util.ArrayList<>(original.initParamTypes);
         clone.methods.addAll(original.methods);
         clone.isAbstract = original.isAbstract;
+        clone.baseModelName = original.baseModelName;
         return clone;
     }
     // --- Informações sobre símbolos ---
@@ -281,6 +282,9 @@ public class SemanticScope {
 
         public boolean isAbstract = false;
 
+        // ─── A CORREÇÃO DE ARQUITETURA NO LINTER ───
+        public String baseModelName = null; // Guardará "Animal" se isto for o "Fish"
+
         public XPLModelInfo(String name, String superclass, List<Stmt.FieldDecl> fields, List<String> interfaces, boolean isSealed, int typeParamCount, List<String> typeParameters) {
             this.name = name;
             this.superclass = superclass;
@@ -289,6 +293,26 @@ public class SemanticScope {
             this.isSealed = isSealed;
             this.typeParamCount = typeParamCount;
             this.typeParameters = typeParameters != null ? typeParameters : new ArrayList<>();
+        }
+
+        // Faz a validação baseada apenas na herança clássica!
+        public boolean requiresOverride(String methodName, SemanticScope currentScope) {
+            // Herança Clássica (extends) - Sobe na árvore
+            String currentSuper = this.superclass;
+            while (currentSuper != null) {
+                XPLModelInfo superInfo = currentScope.getClassInfo(currentSuper);
+                if (superInfo != null) {
+                    for (Stmt.Function m : superInfo.methods) {
+                        if (m.name.lexeme.equals(methodName)) return true;
+                    }
+                    currentSuper = superInfo.superclass;
+                } else {
+                    break;
+                }
+            }
+
+            // O Linter já não olha para o 'baseModelName' porque as Variantes são isoladas!
+            return false;
         }
     }
 }

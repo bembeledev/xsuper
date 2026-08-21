@@ -894,7 +894,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
                 // ⭐ 2. VERIFICAÇÃO DE ADN (SUPERCLASSE)
                 // O modelo pai já tem este método?
-                boolean overridesSuper = (baseModel.superclass != null && baseModel.superclass.findMethod(method.name.lexeme) != null);
+                // ─── 3. A MESMA CORREÇÃO PARA OS GENÉRICOS ───
+                boolean overridesSuper = baseModel.requiresOverride(method.name.lexeme);
+
 
                 // ⭐ 3. VERIFICAÇÃO DE CONTRATOS (INTERFACES)
                 // Este método pertence a alguma interface assinada neste bloco 'implement'?
@@ -906,6 +908,32 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                             fulfillsInterface = true;
                             break; // Encontrou na interface, não precisa procurar mais!
                         }
+                    }
+                }
+
+                // =====================================================================
+                // ⭐ 3.5 A GUILHOTINA DA HERANÇA ABSTRATA (RUN-TIME) ⭐
+                // =====================================================================
+                if (!stmt.isAbstract) {
+                    XPLModel currentParent = baseModel.superclass;
+
+                    while (currentParent != null) {
+                        // Procura todos os métodos abstratos neste nível da árvore genealógica
+                        for (Stmt.Function parentMethod : currentParent.methods.values()) {
+                            if (parentMethod.isAbstract) {
+
+                                // O findMethod sobe a árvore toda!
+                                // Se devolver um método abstrato (ou null), significa que a classe
+                                // atual não fez o seu trabalho de o implementar de forma concreta!
+                                Stmt.Function localImpl = baseModel.findMethod(parentMethod.name.lexeme);
+
+                                if (localImpl == null || localImpl.isAbstract) {
+                                    throw new ControlFlow.RuntimeError(stmt.targetName,
+                                            "Quebra de Contrato Genético Fatal: O modelo '" + baseModel.name + "' herda o método abstrato '" + parentMethod.name.lexeme + "()' de '" + currentParent.name + "', mas não o implementou de forma concreta.");
+                                }
+                            }
+                        }
+                        currentParent = currentParent.superclass;
                     }
                 }
 
@@ -952,6 +980,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 baseModel.implementedInterfaces.add(interfaceName);
             }
 
+
+
             System.out.println("[XPL Genéricos] -> Acoplando Comportamento ao Blueprint: " + baseName + "<...>");
             return null; // <-- Corta aqui! O blueprint fica completo na câmara criogénica.
         }
@@ -980,6 +1010,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             activeModel = new XPLModel(variantName, baseModel.superclass);
             baseModel.variantAliases.add(activeModel.name);
             activeModel.hasBaseImplementation = true;
+
+            // ─── 1. A LIGAÇÃO QUE FALTAVA: Avisar quem é a Base! ───
+            activeModel.baseModel = baseModel;
 
             if (stmt.isAbstract) {
                 activeModel.isAbstract = true;
@@ -1016,7 +1049,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             }
 
             // ⭐ 2. VERIFICAÇÃO DE ADN (SUPERCLASSE)
-            boolean overridesSuper = (activeModel.superclass != null && activeModel.superclass.findMethod(method.name.lexeme) != null);
+            // ─── 2. A CORREÇÃO DE OURO: Usar o cérebro do XPLModel! ───
+            boolean overridesSuper = activeModel.requiresOverride(method.name.lexeme);
 
             // ⭐ 3. VERIFICAÇÃO DE CONTRATOS (INTERFACES)
             boolean fulfillsInterface = false;

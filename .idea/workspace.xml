@@ -4,58 +4,25 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="refactor&#10;&#10;- Remoção da ui para outro projecto independente">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/XplNativeObject.java" afterDir="false" />
+    <list default="true" id="e2899d0b-dc25-4f1a-94e7-837de8051787" name="Changes" comment="restore(engine)&#10;- Adição do XplNativeObject.java que era vinclulado a UI.&#10;fix(engine)&#10;- Correção aos bugs lingados aos XplNativeObject.java ono modulo engine.&#10;remove(all ui file)&#10;- limpeza de todos os arquivos ligados ao ui.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/files/controller/HomeController.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/files/controller/HomeController.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/files/server.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/files/server.xpl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplBootstrapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplBootstrapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/app/XplRuntime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/AwkCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/AwkCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/CompressCmd.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/EncryptCmd.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/RunXplCmd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/commands/xsuper/SearchTextCmd.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/cli/services/SecurityService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticScope.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/Interpreter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/ContextNativeRegistry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/UINativeRegistry.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/DatabaseNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/DatabaseNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/InteropNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/InteropNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/MongoNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/MongoNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/SocketNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/SocketNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/StreamNativeModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/natives/models/StreamNativeModel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/SuperUIEditorTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestHeadlessEngine.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TestSuperHTML.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/TesteXplBackend.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/ComprehensiveEngineTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/DetailsExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/FormExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/ListExamples.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/MediaExamples.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/MenuExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/OverflowExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/RunApp.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TabExample.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TabExampleModern.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestLists.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestMenus.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestSelect.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIInputRender.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRender.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRender02.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUIRenderMaster.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUITableRender.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/tests/ui/TestUITextRender.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/core/document.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/core/render.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/main.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/artigo.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/div.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/editor.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/element.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/event.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/ide.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/menus.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/popup.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/super.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/supertext.xpl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/tags/test.xpl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/MetaProgramming.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/StringifyHelper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/core/interpreter/TypeChecker.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XPLModel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/poo/XPLModel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/arq.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/arq.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/array.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/array.xpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/poo2.xpl" beforeDir="false" afterPath="$PROJECT_DIR$/tests/poo2.xpl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,6 +100,7 @@
     &quot;Application.TestXplCssMatcher.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestXplCssResolver.executor&quot;: &quot;Run&quot;,
     &quot;Application.UIFromHTML.executor&quot;: &quot;Run&quot;,
+    &quot;Application.XplLspLauncher.executor&quot;: &quot;Run&quot;,
     &quot;Application.XplRuntime.executor&quot;: &quot;Run&quot;,
     &quot;Application.com.dic.xsuper.Main.executor&quot;: &quot;Run&quot;,
     &quot;Batch.xpl.executor&quot;: &quot;Run&quot;,
@@ -256,13 +224,15 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="xpl" type="BatchConfigurationType" factoryName="Batch" temporary="true">
-      <module name="FileManager" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SCRIPT_NAME" value="xpl.bat" />
-      <option name="PARAMETERS" value="" />
+    <configuration name="XplLspLauncher" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.dic.xsuper.lsp.XplLspLauncher" />
+      <module name="xsuper-xplorer" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.dic.xsuper.lsp.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -283,19 +253,19 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.XplLspLauncher" />
       <item itemvalue="Application.RunApp" />
       <item itemvalue="Application.TestHeadlessEngine" />
       <item itemvalue="Application.Main" />
-      <item itemvalue="Batch.xpl" />
       <item itemvalue="JUnit.TesteXplBackend" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Application.Main" />
+        <item itemvalue="Application.XplLspLauncher" />
         <item itemvalue="Application.RunApp" />
         <item itemvalue="Application.TestHeadlessEngine" />
         <item itemvalue="JUnit.TesteXplBackend" />
-        <item itemvalue="Batch.xpl" />
       </list>
     </recent_temporary>
   </component>
@@ -756,7 +726,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="feat(core): revolução na arquitetura CSS Grid, Scroll moderno e Math Charts nativos&#10;&#10;Esta atualização refatora profundamente a forma como a SuperUI lida com o layout W3C, dimensões físicas e renderização gráfica, aproximando a engine do comportamento real de um browser.&#10;&#10;️ Correções (Fixes):&#10;- fix(lexer): Remove falso positivo de &quot;comentário não fechado&quot; no exato final do ficheiro.&#10;- fix(layout): Elimina a duplicação de texto (&quot;ghost text&quot;) na `NativeTag`.&#10;- fix(grid): Corrige o &quot;estouro&quot; de largura das colunas. Substitui hacks de 2000px por `setFillWidth(true)` e `setMinWidth(0)` no `GridContainerPane`.&#10;- fix(chart): Força a submissão dos gráficos nativos do JavaFX ao CSS Grid usando `setMinSize(0,0)` e `setPrefSize(10,10)`.&#10;&#10;✨ Novas Funcionalidades (Features):&#10;- feat(scroll): Cria o módulo `ModernScrollContainer` (inspirado em Skia) com track transparente, auto-hide e polegar arrastável, substituindo o ScrollPane padrão do JavaFX.&#10;- feat(window): Adiciona limitador inteligente na `MainWindow` via `Screen.getPrimary().getVisualBounds()`.&#10;- feat(grid): Adiciona suporte nativo para `grid-column: span X` no algoritmo de distribuição de células.&#10;- feat(debugger): Evolui o `XplNodeDebugger` para o &quot;Modo Raio-X&quot;, extraindo dimensões absolutas `prefWidth(-1)` e coordenadas XY através da compilação de nós na memória.&#10;- feat(chart): Implementa `MathChartTag` com um Recursive Descent Parser minúsculo e nativo. Suporta plotagem de múltiplas funções matemáticas no mesmo S.C.O separadas por vírgula (ex: `expressions=&quot;x, x^2&quot;`)." />
     <MESSAGE value="feat(animation): universal keyframes support for colors/transforms &amp; AnimateFX integration&#10;&#10;- Integrada a biblioteca AnimateFX com mais de 70 animações geridas pelo XplAnimationEngine (Maestro).&#10;- Corrigido NullPointerException em animações complexas/3D através de escuta segura da Scene no ciclo de vida do nó.&#10;- Implementada interpolação matemática de cores quadro a quadro para keyframes (background-color, color, border-color).&#10;- Expandido o motor de transformações numéricas para suporte universal a propriedades diretas e compostas (scale, rotate, translate, e sintaxe transform)." />
     <MESSAGE value="fix(core): enforce W3C Box Model and fix composite border parsing&#10;&#10;- Layout: Apply strict dimension constraints (min/max/pref) in NativeTag.java for fixed width/height values, preventing JavaFX containers from stretching elements.&#10;- CSS: Implement fallback logic to correctly translate combined 'border' (with rgba) and 'border-top-color' shorthands into the 4-axis JavaFX '-fx-border-color' format.&#10;- Resolves the &quot;fake black background&quot; and stretching bugs on W3C components like spinners." />
     <MESSAGE value="fix(modularity): resolve isolated local vault paths and project root detection&#10;&#10;- Update XplModuleManager to prioritize local project files before querying the SDM vault.&#10;- Fix physical file resolution for local packages mapped via sdm.lock.&#10;- Enhance XplRuntime to automatically detect the true project root (containing sdm.lock) from nested script paths.&#10;- Successfully integrate and execute the com.dic.validators security lifecycle module." />
@@ -781,7 +750,8 @@
     <MESSAGE value="feat(cli): adiciona suporte completo a requisições HTTP e ficheiros .http&#10;&#10;- Implementa o comando nativo `HttpCmd` com suporte a qualquer método HTTP (GET, POST, PUT, PATCH, DELETE, OPTIONS, etc.).&#10;- Adiciona processamento de cabeçalhos dinâmicos via linha de comandos com a flag `-H`.&#10;- Implementa parser de ficheiros `.http` seguindo o padrão da indústria (separação de headers e body por linha em branco).&#10;- Conclui o ciclo de desenvolvimento das ferramentas de rede e automação do ecossistema .XAT." />
     <MESSAGE value="feat(core): adiciona comando 'abort' para terminação silenciosa de scripts&#10;&#10;- Introduz a instrução 'abort' na linguagem XAT para permitir cláusulas de guarda (early returns).&#10;- Cria a exceção de controlo 'AbortScriptException' para interromper a execução instantaneamente em qualquer nível de aninhamento.&#10;- Atualiza o Lexer, Parser e a AST para reconhecer a nova palavra reservada isolada (sem argumentos).&#10;- Mantém a instrução 100% silenciosa, delegando a responsabilidade de feedback visual e formatação de erros ao comando nativo 'echo'." />
     <MESSAGE value="refactor&#10;&#10;- Remoção da ui para outro projecto independente" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor&#10;&#10;- Remoção da ui para outro projecto independente" />
+    <MESSAGE value="restore(engine)&#10;- Adição do XplNativeObject.java que era vinclulado a UI.&#10;fix(engine)&#10;- Correção aos bugs lingados aos XplNativeObject.java ono modulo engine.&#10;remove(all ui file)&#10;- limpeza de todos os arquivos ligados ao ui." />
+    <option name="LAST_COMMIT_MESSAGE" value="restore(engine)&#10;- Adição do XplNativeObject.java que era vinclulado a UI.&#10;fix(engine)&#10;- Correção aos bugs lingados aos XplNativeObject.java ono modulo engine.&#10;remove(all ui file)&#10;- limpeza de todos os arquivos ligados ao ui." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -813,6 +783,12 @@
           <log-expression expression="&quot;[XPL Engine] -&gt; Registando Interface: &quot; + interfaceName" language="JAVA" mode="CODE_FRAGMENT" />
           <placement>INTER_LINE</placement>
           <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="NONE" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/dic/xsuper/engine/analysis/SemanticAnalyzer.java</url>
+          <line>380</line>
+          <placement>INTER_LINE</placement>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

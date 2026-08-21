@@ -43,11 +43,13 @@ abstract implement Animal {
 // ==========================================
 abstract implement Animal as Fish {
     // Sobrescreve o método (Opcional, mas permitido na POO)
+    //@Override
     pub fun verIdade(): int {
         return this.id * 2; // Peixes envelhecem diferente!
     }
 
     // ⭐ OBRIGATÓRIO: Cumpre a regra abstracta do Pai
+    //@Override
     pub fun acasalamento(): string {
         return "O peixe liberta ovos na água.";
     }
@@ -64,6 +66,11 @@ implement Mamifero {
     pub fun init(nome: string, id: int, local: string) {
         super.init(nome, id); // O pai trata da genética base!
         this.localizacao = local; // O filho foca-se na evolução!
+    }
+
+    @Override
+    pub fun acasalamento(): string {
+        return "O mamífero reproduz-se de forma vivípara na " + this.localizacao;
     }
 }
 
@@ -123,6 +130,7 @@ println(reprod);
 leao.verIdade();
 
 var mam = new Mamifero("Tacto",21,"Oil");
+
 mam.verIdade();
 
 println(">> Execução concluída com sucesso da Arquitectura XPL!", "#00FF00");

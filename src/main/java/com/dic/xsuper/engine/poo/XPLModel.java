@@ -108,6 +108,23 @@ public class XPLModel {
         return false;
     }
 
+    // =========================================================================
+    //   VALIDAÇÃO DE SOBREPOSIÇÃO (O CÉREBRO DE ISOLAMENTO)
+    // =========================================================================
+
+    public boolean requiresOverride(String methodName) {
+        // 1. Herança Clássica (extends)
+        // Só exige @Override se a classe for um Filho Direto e o Pai tiver o método.
+        if (superclass != null && superclass.findMethod(methodName) != null) {
+            return true;
+        }
+
+        // 2. Variantes (as Alias)
+        // São completamente isoladas em comportamento. Nunca herdam métodos da implementação base!
+        // Logo, reescrever um método nunca é um Override.
+        return false;
+    }
+
 
     // ⭐ A VERIFICAÇÃO DE CONTRATOS (INTERFACES) ⭐
     public boolean implementsInterface(String targetType) {
